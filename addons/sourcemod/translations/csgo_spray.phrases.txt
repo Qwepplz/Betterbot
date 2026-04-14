@@ -1,0 +1,365 @@
+"Phrases"
+{
+	"Spray System"
+	{
+		"en"		"[Spray System]"
+		"chi"		"[喷漆系统]"
+	}
+	
+	"Welcome back random spray"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Welcome back! Random spray is enabled, each spray will be randomly selected."
+		"chi"		"{1} 欢迎回来！随机喷漆已启用，每次喷漆都会随机选择。"
+	}
+	
+	"Welcome back no spray"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Welcome back! Type !pq to select a spray."
+		"chi"		"{1} 欢迎回来！输入 !pq 选择一个喷漆。"
+	}
+	
+	"Spray data not loaded"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray data is not loaded yet, please try again later."
+		"chi"		"{1} 喷漆数据尚未加载完成，请稍后再试。"
+	}
+	
+	"Spray menu not created"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray menu is not created yet, please try again later."
+		"chi"		"{1} 喷漆菜单尚未创建，请稍后再试。"
+	}
+	
+	"Spray cooldown"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} Spray cooldown, {2} seconds remaining"
+		"chi"		"{1} 喷漆冷却中，剩余 {2} 秒"
+	}
+	
+	"Spray limit reached"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray limit reached for this round"
+		"chi"		"{1} 本回合喷漆数量已达上限"
+	}
+	
+	"No spray selected"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} You haven't selected any spray! Type !pq to select one."
+		"chi"		"{1} 你尚未选择任何喷漆！输入 !pq 选择一个喷漆。"
+	}
+	
+	"Spray disabled"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray disabled"
+		"chi"		"{1} 喷漆已禁用"
+	}
+	
+	"Spray selected"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} You have selected spray: {2}"
+		"chi"		"{1} 你已选择喷漆: {2}"
+	}
+	
+	"Use E key for spray"
+	{
+		"en"		"Use E key for spray"
+		"chi"		"使用E键喷漆"
+	}
+	
+	"Play spray sound"
+	{
+		"en"		"Play spray sound"
+		"chi"		"播放喷漆声音"
+	}
+	
+	"Random spray"
+	{
+		"en"		"Random spray"
+		"chi"		"随机喷漆"
+	}
+	
+	"Global notifications"
+	{
+		"en"		"Global notifications"
+		"chi"		"全局通知"
+	}
+	
+	"Current spray"
+	{
+		"en"		"Current spray"
+		"chi"		"当前喷漆"
+	}
+	
+	"Bind command info"
+	{
+		"en"		"Bind command: bind key \"say !sq\""
+		"chi"		"绑定命令: bind 按键 \"say !sq\""
+	}
+	
+	"Spray enabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray with E key is enabled"
+		"chi"		"{1} 使用E键喷漆已开启"
+	}
+	
+	"Spray disabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray with E key is disabled"
+		"chi"		"{1} 使用E键喷漆已关闭"
+	}
+	
+	"Sound enabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray sound is enabled"
+		"chi"		"{1} 喷漆声音已开启"
+	}
+	
+	"Sound disabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Spray sound is disabled"
+		"chi"		"{1} 喷漆声音已关闭"
+	}
+	
+	"Random spray enabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Random spray is enabled"
+		"chi"		"{1} 随机喷漆已开启"
+	}
+	
+	"Random spray disabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Random spray is disabled"
+		"chi"		"{1} 随机喷漆已关闭"
+	}
+	
+	"Notifications enabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Global notifications are enabled"
+		"chi"		"{1} 全局通知已开启"
+	}
+	
+	"Notifications disabled status"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Global notifications are disabled"
+		"chi"		"{1} 全局通知已关闭"
+	}
+	
+	"Current spray random"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} Your current spray setting: Random spray each time"
+		"chi"		"{1} 你当前的喷漆设置: 每次喷漆随机选择"
+	}
+	
+	"Current spray selected"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} Your current spray: {2}"
+		"chi"		"{1} 你当前选择的喷漆: {2}"
+	}
+	
+	"No spray chosen"
+	{
+		"#format"	"{1:s}"
+		"en"		"{1} You haven't selected any spray!"
+		"chi"		"{1} 你尚未选择任何喷漆！"
+	}
+	
+	"Random spray used"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} Used random spray: {2}"
+		"chi"		"{1} 已使用随机喷漆: {2}"
+	}
+	
+	"Choose spray set"
+	{
+		"en"		"Choose Spray Set"
+		"chi"		"选择喷漆包"
+	}
+	
+	"Settings"
+	{
+		"en"		"Settings"
+		"chi"		"设置"
+	}
+	
+	"View current spray"
+	{
+		"en"		"View Current Spray"
+		"chi"		"查看当前喷漆"
+	}
+	
+	"Close menu"
+	{
+		"en"		"Close Menu"
+		"chi"		"关闭菜单"
+	}
+	
+	"Disable spray"
+	{
+		"en"		"Disable Spray"
+		"chi"		"禁用喷漆"
+	}
+	
+	"Back"
+	{
+		"en"		"Back"
+		"chi"		"返回上一步"
+	}
+	
+	"Spray with E key status"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} Spray with E key [{2}]"
+		"chi"		"{1} 使用E键喷漆 [{2}]"
+	}
+	
+	"Play spray sound status"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} Play spray sound [{2}]"
+		"chi"		"{1} 播放喷漆声音 [{2}]"
+	}
+	
+	"Random spray status"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} Random spray [{2}]"
+		"chi"		"{1} 随机喷漆 [{2}]"
+	}
+	
+	"Global notifications status"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{1} Global notifications [{2}]"
+		"chi"		"{1} 全局通知 [{2}]"
+	}
+	
+	"On"
+	{
+		"en"		"On"
+		"chi"		"开启"
+	}
+	
+	"Off"
+	{
+		"en"		"Off"
+		"chi"		"关闭"
+	}
+	
+	"Spray set menu title"
+	{
+		"#format"	"{1:s}"
+		"en"		"Choose Spray - {1}"
+		"chi"		"选择喷漆 - {1}"
+	}
+	
+	"Settings menu title"
+	{
+		"en"		"Spray System Settings"
+		"chi"		"喷漆系统设置"
+	}
+	
+	"Spray reloading"
+	{
+		"en"		"[Spray System] Spray cache is reloading"
+		"chi"		"[喷漆系统] 喷漆缓存正在重新加载"
+	}
+	
+	"eItems not synced"
+	{
+		"en"		"[Spray System] eItems is not synced yet, please try again later"
+		"chi"		"[喷漆系统] eItems尚未同步，请稍后再试"
+	}
+	
+	"eItems synced loading cache"
+	{
+		"en"		"[Spray System] eItems synced, loading spray cache"
+		"chi"		"[喷漆系统] eItems已同步，正在加载喷漆缓存"
+	}
+	
+	"No sprays in eItems"
+	{
+		"en"		"[Spray System] No sprays found in eItems, retrying in 5 seconds"
+		"chi"		"[喷漆系统] eItems中没有喷漆数据，5秒后重试"
+	}
+	
+	"Spray cache loaded"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"[Spray System] Spray cache loaded, {1} spray sets, {2} sprays"
+		"chi"		"[喷漆系统] 喷漆缓存已加载，{1}个喷漆包，{2}个喷漆"
+	}
+	
+	"Spray set loaded"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"		"[Spray System] Loaded spray set: {1} (ID: {2}, Sprays: {3})"
+		"chi"		"[喷漆系统] 已加载喷漆包: {1} (ID: {2}, 喷漆: {3})"
+	}
+	
+	"Spray added to menu"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"[Spray System] Added to main menu: {1} (ID: {2})"
+		"chi"		"[喷漆系统] 已添加到主菜单: {1} (ID: {2})"
+	}
+	
+	"Processing spray set"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"[Spray System] Processing spray set {1} (ID: {2})"
+		"chi"		"[喷漆系统] 正在处理喷漆包 {1} (ID: {2})"
+	}
+	
+	"Spray added"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"[Spray System] Added spray: {1} (ID: {2})"
+		"chi"		"[喷漆系统] 已添加喷漆: {1} (ID: {2})"
+	}
+	
+	"Total sprays in menu"
+	{
+		"#format"	"{1:d}"
+		"en"		"[Spray System] Total sprays added to menu: {1}"
+		"chi"		"[喷漆系统] 菜单中添加的喷漆总数: {1}"
+	}
+	
+	"Main menu created"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"[Spray System] Main menu created, {1} spray sets, {2} sprays"
+		"chi"		"[喷漆系统] 主菜单已创建，{1}个喷漆包，{2}个喷漆"
+	}
+	
+	"Spray cache not loaded menu"
+	{
+		"en"		"[Spray System] Spray cache not loaded, cannot create menu"
+		"chi"		"[喷漆系统] 喷漆缓存未加载，无法创建菜单"
+	}
+	
+	"No sprays menu"
+	{
+		"en"		"[Spray System] No sprays found in eItems, cannot create menu"
+		"chi"		"[喷漆系统] eItems中没有喷漆数据，无法创建菜单"
+	}
+}

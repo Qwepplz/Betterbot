@@ -1,0 +1,361 @@
+"Phrases"
+{
+  "BombExplodedTimeLeftMessage"
+  {
+    "#format" "{1:s},{2:s},{3:s}"
+    "en"            "{GREEN}[{1}] {BLUE}{2}{Default} was too late by {RED}{3}s{Default}!"
+    "zho"           "{GREEN}[{1}] {BLUE}{2}{Default} 差 {RED}{3} {Default}秒就能拆除炸彈!"
+    "chi"           "{GREEN}[{1}] {BLUE}{2}{Default} 差 {RED}{3} {Default}秒就能拆除C4!"
+  }
+  "SuccessfulDefuseTimeLeftMessage"
+  {
+    "#format" "{1:s},{2:s},{3:s}"
+    "en"            "{GREEN}[{1}] {BLUE}{2}{Default} defused with {RED}{3}s{Default} remaining!"
+    "zho"           "{GREEN}[{1}] {BLUE}{2}{Default} 在剩下 {RED}{3}{Default} 秒時拆除炸彈!"
+    "chi"           "{GREEN}[{1}] {BLUE}{2}{Default} 在剩下 {RED}{3}{Default} 秒时拆除C4!"
+  }
+  "DefuserDiedTimeLeftMessage"
+  {
+    "#format" "{1:s},{2:s},{3:s}"
+    "en"            "{GREEN}[{1}] {BLUE}{2}{Default} was {RED}{3}s{Default} away from defusing!"
+    "zho"           "{GREEN}[{1}] {BLUE}{2}{Default} 剩下 {RED}{3}{Default} 秒就能拆除炸彈了!"
+    "chi"           "{GREEN}[{1}] {BLUE}{2}{Default} 剩下 {RED}{3}{Default} 秒就能拆除C4了!"
+  }
+  "PostDefuseKillTimeMessage"
+  {
+    "#format" "{1:s},{2:s},{3:s}"
+    "en"            "{GREEN}[{1}] {ORANGE}{2}{Default} was {RED}{3}s{Default} too late to stop the defuser!"
+    "zho"           "{GREEN}[{1}] {ORANGE}{2}{Default} 差 {RED}{3}{Default} 秒就能阻止炸彈被拆除!"
+    "chi"           "{GREEN}[{1}] {ORANGE}{2}{Default} 差 {RED}{3}{Default} 秒就能阻止C4被拆除!"
+  }
+  
+  // 倒计时消息 - 0-10秒使用低倒计时颜色
+  "countdown 0"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 1"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 2"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 3"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 4"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 5"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 6"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 7"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 8"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 9"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+  }
+  "countdown 10"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  
+  // 倒计时消息 - 11-20秒使用中倒计时颜色
+  "countdown 11"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 12"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 13"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 14"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 15"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 16"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 17"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 18"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 19"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 20"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  
+  // 倒计时消息 - 21-40秒使用高倒计时颜色
+  "countdown 21"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 22"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 23"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 24"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 25"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 26"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 27"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 28"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 29"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 30"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 31"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 32"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 33"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 34"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 35"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 36"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 37"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 38"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 39"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  "countdown 40"
+  {
+    "#format"       "{1:d}"
+    "en"            "Bomb has been planted.\nTime until explosion: <font size='50' color='{COLOR}'>{1}</font>"
+    "zho"           "炸彈已被安放。\n離引爆還剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+    "chi"           "炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+  }
+  
+  // 新增消息类型
+  "Bomb Planted"
+  {
+    "#format"       "{1:s}"
+    "en"            "{GREEN}[{1}] {RED}Bomb has been planted!"
+    "zho"           "{GREEN}[{1}] {RED}炸彈已安放!"
+    "chi"           "{GREEN}[{1}] {RED}C4已安放!"
+  }
+  "Defuse Started"
+  {
+    "#format"       "{1:s},{2:s},{3:s}"
+    "en"            "{GREEN}[{1}] {BLUE}{2} {Default}started defusing {ORANGE}({3}{Default})"
+    "zho"           "{GREEN}[{1}] {BLUE}{2} {Default}開始拆除炸彈 {ORANGE}({3}{Default})"
+    "chi"           "{GREEN}[{1}] {BLUE}{2} {Default}开始拆除C4 {ORANGE}({3}{Default})"
+  }
+  "Defuse Aborted"
+  {
+    "#format"       "{1:s},{2:s}"
+    "en"            "{GREEN}[{1}] {BLUE}{2} {Default}aborted defusing!"
+    "zho"           "{GREEN}[{1}] {BLUE}{2} {Default}停止拆除炸彈!"
+    "chi"           "{GREEN}[{1}] {BLUE}{2} {Default}停止拆除C4!"
+  }
+  "With Kit"
+  {
+    "#format"       ""
+    "en"            "With Defuse Kit"
+    "zho"           "有拆彈器"
+    "chi"           "有拆弹器"
+  }
+  "Without Kit"
+  {
+    "#format"       ""
+    "en"            "Without Defuse Kit"
+    "zho"           "無拆彈器"
+    "chi"           "无拆弹器"
+  }
+}

@@ -1,0 +1,633 @@
+"Teams"
+{
+	"100 Thieves"
+	{
+		"players"	"rain,poiii,sirah,Ag1l,dev1ce"
+		"logo"	"100t"
+	}
+	"1w Team"
+	{
+		"players"	"lattykk,oz1k,cronuss,Qikert,reyoz"
+		"logo"	"1w"
+	}
+	"33"
+	{
+		"players"	"kinqie,executor,KIRO,z1Nny,bluewh1te"
+		"logo"	"33"
+	}
+	"3DMAX"
+	{
+		"players"	"Lucky,Ex3rcice,Maka,Graviti,misutaaa"
+		"logo"	"3dmax"
+	}
+	"9INE"
+	{
+		"players"	"raalz,kraghen,cej0t,bnox,Flayy"
+		"logo"	"nein"
+	}
+	"9z Team"
+	{
+		"players"	"max,HUASOPEEK,luchov,meyern,dgt"
+		"logo"	"nine"
+	}
+	"ARCRED"
+	{
+		"players"	"DSSj,Get_Jeka,Ryujin,Raijin,synyx"
+		"logo"	"arc"
+	}
+	"AaB esport"
+	{
+		"players"	"qx,bekker,Maze,n1Xen,sSen"
+		"logo"	"aab"
+	}
+	"Alliance"
+	{
+		"players"	"avid,twist,upE,eraa,MaiL09"
+		"logo"	"alli"
+	}
+	"Alter Ego"
+	{
+		"players"	"b1lal,BnTeT,Gratisfaction,Polbandana,BOROS"
+		"logo"	"alter"
+	}
+	"Astralis"
+	{
+		"players"	"Staehr,jabbi,HooXi,phzy,ryu"
+		"logo"	"astr"
+	}
+	"Aurora Gaming"
+	{
+		"players"	"XANTARES,MAJ3R,Wicadia,woxic,soulfly"
+		"logo"	"aur"
+	}
+	"Aurora Young Blud"
+	{
+		"players"	"r1pa4,meetyoxanaji,k1nco,starmie,redzed"
+		"logo"	"ayb"
+	}
+	"B8"
+	{
+		"players"	"npl,esenthial,alex666,kensizor,s1zzi"
+		"logo"	"b8"
+	}
+	"BC.Game Esports"
+	{
+		"players"	"s1mple,electroNic,MUTiRiS,krazy,aragornN"
+		"logo"	"bc"
+	}
+	"BESTIA"
+	{
+		"players"	"tomaszin,cass1n,timo,buda,nacho"
+		"logo"	"best"
+	}
+	"BIG"
+	{
+		"players"	"tabseN,JDC,gr1ks,blameF,faveN"
+		"logo"	"big"
+	}
+	"BIG Academy"
+	{
+		"players"	"w1dow,JBOEN,prosus,D0nii,tripex17"
+		"logo"	"biga"
+	}
+	"BIG EQUIPA"
+	{
+		"players"	"Hanka,Emmsan,ASTRA,sosya,aiM"
+		"logo"	"bige"
+	}
+	"BOSS"
+	{
+		"players"	"SLIGHT,Bwills,stanislaw,marekiew,WUMBO"
+		"logo"	"boss"
+	}
+	"BRUTE"
+	{
+		"players"	"SiKO,realzen,KAD1M,mASKED,hfah"
+		"logo"	"brut"
+	}
+	"Bekescsabai E-Sport Egyesulet"
+	{
+		"players"	"RIP,baiano,daneelo,marcipan,Gyhufaaa"
+		"logo"	"bee"
+	}
+	"BetBoom Team"
+	{
+		"players"	"s1ren,Magnojez,Boombl4,ArtFr0st,d1Ledez"
+		"logo"	"bet"
+	}
+	"Betclic Apogee Esports"
+	{
+		"players"	"Prism,Demho,hades,eskyy,Dr3nquu"
+		"logo"	"bae"
+	}
+	"Bounty Hunters Esports"
+	{
+		"players"	"KAISER,zock,fREQ,ponter,pepe"
+		"logo"	"bhe"
+	}
+	"Bushido Wildcats"
+	{
+		"players"	"darendeli,Vej,cadnyx,eNs,scolleN"
+		"logo"	"bw"
+	}
+	"CYBERSHOKE Esports"
+	{
+		"players"	"FenomeN,bl1x1,glowiing,alpha,Mokuj1n"
+		"logo"	"cyber"
+	}
+	"Chinggis Warriors"
+	{
+		"players"	"ROUX,efire,yAmi,cool4st,Tikuak"
+		"logo"	"ching"
+	}
+	"Coalesce"
+	{
+		"players"	"f0cus,onder,Fizzy,Flicky,Abyss"
+		"logo"	"coal"
+	}
+	"ECSTATIC"
+	{
+		"players"	"Anlelele,nut nut,TMB,Buzz,nicoodoz"
+		"logo"	"ecs"
+	}
+	"ENCE Academy"
+	{
+		"players"	"teme,millert,Schwarz,Cliqq,Matz"
+		"logo"	"encea"
+	}
+	"EYEBALLERS"
+	{
+		"players"	"JW,dex,Ro1f,maxster,bobeksde"
+		"logo"	"eye"
+	}
+	"Eternal Fire"
+	{
+		"players"	"EMSTAR,Woro2k,rigoN,DemQQ,jottAAA"
+		"logo"	"eter"
+	}
+	"FAVBET Team"
+	{
+		"players"	"bondik,Smash,j3kie,Marix,s4ltovsk1yy"
+		"logo"	"fav"
+	}
+	"FURIA"
+	{
+		"players"	"yuurih,KSCERATO,FalleN,molodoy,YEKINDAR"
+		"logo"	"furi"
+	}
+	"FURIA Female"
+	{
+		"players"	"kaahSENSEI,izaa,gabs,bizinha,lulitenz"
+		"logo"	"furif"
+	}
+	"FUT Esports"
+	{
+		"players"	"dem0n,Krabeni,cmtry,dziugss,lauNX"
+		"logo"	"fut"
+	}
+	"FaZe Clan"
+	{
+		"players"	"broky,karrigan,frozen,jcobbb,Twistzz"
+		"logo"	"faze"
+	}
+	"FengDa Gaming"
+	{
+		"players"	"p5p,3gl,Biuckmt,Trash,salmon"
+		"logo"	"feng"
+	}
+	"Fisher College"
+	{
+		"players"	"AlekS,ReFuZR,CrePoW,corn,TH0R"
+		"logo"	"fisher"
+	}
+	"FlyQuest"
+	{
+		"players"	"INS,Vexite,nettik,jks,story"
+		"logo"	"flyq"
+	}
+	"FlyQuest RED"
+	{
+		"players"	"BiBiAhn,emy,vanessa,marie,Fawx"
+		"logo"	"flyqr"
+	}
+	"Fnatic"
+	{
+		"players"	"KRIMZ,fear,jambo,jackasmo,maden"
+		"logo"	"fntc"
+	}
+	"G2 Ares"
+	{
+		"players"	"tAk,hitori,Junyme,yksjupe,SHiNE"
+		"logo"	"g2a"
+	}
+	"G2 Esports"
+	{
+		"players"	"huNter-,HeavyGod,SunPayus,matys,NertZ"
+		"logo"	"g2"
+	}
+	"Gaimin Gladiators"
+	{
+		"players"	"JOTA,NEKIZ,felps,HEN1,Luken"
+		"logo"	"gg"
+	}
+	"Galorys"
+	{
+		"players"	"tomate,nython,gbb,destiny,drg"
+		"logo"	"galo"
+	}
+	"GamerLegion"
+	{
+		"players"	"Tauson,PR,REZ,hypex,Snax"
+		"logo"	"gl"
+	}
+	"Gentle Mates"
+	{
+		"players"	"mopoz,dav1g,sausol,alex,Martinez"
+		"logo"	"gent"
+	}
+	"Ground Zero Gaming"
+	{
+		"players"	"damyo,apocdud,pz,vision,Omichella"
+		"logo"	"gzg"
+	}
+	"HAVU"
+	{
+		"players"	"uli,puuha,ottob,p3kko,Alxc"
+		"logo"	"havu"
+	}
+	"HEROIC"
+	{
+		"players"	"xfl0ud,nilo,Alkaren,Chr1zN,susp"
+		"logo"	"heroi"
+	}
+	"HOTU"
+	{
+		"players"	"mizu,lampada,dukefissura,frontales,n0rb3r7"
+		"logo"	"hotu"
+	}
+	"Imperial Esports"
+	{
+		"players"	"VINI,noway,chelo,levi,decenty"
+		"logo"	"imper"
+	}
+	"InControl"
+	{
+		"players"	"TyRa,jsfeltner,Scorchyy,aelor,ayaneuu"
+		"logo"	"inc"
+	}
+	"Inner Circle Esports"
+	{
+		"players"	"onic,Dawy,zeRRoFIX,cptkurtka023,headtr1ck"
+		"logo"	"ice"
+	}
+	"Johnny Speeds"
+	{
+		"players"	"Sapec,Lekr0,HEAP,jocab,nawwk"
+		"logo"	"speed"
+	}
+	"K27"
+	{
+		"players"	"kashl1d,relaxxie,xeedo,qw1nk1,X5G7V"
+		"logo"	"k27"
+	}
+	"Keyd Stars"
+	{
+		"players"	"CutzMeretz,t9rnay,lash,matios,xureba"
+		"logo"	"keyds"
+	}
+	"Kitsune Esports"
+	{
+		"players"	"Doru,wilj,Triton,March,FROZ3N"
+		"logo"	"kits"
+	}
+	"LargadosyPelados"
+	{
+		"players"	"zmb,happ,Leomonster,divine,Alisson"
+		"logo"	"larg"
+	}
+	"Lazer Cats"
+	{
+		"players"	"yab0ku-,Magic,nikitea,Br4tkO,Kiy0o"
+		"logo"	"lazer"
+	}
+	"Legacy"
+	{
+		"players"	"latto,dumau,saadzin,n1ssim,arT"
+		"logo"	"leg"
+	}
+	"Leo Team"
+	{
+		"players"	"OneUn1que,marat2k,kL1o,Malkiss,amster"
+		"logo"	"leo"
+	}
+	"Life's A Game"
+	{
+		"players"	"Sandman,consti,djay,kmrn,Cryptic"
+		"logo"	"lag"
+	}
+	"Lynn Vision Gaming"
+	{
+		"players"	"westmelon,z4kr,EmiliaQAQ,Starry,C4LLM3SU3"
+		"logo"	"lynn"
+	}
+	"M80"
+	{
+		"players"	"Swisher,slaxz-,s1n,Lake,JBa"
+		"logo"	"m80"
+	}
+	"MANA eSports"
+	{
+		"players"	"ammar,Caleyy,BledarD,cerber,SENER1"
+		"logo"	"mana"
+	}
+	"MIBR"
+	{
+		"players"	"brnz4n,insani,kl1m,LNZ,venomzera"
+		"logo"	"mibr"
+	}
+	"MIBR Academy"
+	{
+		"players"	"brn$,stormzyn,lkz,fl4sh,Jerr1"
+		"logo"	"mibra"
+	}
+	"MIBR Female"
+	{
+		"players"	"dani,GaBi,yungher,poppins,olga"
+		"logo"	"mibrf"
+	}
+	"MOUZ"
+	{
+		"players"	"torzsi,xertioN,Jimpphat,Brollan,Spinx"
+		"logo"	"mouz"
+	}
+	"MOUZ NXT"
+	{
+		"players"	"xelex,Joey,ay0k,Nikodeon,opdust"
+		"logo"	"mouzn"
+	}
+	"Made in Thailand"
+	{
+		"players"	"MAIROLLS,ROLEX,SeveN89,AumMaloDy2K,Anony"
+		"logo"	"mith"
+	}
+	"Marsborne"
+	{
+		"players"	"chop,motm,WolfY,Grizz,Cxzi"
+		"logo"	"mars"
+	}
+	"Metizport"
+	{
+		"players"	"Plopski,isak,Jackinho,Dragon,forsyy"
+		"logo"	"metiz"
+	}
+	"Mindfreak"
+	{
+		"players"	"zune,dpr,Texta,sliimey,Crunchy"
+		"logo"	"mind"
+	}
+	"Monte"
+	{
+		"players"	"Gizmy,afro,AZUWU,Bymas,Rainwaker"
+		"logo"	"mont"
+	}
+	"Mythic"
+	{
+		"players"	"fl0m,Cooper,Trucklover86,hyza,PwnAlone"
+		"logo"	"myth"
+	}
+	"NOVAQ"
+	{
+		"players"	"def1zer,Pump,tasman,neaLaN,ICY"
+		"logo"	"novaq"
+	}
+	"NRG"
+	{
+		"players"	"oSee,nitr0,br0,Sonic,Grim"
+		"logo"	"nr"
+	}
+	"Natus Vincere"
+	{
+		"players"	"b1t,Aleksib,iM,w0nderful,makazze"
+		"logo"	"navi"
+	}
+	"Natus Vincere Junior"
+	{
+		"players"	"kodak,Yoki,satsu,R3ZLOO,FAZERY"
+		"logo"	"navij"
+	}
+	"Nemiga Gaming"
+	{
+		"players"	"1eeR,khaN,Sowalio,SYPH0,KaiR0N-"
+		"logo"	"nem"
+	}
+	"Nexus Gaming"
+	{
+		"players"	"XELLOW,s0und,Blytz,fnl,fNk"
+		"logo"	"nex"
+	}
+	"Ninjas in Pyjamas"
+	{
+		"players"	"r1nkle,sjuush,Snappi,xKacpersky,cairne"
+		"logo"	"nip"
+	}
+	"Nuclear TigeRES"
+	{
+		"players"	"senka,flouzer,z1k4,m1QUSE,ayuki"
+		"logo"	"nt"
+	}
+	"ODDIK"
+	{
+		"players"	"naitte,WOOD7,ksloks,nardes,diozera"
+		"logo"	"odd"
+	}
+	"OG"
+	{
+		"players"	"spooke,adamb,arrozdoce,cadiaN,bodyy"
+		"logo"	"og"
+	}
+	"PARIVISION"
+	{
+		"players"	"BELCHONOKK,Jame,nota,xiELO,zweih"
+		"logo"	"pari"
+	}
+	"Passion UA"
+	{
+		"players"	"Kvem,JT,nicx,try,Senzu"
+		"logo"	"pass"
+	}
+	"Phantom Esports"
+	{
+		"players"	"Kunai,Kylar,mynio,KEi,mwlky"
+		"logo"	"phan"
+	}
+	"Playing Ducks"
+	{
+		"players"	"OneLion,MYS,Miku,frozeN,UN1TY"
+		"logo"	"pduc"
+	}
+	"QUAZAR"
+	{
+		"players"	"gehji,kaiori,1zz,newt,Ne1XXX"
+		"logo"	"qua"
+	}
+	"QWENTRY"
+	{
+		"players"	"slaxejezzz,eightz,PsychoDoctor,facecrack,abiraju"
+		"logo"	"qwen"
+	}
+	"RED Canids"
+	{
+		"players"	"drop,kauez,history,chayJESUS,dav1deuS"
+		"logo"	"cani"
+	}
+	"RUSTEC"
+	{
+		"players"	"Brilliance,jakekeS,supra,anttzz,youka"
+		"logo"	"rustec"
+	}
+	"Rare Atom"
+	{
+		"players"	"Summer,L1haNg,ChildKing,TiGeR,chengking"
+		"logo"	"rar"
+	}
+	"Rebels Gaming"
+	{
+		"players"	"Icarus,snapy,NOPEEj,TMKj,stadodo"
+		"logo"	"reb"
+	}
+	"SAW"
+	{
+		"players"	"tuxa,m0retz,jERK0z,blaze,Jayy2s"
+		"logo"	"saw"
+	}
+	"SINNERS Esports"
+	{
+		"players"	"beastik,SHOCK,kisserek,stressarN,MoDo"
+		"logo"	"sinn"
+	}
+	"SemperFi Esports"
+	{
+		"players"	"SaVage,keen,shadiy,HaZR,ADDICT"
+		"logo"	"semp"
+	}
+	"Sharks Esports"
+	{
+		"players"	"gafolo,rdnzao,doc,koala,maxxkor"
+		"logo"	"shark"
+	}
+	"ShindeN"
+	{
+		"players"	"abizz,ivz,naz,tom1jed,FraGuTy"
+		"logo"	"shin"
+	}
+	"Sissi State Punks"
+	{
+		"players"	"farmaG,Cl34v3rs,oli,fADE,kinQ"
+		"logo"	"ssp"
+	}
+	"Steel Helmet"
+	{
+		"players"	"captainMo,AE,18yM,DD,AiM"
+		"logo"	"sh"
+	}
+	"TYLOO"
+	{
+		"players"	"JamYoung,Moseyuh,Mercury,Jee,zero"
+		"logo"	"tyl"
+	}
+	"Team Falcons"
+	{
+		"players"	"NiKo,TeSeS,kyxsan,m0NESY,kyousuke"
+		"logo"	"fal"
+	}
+	"Team LEISURE"
+	{
+		"players"	"BischeR,julz,DREAd,zDragZzz,Pano"
+		"logo"	"leis"
+	}
+	"Team Liquid"
+	{
+		"players"	"NAF,ultimate,siuhy,EliGE,malbsMd"
+		"logo"	"liq"
+	}
+	"Team Nemesis"
+	{
+		"players"	"SELLTER,Sdaim,tex1y,mag1k3Y,r3salt"
+		"logo"	"tn"
+	}
+	"Team Spirit"
+	{
+		"players"	"magixx,zont1x,donk,sh1ro,tN1R"
+		"logo"	"spir"
+	}
+	"Team Spirit Academy"
+	{
+		"players"	"mazay,Kiryasoo,kidofpain,VILBy,s1nside"
+		"logo"	"spira"
+	}
+	"Team Vitality"
+	{
+		"players"	"apEX,ZywOo,flameZ,mezii,ropz"
+		"logo"	"vita"
+	}
+	"The Huns Esports"
+	{
+		"players"	"nin9,Bart4k,xerolte,sk0R,controlez"
+		"logo"	"hun"
+	}
+	"The MongolZ"
+	{
+		"players"	"bLitz,Techno4K,910,mzinho,cobrazera"
+		"logo"	"mongo"
+	}
+	"Tricked Esport"
+	{
+		"players"	"Leakz,salazar,NickyB,IceBerg,Boye"
+		"logo"	"trick"
+	}
+	"UNiTY esports"
+	{
+		"players"	"K1-FiDa,NEOFRAG,woozzzi,MoriiSko,M1key"
+		"logo"	"unit"
+	}
+	"Virtus.pro"
+	{
+		"players"	"tO0RO,b1st,mir,AquaRS,F0R3VER"
+		"logo"	"vp"
+	}
+	"WOPA Esport"
+	{
+		"players"	"Zanto,thamlike,Patti,kwezz,sL1m3"
+		"logo"	"wop"
+	}
+	"Wildcard"
+	{
+		"players"	"Peeping,reck,mhL,HexT,nEMANHA"
+		"logo"	"wc"
+	}
+	"Young Ninjas"
+	{
+		"players"	"MisteM,rud,tein,n0te,joeski"
+		"logo"	"ynip"
+	}
+	"against All authority"
+	{
+		"players"	"7AIZO,AsI0K,Saax,SLIE9000,Tarkky"
+		"logo"	"aaa"
+	}
+	"los kogutos"
+	{
+		"players"	"Nami,AdrieN,maaryy,yvro,Markos"
+		"logo"	"lk"
+	}
+	"paiN Gaming"
+	{
+		"players"	"biguzera,nqz,snow,piriajr,v$m"
+		"logo"	"pain"
+	}
+	"plan-B esports"
+	{
+		"players"	"zavi,SppurK,RflX,Delayer,Emilio"
+		"logo"	"planb"
+	}
+}

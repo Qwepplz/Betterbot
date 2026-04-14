@@ -1,0 +1,416 @@
+"Phrases"
+{	
+	"Unranked"
+	{
+		"en"	"Unranked"
+		"chi"	"无段位"
+	}
+	
+	"Silver I"
+	{
+		"en"	"Silver I"
+		"chi"	"白银 I"
+	}
+
+	"Silver II"
+	{
+		"en"	"Silver II"
+		"chi"	"白银 II"
+	}
+
+	"Silver III"
+	{
+		"en"	"Silver III"
+		"chi"	"白银 III"
+	}
+
+	"Silver IV"
+	{
+		"en"	"Silver IV"
+		"chi"	"白银 IV"
+	}
+
+	"Silver Elite"
+	{
+		"en"	"Silver Elite"
+		"chi"	"白银精英"
+	}
+
+	"Silver Elite Master"
+	{
+		"en"	"Silver Elite Master"
+		"chi"	"白银精英大师"
+	}
+
+	"Gold Nova I"
+	{
+		"en"	"Gold Nova I"
+		"chi"	"黄金新星 I"
+	}
+
+	"Gold Nova II"
+	{
+		"en"	"Gold Nova II"
+		"chi"	"黄金新星 II"
+	}
+
+	"Gold Nova III"
+	{
+		"en"	"Gold Nova III"
+		"chi"	"黄金新星 III"
+	}
+
+	"Gold Nova Master"
+	{
+		"en"	"Gold Nova IV"
+		"chi"	"黄金新星大师"
+	}
+
+	"Master Guardian I"
+	{
+		"en"	"Master Guardian I"
+		"chi"	"大师级守护者 I"
+	}
+
+	"Master Guardian II"
+	{
+		"en"	"Master Guardian II"
+		"chi"	"大师级守护者 II"
+	}
+
+	"Master Guardian Elite"
+	{
+		"en"	"Master Guardian Elite"
+		"chi"	"大师级守护精英"
+	}
+
+	"Distinguished Master Guardian"
+	{
+		"en"	"Distinguished Master Guardian"
+		"chi"	"卓越大师级守护者"
+	}
+
+	"Legendary Eagle"
+	{
+		"en"	"Legendary Eagle"
+		"chi"	"传奇之鹰"
+	}
+
+	"Legendary Eagle Master"
+	{
+		"en"	"Legendary Eagle Master"
+		"chi"	"传奇之鹰大师"
+	}
+
+	"Supreme First Master Class"
+	{
+		"en"	"Supreme First Master Class"
+		"chi"	"至高无上第一大师"
+	}
+
+	"Global Elite"
+	{
+		"en"	"Global Elite"
+		"chi"	"全球精英"
+	}
+	
+	"Wingman Silver I"
+	{
+		"en"	"Wingman Silver I"
+		"chi"	"双排白银 I"
+	}
+
+	"Wingman Silver II"
+	{
+		"en"	"Wingman Silver II"
+		"chi"	"双排白银 II"
+	}
+
+	"Wingman Silver III"
+	{
+		"en"	"Wingman Silver III"
+		"chi"	"双排白银 III"
+	}
+
+	"Wingman Silver IV"
+	{
+		"en"	"Wingman Silver IV"
+		"chi"	"双排白银 IV"
+	}
+
+	"Wingman Silver Elite"
+	{
+		"en"	"Wingman Silver Elite"
+		"chi"	"双排白银精英"
+	}
+
+	"Wingman Silver Elite Master"
+	{
+		"en"	"Wingman Silver Elite Master"
+		"chi"	"双排白银精英大师"
+	}
+
+	"Wingman Gold Nova I"
+	{
+		"en"	"Wingman Gold Nova I"
+		"chi"	"双排黄金新星 I"
+	}
+
+	"Wingman Gold Nova II"
+	{
+		"en"	"Wingman Gold Nova II"
+		"chi"	"双排黄金新星 II"
+	}
+
+	"Wingman Gold Nova III"
+	{
+		"en"	"Wingman Gold Nova III"
+		"chi"	"双排黄金新星 III"
+	}
+
+	"Wingman Gold Nova Master"
+	{
+		"en"	"Wingman Gold Nova IV"
+		"chi"	"双排黄金新星大师"
+	}
+
+	"Wingman Master Guardian I"
+	{
+		"en"	"Wingman Master Guardian I"
+		"chi"	"双排大师级守护者 I"
+	}
+
+	"Wingman Master Guardian II"
+	{
+		"en"	"Wingman Master Guardian II"
+		"chi"	"双排大师级守护者 II"
+	}
+
+	"Wingman Master Guardian Elite"
+	{
+		"en"	"Wingman Master Guardian Elite"
+		"chi"	"双排大师级守护精英"
+	}
+
+	"Wingman Distinguished Master Guardian"
+	{
+		"en"	"Wingman Distinguished Master Guardian"
+		"chi"	"双排卓越大师级守护者"
+	}
+
+	"Wingman Legendary Eagle"
+	{
+		"en"	"Wingman Legendary Eagle"
+		"chi"	"双排传奇之鹰"
+	}
+
+	"Wingman Legendary Eagle Master"
+	{
+		"en"	"Wingman Legendary Eagle Master"
+		"chi"	"双排传奇之鹰大师"
+	}
+
+	"Wingman Supreme First Master Class"
+	{
+		"en"	"Wingman Supreme First Master Class"
+		"chi"	"双排至高无上第一大师"
+	}
+
+	"Wingman Global Elite"
+	{
+		"en"	"Wingman Global Elite"
+		"chi"	"双排全球精英"
+	}
+
+	"Lab Rat I"
+	{
+		"en"	"Lab Rat I"
+		"chi"	"实验鼠 I"
+	}
+
+	"Lab Rat II"
+	{
+		"en"	"Lab Rat II"
+		"chi"	"实验鼠 II"
+	}
+
+	"Sprinting Hare I"
+	{
+		"en"	"Sprinting Hare I"
+		"chi"	"疾行之兔 I"
+	}
+
+	"Sprinting Hare II"
+	{
+		"en"	"Sprinting Hare II"
+		"chi"	"疾行之兔 II"
+	}
+
+	"Wild Scout I"
+	{
+		"en"	"Wild Scout I"
+		"chi"	"狂野侦察兵 I"
+	}
+
+	"Wild Scout II"
+	{
+		"en"	"Wild Scout II"
+		"chi"	"狂野侦察兵 II"
+	}
+
+	"Wild Scout Elite"
+	{
+		"en"	"Wild Scout Elite"
+		"chi"	"狂野侦察精英"
+	}
+
+	"Hunter Fox I"
+	{
+		"en"	"Hunter Fox I"
+		"chi"	"猎狐者 I"
+	}
+
+	"Hunter Fox II"
+	{
+		"en"	"Hunter Fox II"
+		"chi"	"猎狐者 II"
+	}
+
+	"Hunter Fox III"
+	{
+		"en"	"Hunter Fox III"
+		"chi"	"猎狐者 III"
+	}
+
+	"Hunter Fox Elite"
+	{
+		"en"	"Hunter Fox Elite"
+		"chi"	"猎狐精英"
+	}
+
+	"Timber Wolf"
+	{
+		"en"	"Timber Wolf"
+		"chi"	"森林之狼"
+	}
+
+	"Ember Wolf"
+	{
+		"en"	"Ember Wolf"
+		"chi"	"余烬之狼"
+	}
+
+	"Wildfire Wolf"
+	{
+		"en"	"Wildfire Wolf"
+		"chi"	"野火之狼"
+	}
+
+	"The Howling Alpha"
+	{
+		"en"	"The Howling Alpha"
+		"chi"	"嗥叫的阿尔法"
+	}
+
+	"FaceIT Level 1"
+	{
+		"en"	"FaceIT Level 1"
+		"chi"	"FaceIT 等级 1"
+	}
+
+	"FaceIT Level 2"
+	{
+		"en"	"FaceIT Level 2"
+		"chi"	"FaceIT 等级 2"
+	}
+
+	"FaceIT Level 3"
+	{
+		"en"	"FaceIT Level 3"
+		"chi"	"FaceIT 等级 3"
+	}
+
+	"FaceIT Level 4"
+	{
+		"en"	"FaceIT Level 4"
+		"chi"	"FaceIT 等级 4"
+	}
+
+	"FaceIT Level 5"
+	{
+		"en"	"FaceIT Level 5"
+		"chi"	"FaceIT 等级 5"
+	}
+
+	"FaceIT Level 6"
+	{
+		"en"	"FaceIT Level 6"
+		"chi"	"FaceIT 等级 6"
+	}
+
+	"FaceIT Level 7"
+	{
+		"en"	"FaceIT Level 7"
+		"chi"	"FaceIT 等级 7"
+	}
+
+	"FaceIT Level 8"
+	{
+		"en"	"FaceIT Level 8"
+		"chi"	"FaceIT 等级 8"
+	}
+
+	"FaceIT Level 9"
+	{
+		"en"	"FaceIT Level 9"
+		"chi"	"FaceIT 等级 9"
+	}
+
+	"FaceIT Level 10"
+	{
+		"en"	"FaceIT Level 10"
+		"chi"	"FaceIT 等级 10"
+	}
+	
+	"Rank Up"
+	{
+		"#format"	"{1:s}"
+		"en"		"Congratulations, you ranked up to: {1}!"
+		"chi"		"恭喜，你已升到： {1}！"
+	}
+	
+	"Rank Down"
+	{
+		"#format"	"{1:s}"
+		"en"		"Unfornately, you ranked down to: {1}"
+		"chi"		"很遗憾，你已降到： {1}"
+	}
+	
+	"Rank Menu Title"
+	{
+		"en"		"Ranks Menu"
+		"chi"		"段位菜单"
+	}
+	
+	"Less Than X Points"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} - Less than {2} points"
+		"chi"		"{1} - 小于 {2} 分"
+	}
+	
+	"More Than X Points"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1} - More than {2} points"
+		"chi"		"{1} - 大于 {2} 分"
+	}
+
+	"Between X and Y"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"en"		"{1} - Between {2} and {3} points"
+		"chi"		"{1} - 介于 {2} 和 {3} 分之间"
+	}
+
+}
