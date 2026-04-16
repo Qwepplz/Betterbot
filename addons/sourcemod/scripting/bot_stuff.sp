@@ -277,11 +277,11 @@ public void OnPluginStart()
     LoadDetours();
 	InitializeMapRuntime();
      
-    RegConsoleCmd("team", Command_Team);
+    RegServerCmd("team", Command_Team);
     RegConsoleCmd("sm_validate_bots", Command_ValidateBots);
 }
 
-public Action Command_Team(int iClient, int iArgs)
+public Action Command_Team(int iArgs)
 {
     if (iArgs < 2)
     {
