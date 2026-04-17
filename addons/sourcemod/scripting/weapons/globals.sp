@@ -210,10 +210,14 @@ int g_iRoundStartTime = 0;
 
 int g_iDatabaseState = 0;
 
+bool g_bEventsHooked = false;
+bool g_bRoundStartHooked = false;
+Handle g_hBotControlTimer = INVALID_HANDLE;
+
 char g_Language[MAX_LANG][32];
+int g_iDefaultLanguage = 0;
 int g_iClientLanguage[MAXPLAYERS+1];
 Menu menuWeapons[MAX_LANG][sizeof(g_WeaponClasses)];
-Menu menuKnife;
 
 StringMap g_smWeaponIndex;
 StringMap g_smWeaponDefIndex;

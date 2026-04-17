@@ -34,11 +34,30 @@ stock void CleanNameTag(char[] nameTag, int size) {
   StripQuotes(nameTag);
 }
 
+stock int GetClientMenuLanguage(int client) {
+  int language = g_iDefaultLanguage;
+  if (IsValidClientIndex(client) && 0 <= g_iClientLanguage[client] < MAX_LANG) {
+    language = g_iClientLanguage[client];
+  }
+  if (!(0 <= language < MAX_LANG) || menuWeapons[language][0] == null) {
+    language = g_iDefaultLanguage;
+  }
+  if (!(0 <= language < MAX_LANG) || menuWeapons[language][0] == null) {
+    language = 0;
+  }
+  return language;
+}
+
 stock int GetRandomSkin(int client, int index) {
-  int max = menuWeapons[g_iClientLanguage[client]][index].ItemCount;
-  int random = GetRandomInt(2, max);
-  char idStr[4];
-  menuWeapons[g_iClientLanguage[client]][index].GetItem(random, idStr, sizeof(idStr));
+  int language = GetClientMenuLanguage(client);
+  Menu menu = menuWeapons[language][index];
+  if (menu == null || menu.ItemCount <= 2) {
+    return 0;
+  }
+
+  int random = GetRandomInt(2, menu.ItemCount - 1);
+  char idStr[12];
+  menu.GetItem(random, idStr, sizeof(idStr));
   return StringToInt(idStr);
 }
 
@@ -203,6 +222,11 @@ stock int GetClientTeamSafe(int client) {
   return -1;
 }
 
+stock int GiveClientDefaultKnife(int client) {
+  int team = GetClientTeamSafe(client);
+  return GivePlayerItem(client, team == CS_TEAM_T ? "weapon_knife_t" : "weapon_knife");
+}
+
 stock int GetRandomKnife() {
   return g_iKnifeIndices[GetRandomInt(0, sizeof(g_iKnifeIndices) - 1)];
 }
@@ -294,7 +318,7 @@ stock bool BuildWeaponFloatUpdateField(int index, int team, float wear, char[] o
   if (!GetWeaponFieldName(index, team, fieldName, sizeof(fieldName))) {
     return false;
   }
-  Format(output, size, "%s_float = %.2f", fieldName, wear);
+  Format(output, size, "%s_float = %.4f", fieldName, wear);
   return true;
 }
 
@@ -398,8 +422,8 @@ stock bool SetClientKnife(int client, const char[] knifeClass, bool throwError =
     knifeIndex = -1;
   } else if (!StrEqual(knifeClass, "weapon_knife", false) && !StrEqual(knifeClass, "weapon_knife_t", false)) {
     knifeIndex = -1;
-    for (int i = 33; i < sizeof(g_WeaponClasses); i++) {
-      if (StrEqual(knifeClass, g_WeaponClasses[i], false)) {
+    for (int i = 0; i < sizeof(g_WeaponClasses); i++) {
+      if (IsKnifeClass(g_WeaponClasses[i]) && StrEqual(knifeClass, g_WeaponClasses[i], false)) {
         knifeIndex = i;
         break;
       }

@@ -23,14 +23,25 @@ public void OnConfigsExecuted() {
   strcopy(g_DBConnectionOld, sizeof(g_DBConnectionOld), g_DBConnection);
   InitializeConVars();
 
-  if (g_iGracePeriod > 0) {
+  if (g_iGracePeriod > 0 && !g_bRoundStartHooked) {
     HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
+    g_bRoundStartHooked = true;
+  } else if (g_iGracePeriod <= 0 && g_bRoundStartHooked) {
+    UnhookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
+    g_bRoundStartHooked = false;
   }
-  HookEvent("player_spawn", OnPlayerSpawn, EventHookMode_PostNoCopy);
-  HookEvent("player_team", OnPlayerTeam, EventHookMode_PostNoCopy);
-  HookEvent("player_death", OnPlayerDeath, EventHookMode_PostNoCopy);
-  HookEvent("player_hurt", OnPlayerHurt, EventHookMode_PostNoCopy);
-  CreateTimer(1.0, CheckBotControlStatusTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+
+  if (!g_bEventsHooked) {
+    HookEvent("player_spawn", OnPlayerSpawn, EventHookMode_PostNoCopy);
+    HookEvent("player_team", OnPlayerTeam, EventHookMode_PostNoCopy);
+    HookEvent("player_death", OnPlayerDeath, EventHookMode_PostNoCopy);
+    HookEvent("player_hurt", OnPlayerHurt, EventHookMode_PostNoCopy);
+    g_bEventsHooked = true;
+  }
+
+  if (g_hBotControlTimer == INVALID_HANDLE) {
+    g_hBotControlTimer = CreateTimer(1.0, CheckBotControlStatusTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+  }
 
   for (int i = 1; i <= MaxClients; i++) {
     if (IsClientInGame(i)) {
@@ -75,6 +86,7 @@ public void OnClientPostAdminCheck(int client) {
     g_iSteam32[client] = StringToInt(temp);
   }
 
+  g_iClientLanguage[client] = g_iDefaultLanguage;
   QueryClientConVar(client, "cl_language", ConVarCallBack);
   if (IsDatabaseReady()) {
     GetPlayerData(client);
@@ -93,8 +105,18 @@ public Action LoadPlayerDataTimer(Handle timer, int userid) {
 
 public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName,
                     const char[] cvarValue) {
-  if (!g_smLanguageIndex.GetValue(cvarValue, g_iClientLanguage[client])) {
-    g_iClientLanguage[client] = 0;
+  if (!IsValidClientIndex(client)) {
+    return;
+  }
+
+  char languageKey[32];
+  strcopy(languageKey, sizeof(languageKey), cvarValue);
+  for (int i = 0; languageKey[i] != '\0'; i++) {
+    languageKey[i] = CharToLower(languageKey[i]);
+  }
+
+  if (result != ConVarQuery_Okay || !g_smLanguageIndex.GetValue(languageKey, g_iClientLanguage[client])) {
+    g_iClientLanguage[client] = g_iDefaultLanguage;
   }
 }
 
@@ -146,7 +168,7 @@ public Action OnTeamChangeTimer(Handle timer, int userid) {
 public Action CheckAndGiveKnifeTimer(Handle timer, int userid) {
   int client = GetClientOfUserId(userid);
   if (IsValidClientIndex(client) && IsClientInGame(client) && IsPlayerAlive(client) && !HasKnife(client)) {
-    GivePlayerItem(client, "weapon_knife");
+    GiveClientDefaultKnife(client);
   }
   return Plugin_Stop;
 }
@@ -173,7 +195,16 @@ public Action CheckBotControlStatusTimer(Handle timer) {
   return Plugin_Continue;
 }
 
+public void OnMapEnd() {
+  g_hBotControlTimer = INVALID_HANDLE;
+}
+
 public void OnPluginEnd() {
+  if (g_hBotControlTimer != INVALID_HANDLE) {
+    KillTimer(g_hBotControlTimer);
+    g_hBotControlTimer = INVALID_HANDLE;
+  }
+
   for (int i = 1; i <= MaxClients; i++) {
     if (IsClientInGame(i)) {
       OnClientDisconnect(i);

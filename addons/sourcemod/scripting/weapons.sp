@@ -90,7 +90,9 @@ public void OnPluginStart() {
 
   RegConsoleCmd("buyammo1", CommandWeaponSkins);
   RegConsoleCmd("sm_ws", CommandWeaponSkins);
+  RegConsoleCmd("sm_pf", CommandWeaponSkins);
   RegConsoleCmd("sm_knife", CommandKnife);
+  RegConsoleCmd("sm_dao", CommandKnife);
   RegConsoleCmd("sm_nametag", CommandNameTag);
   RegConsoleCmd("sm_wslang", CommandWSLang);
   RegConsoleCmd("sm_seed", CommandSeedMenu);
@@ -140,7 +142,7 @@ public Action CommandKnife(int client, int args) {
   if (IsValidClient(client)) {
     int menuTime;
     if ((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0) {
-      menuKnife.Display(client, menuTime);
+      CreateKnifeMenu(client).Display(client, menuTime);
     } else {
       PrintToChat(client, " %s \x02%t", g_ChatPrefix, "GracePeriod", g_iGracePeriod);
     }
@@ -264,7 +266,7 @@ void RefreshWeapon(int client, int index, bool defaultKnife = false) {
             pack.WriteCell(ammo);
           }
         } else {
-          GivePlayerItem(client, "weapon_knife");
+          GiveClientDefaultKnife(client);
         }
         break;
       }

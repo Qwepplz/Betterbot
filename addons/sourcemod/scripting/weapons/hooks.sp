@@ -81,8 +81,8 @@ public Action ChatListener(int client, const char[] command, int args) {
   char msg[128];
   GetCmdArgString(msg, sizeof(msg));
   StripQuotes(msg);
-  if (StrEqual(msg, "!ws") || StrEqual(msg, "!knife") || StrEqual(msg, "!wslang") ||
-      StrContains(msg, "!nametag") == 0 || StrContains(msg, "!seed") == 0) {
+  if (StrEqual(msg, "!ws") || StrEqual(msg, "!pf") || StrEqual(msg, "!knife") || StrEqual(msg, "!dao") ||
+      StrEqual(msg, "!wslang") || StrContains(msg, "!nametag") == 0 || StrContains(msg, "!seed") == 0) {
     return Plugin_Handled;
   } else if (g_bWaitingForNametag[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
     CleanNameTag(msg, sizeof(msg));
