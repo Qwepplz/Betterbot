@@ -169,54 +169,76 @@ void AddEloBonus(int client, int bonus)
 
 void UpdateKillRecords(int attacker, int victim)
 {
+	int now = GetTime();
 	g_aLastKilledBy[victim] = attacker;
-	g_aLastKilledTime[victim] = GetTime();
+	g_aLastKilledTime[victim] = now;
 	g_aKillStreak[victim] = 0;
-	g_aKillStreak[attacker]++;
+	g_aLastKillTime[victim] = 0;
+
+	if (g_aLastKillTime[attacker] != 0 && now - g_aLastKillTime[attacker] <= KILL_STREAK_WINDOW)
+		g_aKillStreak[attacker]++;
+	else
+		g_aKillStreak[attacker] = 1;
+
+	g_aLastKillTime[attacker] = now;
 	if (g_aKillStreak[attacker] > g_aMaxKillStreak[attacker])
 		g_aMaxKillStreak[attacker] = g_aKillStreak[attacker];
 }
 
 void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 {
-	if (attacker >= MAXPLAYERS || attacker < 1 || victim < 1 || victim > MaxClients || !g_bUseEloSystem)
+	if (attacker > MaxClients || attacker < 1 || victim < 1 || victim > MaxClients || !g_bUseEloSystem)
 		return;
 
-	if (g_aLastKilledBy[attacker] == victim)
+	int now = GetTime();
+	if (g_aLastKilledBy[attacker] == victim && g_aLastKilledTime[attacker] != 0 && now - g_aLastKilledTime[attacker] <= REVENGE_WINDOW)
 	{
 		g_aRevengeCount[attacker]++;
 		AddEloBonus(attacker, 2);
+		g_aLastKilledBy[attacker] = 0;
+		g_aLastKilledTime[attacker] = 0;
 		if (g_bAnnounceRevengeGlobal && IsClientInGame(attacker) && IsClientInGame(victim))
-			CPrintToChatAll("%s {green}%N{default} revenge killed {green}%N{default} (+2 ELO)", MSG, attacker, victim);
+			CPrintToChatAll("%s %t", MSG, "RevengeGlobal", g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], 2);
 	}
 
-	int bonus;
-	char streakName[64];
+	int bonus = 0;
+	char streakPhrase[32];
+	streakPhrase[0] = '\0';
 	if (g_aKillStreak[attacker] == 2)
 	{
 		bonus = 1;
-		strcopy(streakName, sizeof(streakName), "Double Kill");
+		strcopy(streakPhrase, sizeof(streakPhrase), "DoubleKill");
 	}
 	else if (g_aKillStreak[attacker] == 3)
 	{
 		bonus = 2;
-		strcopy(streakName, sizeof(streakName), "Triple Kill");
+		strcopy(streakPhrase, sizeof(streakPhrase), "TripleKill");
 	}
 	else if (g_aKillStreak[attacker] == 4)
 	{
 		bonus = 3;
-		strcopy(streakName, sizeof(streakName), "Multi Kill");
+		strcopy(streakPhrase, sizeof(streakPhrase), "MegaKill");
 	}
 	else if (g_aKillStreak[attacker] == 5)
 	{
 		bonus = 4;
-		strcopy(streakName, sizeof(streakName), "Killing Spree");
+		strcopy(streakPhrase, sizeof(streakPhrase), "UltraKill");
 	}
 	if (bonus > 0)
 	{
 		AddEloBonus(attacker, bonus);
 		if (g_bAnnounceKillStreakGlobal && IsClientInGame(attacker))
-			CPrintToChatAll("%s {green}%N{default}: %s (+%d ELO)", MSG, attacker, streakName, bonus);
+		{
+			char streakName[64];
+			for (int i = 1; i <= MaxClients; i++)
+			{
+				if (!IsClientInGame(i) || IsFakeClient(i))
+					continue;
+
+				Format(streakName, sizeof(streakName), "%T", streakPhrase, i);
+				CPrintToChat(i, "%s %t", MSG, "KillStreakGlobal", g_aClientName[attacker], g_aStats[attacker].SCORE, streakName, bonus);
+			}
+		}
 	}
 }
 

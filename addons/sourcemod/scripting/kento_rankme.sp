@@ -20,6 +20,8 @@
 
 #define SENDER_WORLD 0
 #define MAX_LENGTH_MENU 470
+#define KILL_STREAK_WINDOW 8
+#define REVENGE_WINDOW 30
 
 static const char g_sSqliteCreate[] = "CREATE TABLE IF NOT EXISTS `%s` (id INTEGER PRIMARY KEY, steam VARCHAR(40) NOT NULL, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, assists NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,hkp2000 NUMERIC,usp_silencer NUMERIC,p250 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,tec9 NUMERIC,cz75a NUMERIC,revolver NUMERIC,nova NUMERIC,xm1014 NUMERIC,mag7 NUMERIC,sawedoff NUMERIC,bizon NUMERIC,mac10 NUMERIC,mp9 NUMERIC,mp7 NUMERIC,ump45 NUMERIC,p90 NUMERIC,galilar NUMERIC,ak47 NUMERIC,scar20 NUMERIC,famas NUMERIC,m4a1 NUMERIC,m4a1_silencer NUMERIC,aug NUMERIC,ssg08 NUMERIC,sg556 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,negev NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC,inferno NUMERIC,decoy NUMERIC,taser NUMERIC,mp5sd NUMERIC,breachcharge NUMERIC,head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC, mvp NUMERIC, damage NUMERIC, match_win NUMERIC, match_draw NUMERIC, match_lose NUMERIC, first_blood NUMERIC, no_scope NUMERIC, no_scope_dis NUMERIC, thru_smoke NUMERIC, blind NUMERIC, assist_flash NUMERIC, assist_team_flash NUMERIC, assist_team_kill NUMERIC, wallbang NUMERIC)";
 static const char g_sMysqlCreate[] = "CREATE TABLE IF NOT EXISTS `%s` (id INTEGER PRIMARY KEY, steam TEXT, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, assists NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,hkp2000 NUMERIC,usp_silencer NUMERIC,p250 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,tec9 NUMERIC,cz75a NUMERIC,revolver NUMERIC,nova NUMERIC,xm1014 NUMERIC,mag7 NUMERIC,sawedoff NUMERIC,bizon NUMERIC,mac10 NUMERIC,mp9 NUMERIC,mp7 NUMERIC,ump45 NUMERIC,p90 NUMERIC,galilar NUMERIC,ak47 NUMERIC,scar20 NUMERIC,famas NUMERIC,m4a1 NUMERIC,m4a1_silencer NUMERIC,aug NUMERIC,ssg08 NUMERIC,sg556 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,negev NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC,inferno NUMERIC,decoy NUMERIC,taser NUMERIC,mp5sd NUMERIC,breachcharge NUMERIC,head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC, mvp NUMERIC, damage NUMERIC, match_win NUMERIC, match_draw NUMERIC, match_lose NUMERIC, first_blood NUMERIC, no_scope NUMERIC, no_scope_dis NUMERIC, thru_smoke NUMERIC, blind NUMERIC, assist_flash NUMERIC, assist_team_flash NUMERIC, assist_team_kill NUMERIC, wallbang NUMERIC) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
@@ -55,6 +57,7 @@ HITBOXES g_aHitBox[MAXPLAYERS + 1];
 int g_TotalPlayers;
 int g_aLastKilledBy[MAXPLAYERS + 1];
 int g_aLastKilledTime[MAXPLAYERS + 1];
+int g_aLastKillTime[MAXPLAYERS + 1];
 int g_aRevengeCount[MAXPLAYERS + 1];
 int g_aKillStreak[MAXPLAYERS + 1];
 int g_aMaxKillStreak[MAXPLAYERS + 1];
@@ -581,7 +584,7 @@ public void Event_VipEscaped(Handle event, const char[] name, bool dontBroadcast
 	for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
 		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "CT_VIPEscaped", i, g_PointsVipEscapedTeam);
-	if (client != 0 && (g_bRankBots && !IsFakeClient(client)))
+	if (client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
 		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "VIPEscaped", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsVipEscapedTeam + g_PointsVipEscapedPlayer);
@@ -604,20 +607,23 @@ public void Event_VipKilled(Handle event, const char[] name, bool dontBroadcast)
 	}
 	g_aStats[client].VIP_PLAYED++;
 	g_aSession[client].VIP_PLAYED++;
-	g_aStats[killer].VIP_KILLED++;
-	g_aSession[killer].VIP_KILLED++;
-	g_aStats[killer].SCORE += g_PointsVipKilledPlayer;
-	g_aSession[killer].SCORE += g_PointsVipKilledPlayer;
+	if (killer != 0)
+	{
+		g_aStats[killer].VIP_KILLED++;
+		g_aSession[killer].VIP_KILLED++;
+		g_aStats[killer].SCORE += g_PointsVipKilledPlayer;
+		g_aSession[killer].SCORE += g_PointsVipKilledPlayer;
+	}
 	
 	if (!g_bChatChange)
 		return;
 	for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
 		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "TR_VIPKilled", i, g_PointsVipKilledTeam);
-	if (client != 0 && (g_bRankBots && !IsFakeClient(client)))
+	if (killer != 0 && (g_bRankBots || !IsFakeClient(killer)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "VIPKilled", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsVipKilledTeam + g_PointsVipKilledPlayer);
+		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "VIPKilled", i, g_aClientName[killer], g_aStats[killer].SCORE, g_PointsVipKilledTeam + g_PointsVipKilledPlayer);
 }
 
 public void Event_HostageRescued(Handle event, const char[] name, bool dontBroadcast) {
@@ -647,7 +653,7 @@ public void Event_HostageRescued(Handle event, const char[] name, bool dontBroad
 	if (IsClientInGame(i))
 		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "CT_Hostage", i, g_PointsHostageRescTeam);
 	
-	if (g_PointsHostageRescPlayer > 0 && client != 0 && (g_bRankBots && !IsFakeClient(client)))
+	if (g_PointsHostageRescPlayer > 0 && client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
 		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "Hostage", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsHostageRescPlayer + g_PointsHostageRescTeam);
@@ -808,6 +814,15 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	int i;
 	for(i=1;i<=MaxClients;i++)
 	{
+		g_aLastKilledBy[i] = 0;
+		g_aLastKilledTime[i] = 0;
+		g_aLastKillTime[i] = 0;
+		g_aRevengeCount[i] = 0;
+		g_aKillStreak[i] = 0;
+
+		if (!IsClientInGame(i))
+			continue;
+
 		if (IsClientInGame(i) && GetClientTeam(i) == TR) 
 		{
 			g_aStats[i].ROUNDS_TR++;
@@ -949,6 +964,8 @@ public void Event_BombDropped(Handle event, const char[] name, bool dontBroadcas
 		return;
 	
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if (client == 0)
+		return;
 	
 	g_aStats[client].SCORE -= g_PointsBombDropped;
 	
@@ -965,7 +982,7 @@ public void Event_BombDropped(Handle event, const char[] name, bool dontBroadcas
 	
 	if (!g_bChatChange)
 		return;
-	if (g_PointsBombDropped > 0 && client == 0)
+	if (g_PointsBombDropped > 0 && client != 0)
 		if(!hidechat[client])	CPrintToChat(client, "%s %T", MSG, "BombDropped", client, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombDropped);
 	
 }
@@ -1139,7 +1156,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				if (g_bChatChange) {
 					if(!hidechat[victim])	CPrintToChat(victim, "%s %T", MSG, "KillingVictimNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
 					if (attacker < MAXPLAYERS)
-						if(!hidechat[victim])	CPrintToChat(victim, "%s %T", MSG, "KillingVictimNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
+						if(!hidechat[attacker])	CPrintToChat(attacker, "%s %T", MSG, "KillingVictimNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
 				}
 			} else {
 				if (g_bChatChange) {
@@ -1197,8 +1214,8 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			g_aSession[attacker].FB ++;
 			if (g_bChatChange && g_PointsFb > 0)
 				if(!hidechat[attacker])	CPrintToChat(attacker, "%s %T", MSG, "First Blood", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsFb);
-			if (g_bAnnounceFirstBloodGlobal)
-				CPrintToChatAll("%s {green}%N{default} drew first blood!", MSG, attacker);
+			if (g_bAnnounceFirstBloodGlobal && IsClientInGame(attacker) && IsClientInGame(victim))
+				CPrintToChatAll("%s %t", MSG, "FirstBloodGlobal", g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], g_PointsFb);
 		}
 		
 		/* No scope */
@@ -1226,6 +1243,8 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 
 		if (g_bUseEloSystem && attacker < MAXPLAYERS)
 			g_iPlayerElo[attacker] = g_aStats[attacker].SCORE;
+
+		firstblood = true;
 	}
 			
 	/* Assist */
@@ -1286,8 +1305,6 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 	if (attacker < MAXPLAYERS)
 		if (g_aStats[attacker].KILLS == 50)
 		g_TotalPlayers++;
-		
-	firstblood = true;
 }
 
 public void EventPlayerHurt(Handle event, const char [] name, bool dontBroadcast)
@@ -1512,6 +1529,7 @@ public void LoadPlayer(int client) {
 	OnDB[client] = false;
 	g_aLastKilledBy[client] = 0;
 	g_aLastKilledTime[client] = 0;
+	g_aLastKillTime[client] = 0;
 	g_aRevengeCount[client] = 0;
 	g_aKillStreak[client] = 0;
 	g_aMaxKillStreak[client] = 0;
@@ -1747,6 +1765,7 @@ public void OnClientDisconnect(int client) {
 	CleanupPlayerEloOptimization(client);
 	g_aLastKilledBy[client] = 0;
 	g_aLastKilledTime[client] = 0;
+	g_aLastKillTime[client] = 0;
 	g_aRevengeCount[client] = 0;
 	g_aKillStreak[client] = 0;
 	g_aMaxKillStreak[client] = 0;

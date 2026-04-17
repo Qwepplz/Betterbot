@@ -258,7 +258,7 @@ void CreateCvars()
 	g_cvarPointsMinEnabled = CreateConVar("rankme_points_min_enabled", "1", "Is minimum points enabled? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarPointsMin = CreateConVar("rankme_points_min", "0", "Minimum points", _, true, 0.0);
 	g_cvarRankCache = CreateConVar("rankme_rank_cache", "0", "Get player rank via cache, auto build cache on every OnMapStart.", _, true, 0.0, true, 1.0);
-	g_cvarUseEloSystem = CreateConVar("rankme_use_elo_system", "0", "Use ELO rating system? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarUseEloSystem = CreateConVar("rankme_use_elo_system", "1", "Use ELO rating system? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarEloStartScore = CreateConVar("rankme_elo_start_score", "1000", "Starting score for ELO system", _, true, 1.0);
 	g_cvarEloKLow = CreateConVar("rankme_elo_k_low", "32", "K-factor for low ranks (0-1199)", _, true, 1.0);
 	g_cvarEloKMidLow = CreateConVar("rankme_elo_k_mid_low", "24", "K-factor for mid-low ranks (1200-1599)", _, true, 1.0);
