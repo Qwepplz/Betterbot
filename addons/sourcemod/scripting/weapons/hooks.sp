@@ -186,10 +186,3 @@ public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast) {
   g_iRoundStartTime = GetTime();
 }
 
-Action WeaponCanUsePre(int client, int weapon, bool &pickup) {
-  if (IsKnife(weapon) && (IsValidClient(client) || (IsValidClientIndex(client) && IsClientInGame(client) && IsFakeClient(client)))) {
-    pickup = true;
-    return Plugin_Changed;
-  }
-  return Plugin_Continue;
-}

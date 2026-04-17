@@ -213,6 +213,7 @@ int g_iDatabaseState = 0;
 bool g_bEventsHooked = false;
 bool g_bRoundStartHooked = false;
 Handle g_hBotControlTimer = INVALID_HANDLE;
+float g_fSuppressWeaponRefreshUntil[MAXPLAYERS+1];
 
 char g_Language[MAX_LANG][32];
 int g_iDefaultLanguage = 0;

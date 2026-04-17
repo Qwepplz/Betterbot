@@ -110,8 +110,6 @@ public void OnPluginStart() {
   // {
   // 	PTaH(PTaH_WeaponCanUsePre, Hook, WeaponCanUsePre);
   // }
-  PTaH(PTaH_WeaponCanUsePre, Hook, WeaponCanUsePre);
-
   AddCommandListener(ChatListener, "say");
   AddCommandListener(ChatListener, "say2");
   AddCommandListener(ChatListener, "say_team");

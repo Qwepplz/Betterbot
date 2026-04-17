@@ -53,6 +53,8 @@ public void OnConfigsExecuted() {
 }
 
 public void OnClientPutInServer(int client) {
+  g_fSuppressWeaponRefreshUntil[client] = 0.0;
+
   if (IsFakeClient(client)) {
     if (g_bEnableStatTrak)
       SDKHook(client, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
@@ -121,6 +123,8 @@ public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult res
 }
 
 public void OnClientDisconnect(int client) {
+  g_fSuppressWeaponRefreshUntil[client] = 0.0;
+
   if (IsFakeClient(client)) {
     if (g_bEnableStatTrak)
       SDKUnhook(client, SDKHook_OnTakeDamageAlive, OnTakeDamageAlive);
@@ -139,13 +143,24 @@ public void OnClientDisconnect(int client) {
 
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast) {
   int client = GetClientOfUserId(event.GetInt("userid"));
-  if (IsValidClientIndex(client) && IsClientInGame(client)) {
+  if (IsValidClientIndex(client) && IsClientInGame(client) && GetGameTime() >= g_fSuppressWeaponRefreshUntil[client]) {
     CreateTimer(0.2, CheckAndGiveKnifeTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
   }
 }
 
 public void OnPlayerTeam(Event event, const char[] name, bool dontBroadcast) {
   int client = GetClientOfUserId(event.GetInt("userid"));
+  if (!IsValidClientIndex(client) || !IsClientInGame(client)) {
+    return;
+  }
+
+  int oldTeam = event.GetInt("oldteam");
+  int newTeam = event.GetInt("team");
+  if (IsValidTeam(oldTeam) && IsValidTeam(newTeam) && oldTeam != newTeam) {
+    g_fSuppressWeaponRefreshUntil[client] = GetGameTime() + 1.0;
+    return;
+  }
+
   if (IsValidClient(client)) {
     CreateTimer(0.3, OnTeamChangeTimer, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
   }
@@ -159,7 +174,7 @@ public void OnPlayerHurt(Event event, const char[] name, bool dontBroadcast) {
 
 public Action OnTeamChangeTimer(Handle timer, int userid) {
   int client = GetClientOfUserId(userid);
-  if (IsValidClient(client) && IsPlayerAlive(client)) {
+  if (IsValidClient(client) && IsPlayerAlive(client) && GetGameTime() >= g_fSuppressWeaponRefreshUntil[client]) {
     RefreshWeapon(client, -1, true);
   }
   return Plugin_Stop;
@@ -167,7 +182,7 @@ public Action OnTeamChangeTimer(Handle timer, int userid) {
 
 public Action CheckAndGiveKnifeTimer(Handle timer, int userid) {
   int client = GetClientOfUserId(userid);
-  if (IsValidClientIndex(client) && IsClientInGame(client) && IsPlayerAlive(client) && !HasKnife(client)) {
+  if (IsValidClientIndex(client) && IsClientInGame(client) && IsPlayerAlive(client) && GetGameTime() >= g_fSuppressWeaponRefreshUntil[client] && !HasKnife(client)) {
     GiveClientDefaultKnife(client);
   }
   return Plugin_Stop;
