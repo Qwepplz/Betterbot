@@ -785,12 +785,12 @@ Menu CreateWeaponMenu(int client) {
   bool weaponHasSkin = (g_iSkins[client][index][team] != 0);
 
   if (g_bEnablePaints) {
-    Format(buffer, sizeof(buffer), "%T", "Paints", client);
+    Format(buffer, sizeof(buffer), "%T", "AllWeaponsMenuTitle", client);
     menu.AddItem("paints", buffer);
   }
 
   if (!IsWeaponIndexInOnlyOneTeam(index)) {
-    Format(buffer, sizeof(buffer), "%T", "Applyother", client);
+    Format(buffer, sizeof(buffer), "%T", "ApplyToOppositeTeam", client);
     menu.AddItem("applyother", buffer);
   }
 
