@@ -1,6 +1,18 @@
 /*  CS:GO Weapons&Knives SourceMod Plugin
  *
- *  Recovered from SMX and BoneTM/weapons source.
+ *  Copyright (C) 2017 Kağan 'kgns' Üstüngel
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see http://www.gnu.org/licenses/.
  */
 
 public void HookPlayer(int client) {
@@ -15,35 +27,21 @@ public void UnhookPlayer(int client) {
 
 public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView,
                         bool &OriginIsNULL, float Origin[3]) {
-  int owner = client;
-  if (IsValidClientIndex(client) && IsClientInGame(client) && IsFakeClient(client)) {
-    int controller = GetBotController(client);
-    if (controller > 0) {
-      owner = controller;
-    }
-  }
+  if (IsValidClient(client)) {
+    int team = GetClientTeam(client);
 
-  if (IsValidClient(owner)) {
-    int team = GetClientTeamSafe(owner);
-
-    if (IsValidTeam(team) && g_iKnife[owner][team] != 0 && IsKnifeClass(classname)) {
-      Action result = Plugin_Continue;
-      Call_StartForward(g_hOnKnifeSelect_Pre);
-      Call_PushCell(owner);
-      Call_PushString(classname);
-      Call_PushCell(g_iKnife[owner][team]);
-      Call_Finish(result);
-
-      if (result >= Plugin_Handled) {
-        return result;
-      }
-
+    if (g_iKnife[client][team] != 0 && IsKnifeClass(classname)) {
       ignoredCEconItemView = true;
 
-      if (g_iKnife[owner][team] == -1) {
-        strcopy(classname, sizeof(classname), g_WeaponClasses[GetRandomKnife()]);
+      if (g_iKnife[client][team] == -1) {
+        int max = menuKnife.ItemCount - 1;
+        int random = GetRandomInt(2, max);
+
+        char output[4];
+        menuKnife.GetItem(random, output, sizeof(output));
+        strcopy(classname, sizeof(classname), g_WeaponClasses[StringToInt(output)]);
       } else {
-        strcopy(classname, sizeof(classname), g_WeaponClasses[g_iKnife[owner][team]]);
+        strcopy(classname, sizeof(classname), g_WeaponClasses[g_iKnife[client][team]]);
       }
       return Plugin_Changed;
     }
@@ -53,26 +51,13 @@ public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &it
 
 public void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL,
                        const float Origin[3]) {
-  if (!IsValidEntity(entity)) {
-    return;
-  }
-
-  int owner = client;
-  if (IsValidClientIndex(client) && IsClientInGame(client) && IsFakeClient(client)) {
-    int controller = GetBotController(client);
-    if (controller > 0) {
-      owner = controller;
-    }
-  }
-
-  if (IsValidClient(owner)) {
+  if (IsValidClient(client) && IsValidEntity(entity)) {
     int index;
     if (g_smWeaponIndex.GetValue(classname, index)) {
-      if (owner == client) {
-        SetWeaponProps(owner, entity);
-      } else {
-        SetWeaponPropsForBotControl(owner, entity);
+      if (IsKnifeClass(classname)) {
+        EquipPlayerWeapon(client, entity);
       }
+      SetWeaponProps(client, entity);
     }
   }
 }
@@ -81,8 +66,8 @@ public Action ChatListener(int client, const char[] command, int args) {
   char msg[128];
   GetCmdArgString(msg, sizeof(msg));
   StripQuotes(msg);
-  if (StrEqual(msg, "!ws") || StrEqual(msg, "!pf") || StrEqual(msg, "!knife") || StrEqual(msg, "!dao") ||
-      StrEqual(msg, "!wslang") || StrContains(msg, "!nametag") == 0 || StrContains(msg, "!seed") == 0) {
+  if (StrEqual(msg, "!ws") || StrEqual(msg, "!pf") || StrEqual(msg, "!knife") || StrEqual(msg, "!dao") || StrEqual(msg, "!wslang") ||
+      StrContains(msg, "!nametag") == 0 || StrContains(msg, "!seed") == 0) {
     return Plugin_Handled;
   } else if (g_bWaitingForNametag[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
     CleanNameTag(msg, sizeof(msg));
@@ -99,11 +84,26 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     RefreshWeapon(client, g_iIndex[client]);
 
-    char updateFields[512];
-    BuildWeaponNameTagUpdateField(g_iIndex[client], team, msg, updateFields, sizeof(updateFields));
+    char updateFields[1024];
+    char escaped[257];
+    db.Escape(msg, escaped, sizeof(escaped));
+    char weaponName[32];
+    RemoveWeaponPrefix(g_WeaponClasses[g_iIndex[client]], weaponName, sizeof(weaponName));
+    char teamName[4];
+    teamName = team == CS_TEAM_T ? "" : "ct_";
+    Format(updateFields, sizeof(updateFields), "%s%s_tag = '%s'", teamName, weaponName, escaped);
     UpdatePlayerData(client, updateFields);
 
     PrintToChat(client, " %s \x04%t: \x01\"%s\"", g_ChatPrefix, "NameTagSuccess", msg);
+
+    /* NAMETAGCOLOR
+    int menuTime;
+    if((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0)
+    {
+            CreateColorsMenu(client).Display(client, menuTime);
+    }
+    */
+
     return Plugin_Handled;
   } else if (g_bWaitingForSeed[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
     g_bWaitingForSeed[client] = false;
@@ -117,9 +117,13 @@ public Action ChatListener(int client, const char[] command, int args) {
       return Plugin_Handled;
     }
     int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
-    SetClientSeed(client, g_iIndex[client], team, seedInt, true);
+    g_iWeaponSeed[client][g_iIndex[client]][team] = seedInt;
+    g_iSeedRandom[client][g_iIndex[client]] = -1;
+
+    RefreshWeapon(client, g_iIndex[client]);
 
     CreateTimer(0.1, SeedMenuTimer, GetClientUserId(client));
+
     PrintToChat(client, " %s \x04%t: \x01%i", g_ChatPrefix, "SeedSuccess", seedInt);
 
     return Plugin_Handled;
@@ -135,9 +139,12 @@ public Action ChatListener(int client, const char[] command, int args) {
       return Plugin_Handled;
     }
     int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
-    SetClientWear(client, g_iIndex[client], team, floatVal, true);
+    g_fFloatValue[client][g_iIndex[client]][team] = floatVal;
+
+    RefreshWeapon(client, g_iIndex[client]);
 
     CreateFloatMenu(client).Display(client, MENU_TIME_FOREVER);
+
     PrintToChat(client, " %s \x04%t: \x01%f", g_ChatPrefix, "FloatSetSuccess", floatVal);
 
     return Plugin_Handled;
@@ -175,14 +182,38 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
     return Plugin_Continue;
 
   g_iStatTrakCount[attacker][index][team]++;
+  /*
+  if (IsKnife(weapon))
+  {
+          SetEntProp(weapon, Prop_Send, "m_nFallbackStatTrak", g_iKnifeStatTrakMode == 0 ?
+  GetTotalKnifeStatTrakCount(attacker) : g_iStatTrakCount[attacker][index]);
+  }
+  else
+  {
+          SetEntProp(weapon, Prop_Send, "m_nFallbackStatTrak", g_iStatTrakCount[attacker][index]);
+  }
+  */
 
-  char updateFields[128];
-  BuildWeaponStatTrakCountUpdateField(index, team, g_iStatTrakCount[attacker][index][team], updateFields, sizeof(updateFields));
+  char updateFields[256];
+  char weaponName[32];
+  RemoveWeaponPrefix(g_WeaponClasses[index], weaponName, sizeof(weaponName));
+  char teamName[4];
+  teamName = team == CS_TEAM_T ? "" : "ct_";
+  Format(updateFields, sizeof(updateFields), "%s%s_trak_count = %d", teamName, weaponName,
+         g_iStatTrakCount[attacker][index][team]);
   UpdatePlayerData(attacker, updateFields);
   return Plugin_Continue;
 }
 
 public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast) {
   g_iRoundStartTime = GetTime();
+}
+
+stock Action WeaponCanUsePre(int client, int weapon, bool &pickup) {
+  if (IsKnife(weapon) && IsValidClient(client)) {
+    pickup = true;
+    return Plugin_Changed;
+  }
+  return Plugin_Continue;
 }
 
