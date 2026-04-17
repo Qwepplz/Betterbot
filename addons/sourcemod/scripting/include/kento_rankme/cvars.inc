@@ -187,7 +187,7 @@ int g_iEloKPro;
 void CreateCvars()
 {
 	g_cvarEnabled = CreateConVar("rankme_enabled", "1", "Is RankMe enabled? 1 = true 0 = false", _, true, 0.0, true, 1.0);
-	g_cvarRankbots = CreateConVar("rankme_rankbots", "0", "Rank bots? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarRankbots = CreateConVar("rankme_rankbots", "1", "Rank bots? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarDebugLog = CreateConVar("rankme_debug_log", "0", "Enable debug logging? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarAutopurge = CreateConVar("rankme_autopurge", "0", "Auto-Purge inactive players? X = Days  0 = Off", _, true, 0.0);
 	g_cvarPointsBombDefusedTeam = CreateConVar("rankme_points_bomb_defused_team", "2", "How many points CTs got for defusing the C4?", _, true, 0.0);
