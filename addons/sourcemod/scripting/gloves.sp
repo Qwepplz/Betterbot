@@ -40,17 +40,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_eldiven", CommandGlove);
 	RegConsoleCmd("sm_gllang", CommandGloveLang);
 
-	GameData gameData = new GameData("botinventory.games");
-	if (gameData != null)
-	{
-		StartPrepSDKCall(SDKCall_Player);
-		PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CGameClient::UpdateAcknowledgedFramecount");
-		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-		g_hForceUpdate = EndPrepSDKCall();
-		delete gameData;
-	}
-
-	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
+	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Pre);
 
 	AddCommandListener(ChatListener, "say");
 	AddCommandListener(ChatListener, "say2");
@@ -167,7 +157,6 @@ public void GivePlayerGloves(int client)
 
 			SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
 			if (g_iEnableWorldModel) SetEntProp(client, Prop_Send, "m_nBody", 1);
-			ForceClientUpdate(client);
 		}
 	}
 }
