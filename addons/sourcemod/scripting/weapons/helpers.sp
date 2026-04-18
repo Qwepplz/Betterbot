@@ -138,6 +138,24 @@ stock bool ClassByDefIndex(int index, char[] class, int size) {
   return false;
 }
 
+stock int NormalizeKnifeIndex(int knifeIndex) {
+  if (knifeIndex == 0 || knifeIndex == -1) {
+    return knifeIndex;
+  }
+
+  if (knifeIndex > -1 && knifeIndex < sizeof(g_WeaponClasses) && IsKnifeClass(g_WeaponClasses[knifeIndex])) {
+    return knifeIndex;
+  }
+
+  for (int i = 0; i < sizeof(g_iWeaponDefIndex); i++) {
+    if (g_iWeaponDefIndex[i] == knifeIndex && IsKnifeClass(g_WeaponClasses[i])) {
+      return i;
+    }
+  }
+
+  return 0;
+}
+
 stock bool IsValidWeapon(int weaponEntity) {
   if (weaponEntity > 4096 && weaponEntity != INVALID_ENT_REFERENCE) {
     weaponEntity = EntRefToEntIndex(weaponEntity);

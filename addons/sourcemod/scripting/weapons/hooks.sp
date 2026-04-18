@@ -29,20 +29,30 @@ public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &it
                         bool &OriginIsNULL, float Origin[3]) {
   if (IsValidClient(client)) {
     int team = GetClientTeam(client);
+    if (team < CS_TEAM_T || team > CS_TEAM_CT) {
+      return Plugin_Continue;
+    }
 
-    if (g_iKnife[client][team] != 0 && IsKnifeClass(classname)) {
-      ignoredCEconItemView = true;
+    int knifeIndex = NormalizeKnifeIndex(g_iKnife[client][team]);
+    if (knifeIndex != g_iKnife[client][team]) {
+      g_iKnife[client][team] = knifeIndex;
+    }
 
-      if (g_iKnife[client][team] == -1) {
+    if (knifeIndex != 0 && IsKnifeClass(classname)) {
+      if (knifeIndex == -1) {
         int max = menuKnife.ItemCount - 1;
         int random = GetRandomInt(2, max);
 
         char output[4];
         menuKnife.GetItem(random, output, sizeof(output));
-        strcopy(classname, sizeof(classname), g_WeaponClasses[StringToInt(output)]);
-      } else {
-        strcopy(classname, sizeof(classname), g_WeaponClasses[g_iKnife[client][team]]);
+        knifeIndex = NormalizeKnifeIndex(StringToInt(output));
+        if (knifeIndex == 0) {
+          return Plugin_Continue;
+        }
       }
+
+      ignoredCEconItemView = true;
+      strcopy(classname, sizeof(classname), g_WeaponClasses[knifeIndex]);
       return Plugin_Changed;
     }
   }

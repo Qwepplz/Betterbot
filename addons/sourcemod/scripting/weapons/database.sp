@@ -101,6 +101,9 @@ public void T_GetPlayerDataCallback(Database database, DBResultSet results, cons
         g_iKnife[clientIndex][CS_TEAM_CT] = 0;
       }
     } else {
+      bool shouldUpdateKnife = false;
+      bool shouldUpdateKnifeCt = false;
+
       if (results.FetchRow()) {
         for (int weaponIndex = 0; weaponIndex < sizeof(g_WeaponClasses); weaponIndex++) {
           LoadPlayerWeaponData(results, clientIndex, weaponIndex, CS_TEAM_T);
@@ -112,12 +115,29 @@ public void T_GetPlayerDataCallback(Database database, DBResultSet results, cons
 
         int knifeIndex;
         if (results.FieldNameToNum("knife", knifeIndex)) {
-          g_iKnife[clientIndex][CS_TEAM_T] = results.FetchInt(knifeIndex);
+          int storedKnife = results.FetchInt(knifeIndex);
+          g_iKnife[clientIndex][CS_TEAM_T] = NormalizeKnifeIndex(storedKnife);
+          shouldUpdateKnife = storedKnife != g_iKnife[clientIndex][CS_TEAM_T];
         }
 
         int knifeCtIndex;
         if (results.FieldNameToNum("knife_ct", knifeCtIndex)) {
-          g_iKnife[clientIndex][CS_TEAM_CT] = results.FetchInt(knifeCtIndex);
+          int storedKnifeCt = results.FetchInt(knifeCtIndex);
+          g_iKnife[clientIndex][CS_TEAM_CT] = NormalizeKnifeIndex(storedKnifeCt);
+          shouldUpdateKnifeCt = storedKnifeCt != g_iKnife[clientIndex][CS_TEAM_CT];
+        }
+
+        if (shouldUpdateKnife || shouldUpdateKnifeCt) {
+          char updateFields[64];
+          if (shouldUpdateKnife && shouldUpdateKnifeCt) {
+            FormatEx(updateFields, sizeof(updateFields), "knife = %d, knife_ct = %d", g_iKnife[clientIndex][CS_TEAM_T],
+                     g_iKnife[clientIndex][CS_TEAM_CT]);
+          } else if (shouldUpdateKnife) {
+            FormatEx(updateFields, sizeof(updateFields), "knife = %d", g_iKnife[clientIndex][CS_TEAM_T]);
+          } else {
+            FormatEx(updateFields, sizeof(updateFields), "knife_ct = %d", g_iKnife[clientIndex][CS_TEAM_CT]);
+          }
+          UpdatePlayerData(clientIndex, updateFields);
         }
       }
       char steamid[32];
