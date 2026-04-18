@@ -458,6 +458,31 @@ int GetCurrentPlayers()
 	return count;
 }
 
+void ResetPlayerCombatData(int client) {
+	g_aLastKilledBy[client] = 0;
+	g_aLastKilledTime[client] = 0;
+	g_aLastKillTime[client] = 0;
+	g_aRevengeCount[client] = 0;
+	g_aKillStreak[client] = 0;
+}
+
+void ResetPlayerRuntimeData(int client) {
+	ResetPlayerCombatData(client);
+	g_aMaxKillStreak[client] = 0;
+}
+
+void LoadHideChatPreference(int client) {
+	if (!IsValidClient(client) || IsFakeClient(client))
+		return;
+
+	char buffer[5];
+	GetClientCookie(client, hidechatcookie, buffer, sizeof(buffer));
+	if (StrEqual(buffer, "") || StrEqual(buffer, "0"))
+		hidechat[client] = false;
+	else if (StrEqual(buffer, "1"))
+		hidechat[client] = true;
+}
+
 public void OnPluginEnd() {
 	if (!g_bEnabled)
 		return;
@@ -814,21 +839,18 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 	int i;
 	for(i=1;i<=MaxClients;i++)
 	{
-		g_aLastKilledBy[i] = 0;
-		g_aLastKilledTime[i] = 0;
-		g_aLastKillTime[i] = 0;
-		g_aRevengeCount[i] = 0;
-		g_aKillStreak[i] = 0;
+		ResetPlayerCombatData(i);
 
 		if (!IsClientInGame(i))
 			continue;
 
-		if (IsClientInGame(i) && GetClientTeam(i) == TR) 
+		int team = GetClientTeam(i);
+		if (team == TR) 
 		{
 			g_aStats[i].ROUNDS_TR++;
 			g_aSession[i].ROUNDS_TR++;
 		} 
-		else if (IsClientInGame(i) && GetClientTeam(i) == CT) 
+		else if (team == CT) 
 		{
 			g_aStats[i].ROUNDS_CT++;
 			g_aSession[i].ROUNDS_CT++;
@@ -1514,12 +1536,7 @@ public void OnClientPutInServer(int client) {
 		CreateTimer(1.0, Timer_ReloadBotName, client);
 		
 	// Cookie
-	if(IsValidClient(client) && !IsFakeClient(client)){
-		char buffer[5];
-		GetClientCookie(client, hidechatcookie, buffer, sizeof(buffer));
-		if(StrEqual(buffer, "") || StrEqual(buffer,"0"))	hidechat[client] = false;
-		else if(StrEqual(buffer,"1"))	hidechat[client] = true;
-	}
+	LoadHideChatPreference(client);
 
 	InitializePlayerEloOptimization(client);
 }
@@ -1527,12 +1544,7 @@ public void OnClientPutInServer(int client) {
 public void LoadPlayer(int client) {
 	
 	OnDB[client] = false;
-	g_aLastKilledBy[client] = 0;
-	g_aLastKilledTime[client] = 0;
-	g_aLastKillTime[client] = 0;
-	g_aRevengeCount[client] = 0;
-	g_aKillStreak[client] = 0;
-	g_aMaxKillStreak[client] = 0;
+	ResetPlayerRuntimeData(client);
 	g_iPlayerElo[client] = 0;
 	// stats
 	g_aSession[client].Reset();
@@ -1763,12 +1775,7 @@ public void OnClientDisconnect(int client) {
 	SalvarPlayer(client);
 	OnDB[client] = false;
 	CleanupPlayerEloOptimization(client);
-	g_aLastKilledBy[client] = 0;
-	g_aLastKilledTime[client] = 0;
-	g_aLastKillTime[client] = 0;
-	g_aRevengeCount[client] = 0;
-	g_aKillStreak[client] = 0;
-	g_aMaxKillStreak[client] = 0;
+	ResetPlayerRuntimeData(client);
 	if (g_bUseEloSystem)
 		g_iPlayerElo[client] = 0;
 }
