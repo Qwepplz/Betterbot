@@ -884,12 +884,20 @@ Menu CreateMainMenu(int client) {
   if (IsPlayerAlive(client)) {
     char weaponClass[32];
     char weaponName[32];
+    StringMap addedWeapons = new StringMap();
 
     int size = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 
     for (int i = 0; i < size; i++) {
       int weaponEntity = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", i);
       if (weaponEntity != -1 && GetWeaponClass(weaponEntity, weaponClass, sizeof(weaponClass))) {
+        int alreadyAdded;
+        if (addedWeapons.GetValue(weaponClass, alreadyAdded)) {
+          continue;
+        }
+
+        addedWeapons.SetValue(weaponClass, 1);
+
         int team = GetClientTeam(client);
         Format(weaponName, sizeof(weaponName), "%T", weaponClass, client);
         menu.AddItem(weaponClass, weaponName,
@@ -897,6 +905,8 @@ Menu CreateMainMenu(int client) {
         index++;
       }
     }
+
+    delete addedWeapons;
   }
 
   for (int i = index; i < 6; i++) {
