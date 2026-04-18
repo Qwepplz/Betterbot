@@ -60,7 +60,12 @@ public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &it
 
 public void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL,
                        const float Origin[3]) {
-  if (!CanApplyNamedItemOverride(client) || !IsValidEntity(entity)) {
+  if (!CanApplyNamedItemOverride(client) || !IsValidWeapon(entity)) {
+    return;
+  }
+
+  int index;
+  if (!g_smWeaponIndex.GetValue(classname, index)) {
     return;
   }
 
@@ -69,13 +74,10 @@ public void GiveNamedItemPost(int client, const char[] classname, const CEconIte
     return;
   }
 
-  int index;
-  if (g_smWeaponIndex.GetValue(classname, index)) {
-    if (IsKnifeClass(classname)) {
-      EquipPlayerWeapon(client, entity);
-    }
-    SetWeaponProps(client, entity);
+  if (IsKnifeClass(classname)) {
+    EquipPlayerWeapon(client, entity);
   }
+  SetWeaponProps(client, entity);
 }
 
 public Action EventPlayerDeath(Event event, const char[] name, bool dontBroadcast) {
