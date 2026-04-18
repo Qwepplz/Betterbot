@@ -28,6 +28,21 @@ stock bool IsValidClient(int client)
 	return true;
 }
 
+stock int GetClientGloveTeam(int client)
+{
+	return GetClientTeam(client);
+}
+
+stock bool IsClientsCurrentGloveTeam(int client, int team)
+{
+	return team == GetClientGloveTeam(client);
+}
+
+stock void GetGloveTeamPrefix(int team, char[] prefix, int maxlen)
+{
+	strcopy(prefix, maxlen, team == CS_TEAM_T ? "t" : "ct");
+}
+
 stock void FirstCharUpper(char[] string)
 {
 	if (strlen(string) > 0)

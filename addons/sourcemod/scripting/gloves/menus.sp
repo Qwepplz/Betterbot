@@ -19,18 +19,11 @@ public int GloveMenuHandler(Menu menu, MenuAction action, int client, int select
 				g_iGloves[client][team] = gloveId;
 				char updateFields[128];
 				char teamName[4];
-				if (team == CS_TEAM_T)
-				{
-					teamName = "t";
-				}
-				else if (team == CS_TEAM_CT)
-				{
-					teamName = "ct";
-				}
+				GetGloveTeamPrefix(team, teamName, sizeof(teamName));
 				Format(updateFields, sizeof(updateFields), "%s_group = %d, %s_glove = %d", teamName, groupId, teamName, gloveId);
 				UpdatePlayerData(client, updateFields);
 
-				if (team == GetClientTeam(client))
+				if (IsClientsCurrentGloveTeam(client, team))
 				{
 					int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 					if (activeWeapon != -1)
@@ -112,18 +105,11 @@ public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int se
 					char teamName[4];
 					g_iGroup[client][team] = index;
 					g_iGloves[client][team] = index;
-					if (team == CS_TEAM_T)
-					{
-						teamName = "t";
-					}
-					else if (team == CS_TEAM_CT)
-					{
-						teamName = "ct";
-					}
+					GetGloveTeamPrefix(team, teamName, sizeof(teamName));
 					Format(updateFields, sizeof(updateFields), "%s_group = %d, %s_glove = %d", teamName, index, teamName, index);
 					UpdatePlayerData(client, updateFields);
 
-					if (team == GetClientTeam(client))
+					if (IsClientsCurrentGloveTeam(client, team))
 					{
 						if (index == 0)
 						{
@@ -304,18 +290,11 @@ public Action FloatTimer(Handle timer, DataPack pack)
 	{
 		char updateFields[30];
 		char teamName[4];
-		if (team == CS_TEAM_T)
-		{
-			teamName = "t";
-		}
-		else if (team == CS_TEAM_CT)
-		{
-			teamName = "ct";
-		}
+		GetGloveTeamPrefix(team, teamName, sizeof(teamName));
 		Format(updateFields, sizeof(updateFields), "%s_float = %.2f", teamName, g_fFloatValue[clientIndex][team]);
 		UpdatePlayerData(clientIndex, updateFields);
 
-		if (team == GetClientTeam(clientIndex))
+		if (IsClientsCurrentGloveTeam(clientIndex, team))
 			GivePlayerGloves(clientIndex);
 
 		g_FloatTimer[clientIndex] = INVALID_HANDLE;
@@ -374,7 +353,7 @@ Menu CreateMainMenu(int client)
 
 	if (g_iEnableFloat == 1 && IsPlayerAlive(client))
 	{
-		int playerTeam = GetClientTeam(client);
+		int playerTeam = GetClientGloveTeam(client);
 		if (CS_TEAM_T <= playerTeam <= CS_TEAM_CT && g_iGloves[client][playerTeam] != 0)
 		{
 			g_iTeam[client] = playerTeam;

@@ -10,14 +10,14 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public int Native_IsClientUsingGloves(Handle plugin, int numParams)
 {
 	int clientIndex = GetNativeCell(1);
-	int playerTeam = GetClientTeam(clientIndex);
+	int playerTeam = GetClientGloveTeam(clientIndex);
 	return g_iGloves[clientIndex][playerTeam] != 0;
 }
 
 public int Native_RegisterCustomArms(Handle plugin, int numParams)
 {
 	int clientIndex = GetNativeCell(1);
-	int playerTeam = GetClientTeam(clientIndex);
+	int playerTeam = GetClientGloveTeam(clientIndex);
 	GetNativeString(2, g_CustomArms[clientIndex][playerTeam], 256);
 	return 0;
 }
@@ -25,7 +25,7 @@ public int Native_RegisterCustomArms(Handle plugin, int numParams)
 public int Native_SetArmsModel(Handle plugin, int numParams)
 {
 	int clientIndex = GetNativeCell(1);
-	int playerTeam = GetClientTeam(clientIndex);
+	int playerTeam = GetClientGloveTeam(clientIndex);
 	GetNativeString(2, g_CustomArms[clientIndex][playerTeam], 256);
 	if (g_iGloves[clientIndex][playerTeam] == 0)
 	{
@@ -37,7 +37,7 @@ public int Native_SetArmsModel(Handle plugin, int numParams)
 public int Native_GetArmsModel(Handle plugin, int numParams)
 {
 	int clientIndex = GetNativeCell(1);
-	int playerTeam = GetClientTeam(clientIndex);
+	int playerTeam = GetClientGloveTeam(clientIndex);
 	int size = GetNativeCell(3);
 	SetNativeString(2, g_CustomArms[clientIndex][playerTeam], size);
 	return 0;

@@ -123,7 +123,7 @@ public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult res
 
 public void GivePlayerGloves(int client)
 {
-	int playerTeam = GetClientTeam(client);
+	int playerTeam = GetClientGloveTeam(client);
 	if (g_iGloves[client][playerTeam] != 0)
 	{
 		ClearPlayerWearables(client);
