@@ -27,48 +27,54 @@ public void UnhookPlayer(int client) {
 
 public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView,
                         bool &OriginIsNULL, float Origin[3]) {
-  if (IsValidClient(client)) {
-    int team = GetClientTeam(client);
-    if (team < CS_TEAM_T || team > CS_TEAM_CT) {
-      return Plugin_Continue;
-    }
-
-    int knifeIndex = NormalizeKnifeIndex(g_iKnife[client][team]);
-    if (knifeIndex != g_iKnife[client][team]) {
-      g_iKnife[client][team] = knifeIndex;
-    }
-
-    if (knifeIndex != 0 && IsKnifeClass(classname)) {
-      if (knifeIndex == -1) {
-        int max = menuKnife.ItemCount - 1;
-        int random = GetRandomInt(2, max);
-
-        char output[4];
-        menuKnife.GetItem(random, output, sizeof(output));
-        knifeIndex = NormalizeKnifeIndex(StringToInt(output));
-        if (knifeIndex == 0) {
-          return Plugin_Continue;
-        }
-      }
-
-      ignoredCEconItemView = true;
-      strcopy(classname, sizeof(classname), g_WeaponClasses[knifeIndex]);
-      return Plugin_Changed;
-    }
+  if (!CanApplyNamedItemOverride(client)) {
+    return Plugin_Continue;
   }
+
+  int team = GetClientTeam(client);
+  int knifeIndex = NormalizeKnifeIndex(g_iKnife[client][team]);
+  if (knifeIndex != g_iKnife[client][team]) {
+    g_iKnife[client][team] = knifeIndex;
+  }
+
+  if (knifeIndex != 0 && IsKnifeClass(classname)) {
+    if (knifeIndex == -1) {
+      int max = menuKnife.ItemCount - 1;
+      int random = GetRandomInt(2, max);
+
+      char output[4];
+      menuKnife.GetItem(random, output, sizeof(output));
+      knifeIndex = NormalizeKnifeIndex(StringToInt(output));
+      if (knifeIndex == 0) {
+        return Plugin_Continue;
+      }
+    }
+
+    ignoredCEconItemView = true;
+    strcopy(classname, sizeof(classname), g_WeaponClasses[knifeIndex]);
+    return Plugin_Changed;
+  }
+
   return Plugin_Continue;
 }
 
 public void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL,
                        const float Origin[3]) {
-  if (IsValidClient(client) && IsValidEntity(entity)) {
-    int index;
-    if (g_smWeaponIndex.GetValue(classname, index)) {
-      if (IsKnifeClass(classname)) {
-        EquipPlayerWeapon(client, entity);
-      }
-      SetWeaponProps(client, entity);
+  if (!CanApplyNamedItemOverride(client) || !IsValidEntity(entity)) {
+    return;
+  }
+
+  int prevOwner = GetEntPropEnt(entity, Prop_Send, "m_hPrevOwner");
+  if (prevOwner != -1) {
+    return;
+  }
+
+  int index;
+  if (g_smWeaponIndex.GetValue(classname, index)) {
+    if (IsKnifeClass(classname)) {
+      EquipPlayerWeapon(client, entity);
     }
+    SetWeaponProps(client, entity);
   }
 }
 

@@ -58,6 +58,23 @@ stock bool IsValidClient(int client) {
   return true;
 }
 
+stock bool CanApplyNamedItemOverride(int client) {
+  if (!IsValidClient(client) || !IsPlayerAlive(client)) {
+    return false;
+  }
+
+  int team = GetClientTeam(client);
+  if (team < CS_TEAM_T || team > CS_TEAM_CT) {
+    return false;
+  }
+
+  if (GameRules_GetProp("m_bWarmupPeriod") == 1) {
+    return false;
+  }
+
+  return true;
+}
+
 stock int GetWeaponIndex(int entity) {
   char class[32];
   if (GetWeaponClass(entity, class, sizeof(class))) {
