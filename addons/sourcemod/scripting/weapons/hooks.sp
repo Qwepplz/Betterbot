@@ -147,10 +147,10 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     float floatVal;
     if (StrEqual(msg, "!cancel") || StrEqual(msg, "!iptal") || StrEqual(msg, "")) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "FloatSetCancelled");
+      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "CustomFloatCancelled");
       return Plugin_Handled;
     } else if ((floatVal = StringToFloat(msg)) <= 0 || floatVal >= 1) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "FloatSetFailed");
+      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "CustomFloatFailed");
       return Plugin_Handled;
     }
     int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
@@ -160,7 +160,7 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     CreateFloatMenu(client).Display(client, MENU_TIME_FOREVER);
 
-    PrintToChat(client, " %s \x04%t: \x01%f", g_ChatPrefix, "FloatSetSuccess", floatVal);
+    PrintToChat(client, " %s \x04%t: \x01%f", g_ChatPrefix, "CustomFloatSuccess", floatVal);
 
     return Plugin_Handled;
   }

@@ -296,7 +296,7 @@ Menu CreateFloatMenu(int client) {
   Format(buffer, sizeof(buffer), "%T", "Decrease", client, g_iFloatIncrementPercentage);
   menu.AddItem("decrease", buffer, wear == 0 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 
-  Format(buffer, sizeof(buffer), "%T", "FloatSet", client);
+  Format(buffer, sizeof(buffer), "%T", "CustomFloat", client);
   menu.AddItem("set", buffer);
 
   menu.ExitBackButton = true;
@@ -350,7 +350,7 @@ public int FloatMenuHandler(Menu menu, MenuAction action, int client, int select
           }
         } else if (StrEqual(buffer, "set")) {
           g_bWaitingForWear[client] = true;
-          PrintToChat(client, " %s \x04%t", g_ChatPrefix, "FloatSetInstruction");
+          PrintToChat(client, " %s \x04%t", g_ChatPrefix, "CustomFloatInstruction");
         }
       }
     }
