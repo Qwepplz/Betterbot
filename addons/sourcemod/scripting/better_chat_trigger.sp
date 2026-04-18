@@ -3,6 +3,12 @@
 
 #include <sourcemod>
 
+enum
+{
+    CHAT_MESSAGE_LENGTH = 128,
+    COMMAND_NAME_LENGTH = 32
+};
+
 public Plugin myinfo =
 {
     name = "Better Chat Trigger",
@@ -14,34 +20,43 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-    AddCommandListener(ChatListener, "say");
-    AddCommandListener(ChatListener, "say2");
-    AddCommandListener(ChatListener, "say_team");
+    static const char commands[][] =
+    {
+        "say",
+        "say2",
+        "say_team"
+    };
+
+    for (int index = 0; index < sizeof(commands); index++)
+    {
+        AddCommandListener(ChatListener, commands[index]);
+    }
 }
 
 public Action ChatListener(int client, const char[] command, int args)
 {
-    char message[128];
-    GetCmdArgString(message, sizeof(message));
-    StripQuotes(message);
-
     if (!IsPlayer(client))
     {
         return Plugin_Continue;
     }
 
-    int prefixLength = GetPrefixLength(message);    if (prefixLength == 0)
+    char message[CHAT_MESSAGE_LENGTH];
+    GetCmdArgString(message, sizeof(message));
+    StripQuotes(message);
+
+    int prefixLength = GetPrefixLength(message);
+    if (prefixLength == 0)
     {
         return Plugin_Continue;
     }
 
-    char loweredCommand[32];
+    char loweredCommand[COMMAND_NAME_LENGTH];
     String_ToLower(message[prefixLength], loweredCommand, sizeof(loweredCommand));
 
-    char commandToRun[32];
+    char commandToRun[COMMAND_NAME_LENGTH];
     FormatEx(commandToRun, sizeof(commandToRun), "sm_%s", loweredCommand);
 
-    if (commandToRun[0] == '\0' || !CommandExists(commandToRun))
+    if (!CommandExists(commandToRun))
     {
         return Plugin_Continue;
     }
@@ -72,9 +87,9 @@ int GetPrefixLength(const char[] message)
 void String_ToLower(const char[] input, char[] output, int size)
 {
     int maxLength = size - 1;
-    int index;
+    int index = 0;
 
-    while (input[index] != '\0' && index < maxLength)
+    while (index < maxLength && input[index] != '\0')
     {
         output[index] = CharToLower(input[index]);
         index++;
