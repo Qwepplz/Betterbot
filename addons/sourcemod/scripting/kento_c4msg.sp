@@ -10,6 +10,15 @@
 #define PLUGIN_VERSION "3.0"
 #define CHAT_MESSAGE_MAX 256
 
+#define DEFAULT_C4_TIMER 40.0
+#define COUNTDOWN_INTERVAL 1.0
+
+#define CHAT_PREFIX_MAX 64
+#define COLOR_BUFFER_MAX 16
+#define PHRASE_BUFFER_MAX 32
+#define SECONDS_BUFFER_MAX 16
+#define KIT_TEXT_MAX 64
+
 ConVar g_hCvarTimer;
 ConVar g_hCvarPrefix;
 ConVar g_hCvarShowPlanted;
@@ -28,7 +37,7 @@ Handle g_hTimer_Countdown = INVALID_HANDLE;
 float g_fDetonateTime;
 float g_fC4Timer;
 float g_fDefuseEndTime;
-char g_sChatPrefix[64] = "C4MSG";
+char g_sChatPrefix[CHAT_PREFIX_MAX] = "C4MSG";
 int g_iDefusingClient = -1;
 bool g_bCurrentlyDefusing;
 
@@ -86,7 +95,7 @@ public void OnConfigsExecuted()
     g_fC4Timer = g_hCvarTimer.FloatValue;
     if (g_fC4Timer <= 0.0)
     {
-        g_fC4Timer = 40.0;
+        g_fC4Timer = DEFAULT_C4_TIMER;
     }
 
     g_hCvarPrefix.GetString(g_sChatPrefix, sizeof(g_sChatPrefix));
@@ -163,7 +172,7 @@ public Action EventBombPlanted(Event event, const char[] name, bool dontBroadcas
     if (g_hCvarShowCountdown.BoolValue)
     {
         StopCountdownTimer();
-        g_hTimer_Countdown = CreateTimer(1.0, TimerCountdown, 0, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+        g_hTimer_Countdown = CreateTimer(COUNTDOWN_INTERVAL, TimerCountdown, 0, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
     }
 
     return Plugin_Continue;
@@ -172,13 +181,7 @@ public Action EventBombPlantedPost(Event event, const char[] name, bool dontBroa
 {
     if (g_hCvarShowPlanted.BoolValue)
     {
-        for (int client = 1; client <= MaxClients; client++)
-        {
-            if (IsHumanClient(client))
-            {
-                CPrintToChat(client, "%T", "Bomb Planted", client, g_sChatPrefix);
-            }
-        }
+        BroadcastSimpleC4Message("Bomb Planted");
     }
 
     BombTime_BombPlanted();
@@ -244,7 +247,7 @@ void BombMessage(int seconds)
         return;
     }
 
-    char color[16];
+    char color[COLOR_BUFFER_MAX];
     GetCountdownColor(seconds, color, sizeof(color));
 
     int phraseSeconds = seconds;
@@ -253,7 +256,7 @@ void BombMessage(int seconds)
         phraseSeconds = 40;
     }
 
-    char phrase[32];
+    char phrase[PHRASE_BUFFER_MAX];
     Format(phrase, sizeof(phrase), "countdown %d", phraseSeconds);
 
     for (int client = 1; client <= MaxClients; client++)
@@ -290,7 +293,7 @@ void BombTime_PlayerDeath(Event event)
     if (timeAway > 0.0)
     {
         char victimName[MAX_NAME_LENGTH];
-        char seconds[16];
+        char seconds[SECONDS_BUFFER_MAX];
         GetClientName(victim, victimName, sizeof(victimName));
         FormatSeconds(timeAway, seconds, sizeof(seconds));
         BroadcastC4Message("DefuserDiedTimeLeftMessage", victimName, seconds);
@@ -300,7 +303,7 @@ void BombTime_PlayerDeath(Event event)
     if (IsClientValid(attacker))
     {
         char attackerName[MAX_NAME_LENGTH];
-        char seconds[16];
+        char seconds[SECONDS_BUFFER_MAX];
         GetClientName(attacker, attackerName, sizeof(attackerName));
         FormatSeconds(-timeAway, seconds, sizeof(seconds));
         BroadcastC4Message("PostDefuseKillTimeMessage", attackerName, seconds);
@@ -327,7 +330,7 @@ void BombTime_BombDefused(Event event)
         timeLeft = 0.0;
     }
     char clientName[MAX_NAME_LENGTH];
-    char seconds[16];
+    char seconds[SECONDS_BUFFER_MAX];
     GetClientName(client, clientName, sizeof(clientName));
     FormatSeconds(timeLeft, seconds, sizeof(seconds));
     BroadcastC4Message("SuccessfulDefuseTimeLeftMessage", clientName, seconds);
@@ -354,16 +357,7 @@ void BombTime_BombBeginDefuse(Event event)
 
     char clientName[MAX_NAME_LENGTH];
     GetClientName(client, clientName, sizeof(clientName));
-
-    for (int target = 1; target <= MaxClients; target++)
-    {
-        if (IsHumanClient(target))
-        {
-            char kitText[64];
-            Format(kitText, sizeof(kitText), "%T", hasKit ? "With Kit" : "Without Kit", target);
-            CPrintToChat(target, "%T", "Defuse Started", target, g_sChatPrefix, clientName, kitText);
-        }
-    }
+    BroadcastDefuseStartedMessage(clientName, hasKit);
 }
 
 void BombTime_BombAbortDefuse(Event event)
@@ -381,14 +375,7 @@ void BombTime_BombAbortDefuse(Event event)
 
     char clientName[MAX_NAME_LENGTH];
     GetClientName(client, clientName, sizeof(clientName));
-
-    for (int target = 1; target <= MaxClients; target++)
-    {
-        if (IsHumanClient(target))
-        {
-            CPrintToChat(target, "%T", "Defuse Aborted", target, g_sChatPrefix, clientName);
-        }
-    }
+    BroadcastNamedC4Message("Defuse Aborted", clientName);
 }
 void BombTime_BombExploded()
 {
@@ -402,13 +389,48 @@ void BombTime_BombExploded()
     if (lateBy >= 0.0)
     {
         char clientName[MAX_NAME_LENGTH];
-        char seconds[16];
+        char seconds[SECONDS_BUFFER_MAX];
         GetClientName(g_iDefusingClient, clientName, sizeof(clientName));
         FormatSeconds(lateBy, seconds, sizeof(seconds));
         BroadcastC4Message("BombExplodedTimeLeftMessage", clientName, seconds);
     }
 
     ResetDefuseState();
+}
+
+void BroadcastSimpleC4Message(const char[] phrase)
+{
+    for (int target = 1; target <= MaxClients; target++)
+    {
+        if (IsHumanClient(target))
+        {
+            CPrintToChat(target, "%T", phrase, target, g_sChatPrefix);
+        }
+    }
+}
+
+void BroadcastNamedC4Message(const char[] phrase, const char[] clientName)
+{
+    for (int target = 1; target <= MaxClients; target++)
+    {
+        if (IsHumanClient(target))
+        {
+            CPrintToChat(target, "%T", phrase, target, g_sChatPrefix, clientName);
+        }
+    }
+}
+
+void BroadcastDefuseStartedMessage(const char[] clientName, bool hasKit)
+{
+    for (int target = 1; target <= MaxClients; target++)
+    {
+        if (IsHumanClient(target))
+        {
+            char kitText[KIT_TEXT_MAX];
+            Format(kitText, sizeof(kitText), "%T", hasKit ? "With Kit" : "Without Kit", target);
+            CPrintToChat(target, "%T", "Defuse Started", target, g_sChatPrefix, clientName, kitText);
+        }
+    }
 }
 
 void BroadcastC4Message(const char[] phrase, const char[] clientName, const char[] seconds)
