@@ -5,6 +5,20 @@
 #include <sdktools>
 #include <cstrike>
 
+enum
+{
+    WEAPON_CLASSNAME_LENGTH = 64,
+    PLAYER_WEAPON_SLOT_COUNT = 5
+};
+
+static const float WEAPON_REPLACE_DELAY = 0.2;
+
+static const char CT_DEFAULT_SECONDARY[] = "mp_ct_default_secondary";
+static const char CT_DEFAULT_PISTOL[] = "weapon_usp_silencer";
+static const char PURCHASED_M4A4[] = "weapon_m4a1";
+static const char REPLACEMENT_M4A1S[] = "weapon_m4a1_silencer";
+static const char REPLACEMENT_NOTIFICATION[] = " \x04[武器替换]\x01 已自动将M4A4替换为M4A1";
+
 ConVar g_Cvar_ShowNotifications;
 ConVar g_Cvar_ReplaceP2000;
 ConVar g_Cvar_ReplaceM4A4;
@@ -36,30 +50,31 @@ public void OnConfigsExecuted()
         return;
     }
 
-    ConVar mpCtDefaultSecondary = FindConVar("mp_ct_default_secondary");
-    if (mpCtDefaultSecondary != null)
+    ConVar defaultSecondary = FindConVar(CT_DEFAULT_SECONDARY);
+    if (defaultSecondary != null)
     {
-        mpCtDefaultSecondary.SetString("weapon_usp_silencer", true, false);
+        defaultSecondary.SetString(CT_DEFAULT_PISTOL, true, false);
     }
 }
 
 public Action Event_ItemPurchase(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!IsValidBotClient(client) || GetClientTeam(client) != CS_TEAM_CT)
+    if (!IsValidBotClient(client) || GetClientTeam(client) != CS_TEAM_CT || !g_Cvar_ReplaceM4A4.BoolValue)
     {
         return Plugin_Continue;
     }
 
-    char weapon[64];
+    char weapon[WEAPON_CLASSNAME_LENGTH];
     event.GetString("weapon", weapon, sizeof(weapon));
-
-    if (g_Cvar_ReplaceM4A4.BoolValue && StrEqual(weapon, "weapon_m4a1", true))
+    if (!StrEqual(weapon, PURCHASED_M4A4, true))
     {
-        DataPack dataPack = new DataPack();
-        dataPack.WriteCell(GetClientUserId(client));
-        CreateTimer(0.2, Timer_ReplaceWeapon, dataPack);
+        return Plugin_Continue;
     }
+
+    DataPack dataPack = new DataPack();
+    dataPack.WriteCell(GetClientUserId(client));
+    CreateTimer(WEAPON_REPLACE_DELAY, Timer_ReplaceWeapon, dataPack);
 
     return Plugin_Continue;
 }
@@ -77,17 +92,17 @@ public Action Timer_ReplaceWeapon(Handle timer, DataPack dataPack)
     }
 
     int weaponEntity = -1;
-    while ((weaponEntity = GetPlayerWeaponByClassname(client, "weapon_m4a1")) != -1)
+    while ((weaponEntity = GetPlayerWeaponByClassname(client, PURCHASED_M4A4)) != -1)
     {
         RemovePlayerItem(client, weaponEntity);
         AcceptEntityInput(weaponEntity, "Kill");
     }
 
-    GivePlayerItem(client, "weapon_m4a1_silencer");
+    GivePlayerItem(client, REPLACEMENT_M4A1S);
 
     if (g_Cvar_ShowNotifications.BoolValue)
     {
-        PrintToChat(client, " \x04[武器替换]\x01 已自动将M4A4替换为M4A1");
+        PrintToChat(client, REPLACEMENT_NOTIFICATION);
     }
 
     return Plugin_Stop;
@@ -95,7 +110,7 @@ public Action Timer_ReplaceWeapon(Handle timer, DataPack dataPack)
 
 int GetPlayerWeaponByClassname(int client, const char[] targetClassname)
 {
-    for (int slot = 0; slot < 5; slot++)
+    for (int slot = 0; slot < PLAYER_WEAPON_SLOT_COUNT; slot++)
     {
         int weaponEntity = GetPlayerWeaponSlot(client, slot);
         if (weaponEntity == -1)
@@ -103,7 +118,7 @@ int GetPlayerWeaponByClassname(int client, const char[] targetClassname)
             continue;
         }
 
-        char classname[64];
+        char classname[WEAPON_CLASSNAME_LENGTH];
         GetEntityClassname(weaponEntity, classname, sizeof(classname));
 
         if (StrEqual(classname, targetClassname, true))
