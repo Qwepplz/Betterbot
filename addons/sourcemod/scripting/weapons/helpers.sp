@@ -225,3 +225,11 @@ stock bool IsWeaponIndexInOnlyOneTeam(int index) {
   return false;
 }
 
+stock int GetWeaponDataTeam(int client, int index) {
+  return IsWeaponIndexInOnlyOneTeam(index) ? CS_TEAM_T : GetClientTeam(client);
+}
+
+stock void GetWeaponTeamPrefix(int team, char[] prefix, int maxlen) {
+  strcopy(prefix, maxlen, team == CS_TEAM_T ? "" : "ct_");
+}
+

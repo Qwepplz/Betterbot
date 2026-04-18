@@ -112,7 +112,7 @@ public Action ChatListener(int client, const char[] command, int args) {
       return Plugin_Handled;
     }
 
-    int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+    int team = GetWeaponDataTeam(client, g_iIndex[client]);
     g_NameTag[client][g_iIndex[client]][team] = msg;
 
     RefreshWeapon(client, g_iIndex[client]);
@@ -123,7 +123,7 @@ public Action ChatListener(int client, const char[] command, int args) {
     char weaponName[32];
     RemoveWeaponPrefix(g_WeaponClasses[g_iIndex[client]], weaponName, sizeof(weaponName));
     char teamName[4];
-    teamName = team == CS_TEAM_T ? "" : "ct_";
+    GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
     Format(updateFields, sizeof(updateFields), "%s%s_tag = '%s'", teamName, weaponName, escaped);
     UpdatePlayerData(client, updateFields);
 
@@ -149,7 +149,7 @@ public Action ChatListener(int client, const char[] command, int args) {
       PrintToChat(client, " %s \x02%t", g_ChatPrefix, "SeedFailed");
       return Plugin_Handled;
     }
-    int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+    int team = GetWeaponDataTeam(client, g_iIndex[client]);
     g_iWeaponSeed[client][g_iIndex[client]][team] = seedInt;
     g_iSeedRandom[client][g_iIndex[client]] = -1;
 
@@ -171,7 +171,7 @@ public Action ChatListener(int client, const char[] command, int args) {
       PrintToChat(client, " %s \x02%t", g_ChatPrefix, "CustomFloatFailed");
       return Plugin_Handled;
     }
-    int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+    int team = GetWeaponDataTeam(client, g_iIndex[client]);
     g_fFloatValue[client][g_iIndex[client]][team] = floatVal;
 
     RefreshWeapon(client, g_iIndex[client]);
@@ -202,7 +202,7 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
 
   int index = GetWeaponIndex(weapon);
 
-  int team = IsWeaponIndexInOnlyOneTeam(index) ? CS_TEAM_T : GetClientTeam(attacker);
+  int team = GetWeaponDataTeam(attacker, index);
   if (index != -1 && g_iSkins[attacker][index][team] != 0 && g_iStatTrak[attacker][index][team] != 1)
     return Plugin_Continue;
 
@@ -231,7 +231,7 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
   char weaponName[32];
   RemoveWeaponPrefix(g_WeaponClasses[index], weaponName, sizeof(weaponName));
   char teamName[4];
-  teamName = team == CS_TEAM_T ? "" : "ct_";
+  GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
   Format(updateFields, sizeof(updateFields), "%s%s_trak_count = %d", teamName, weaponName,
          g_iStatTrakCount[attacker][index][team]);
   UpdatePlayerData(attacker, updateFields);

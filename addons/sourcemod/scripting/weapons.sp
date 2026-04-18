@@ -173,7 +173,7 @@ public Action CommandNameTag(int client, int args) {
 
 void SetWeaponProps(int client, int entity) {
   int index = GetWeaponIndex(entity);
-  int team = IsWeaponIndexInOnlyOneTeam(index) ? CS_TEAM_T : GetClientTeam(client);
+  int team = GetWeaponDataTeam(client, index);
   if (index > -1 && (g_iSkins[client][index][team] != 0)) {
     static int IDHigh = 16384;
     SetEntProp(entity, Prop_Send, "m_iItemIDLow", -1);

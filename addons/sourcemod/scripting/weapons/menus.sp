@@ -103,9 +103,9 @@ public int WeaponsMenuHandler(Menu menu, MenuAction action, int client, int sele
         char currentWeaponName[32];
         strcopy(currentWeaponName, sizeof(currentWeaponName), weaponName);
 
-        int team = IsWeaponIndexInOnlyOneTeam(index) ? CS_TEAM_T : GetClientTeam(client);
+        int team = GetWeaponDataTeam(client, index);
         char teamName[4];
-        teamName = team == CS_TEAM_T ? "" : "ct_";
+        GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
         g_iSkins[client][index][team] = skinId;
 
         Format(updateFields, sizeof(updateFields), "%s%s = %d", teamName, currentWeaponName, skinId);
@@ -167,7 +167,7 @@ public int WeaponMenuHandler(Menu menu, MenuAction action, int client, int selec
   switch (action) {
     case MenuAction_Select: {
       if (IsClientInGame(client)) {
-        int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+        int team = GetWeaponDataTeam(client, g_iIndex[client]);
 
         char buffer[30];
         menu.GetItem(selection, buffer, sizeof(buffer));
@@ -189,7 +189,7 @@ public int WeaponMenuHandler(Menu menu, MenuAction action, int client, int selec
           g_iStatTrak[client][g_iIndex[client]][team] = 1 - g_iStatTrak[client][g_iIndex[client]][team];
 
           char teamName[4];
-          teamName = team == CS_TEAM_T ? "" : "ct_";
+          GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
           Format(updateFields, sizeof(updateFields), "%s%s_trak = %d", teamName, weaponName,
                  g_iStatTrak[client][g_iIndex[client]][team]);
           UpdatePlayerData(client, updateFields);
@@ -282,7 +282,7 @@ Menu CreateFloatMenu(int client) {
   char buffer[60];
   Menu menu = new Menu(FloatMenuHandler);
 
-  int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+  int team = GetWeaponDataTeam(client, g_iIndex[client]);
 
   float fValue = g_fFloatValue[client][g_iIndex[client]][team];
   fValue = fValue * 100.0;
@@ -308,7 +308,7 @@ public int FloatMenuHandler(Menu menu, MenuAction action, int client, int select
   switch (action) {
     case MenuAction_Select: {
       if (IsClientInGame(client)) {
-        int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+        int team = GetWeaponDataTeam(client, g_iIndex[client]);
 
         char buffer[30];
         menu.GetItem(selection, buffer, sizeof(buffer));
@@ -379,9 +379,9 @@ public Action FloatTimer(Handle timer, DataPack pack) {
     char weaponName[32];
     RemoveWeaponPrefix(g_WeaponClasses[index], weaponName, sizeof(weaponName));
 
-    int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[clientIndex]) ? CS_TEAM_T : GetClientTeam(clientIndex);
+    int team = GetWeaponDataTeam(clientIndex, g_iIndex[clientIndex]);
     char teamName[4];
-    teamName = team == CS_TEAM_T ? "" : "ct_";
+    GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
     Format(updateFields, sizeof(updateFields), "%s%s_float = %.2f", teamName, weaponName,
            g_fFloatValue[clientIndex][g_iIndex[clientIndex]][team]);
     UpdatePlayerData(clientIndex, updateFields);
@@ -394,7 +394,7 @@ public Action FloatTimer(Handle timer, DataPack pack) {
 }
 
 Menu CreateSeedMenu(int client) {
-  int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+  int team = GetWeaponDataTeam(client, g_iIndex[client]);
 
   Menu menu = new Menu(SeedMenuHandler);
 
@@ -430,7 +430,7 @@ public int SeedMenuHandler(Menu menu, MenuAction action, int client, int selecti
   switch (action) {
     case MenuAction_Select: {
       if (IsClientInGame(client)) {
-        int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+        int team = GetWeaponDataTeam(client, g_iIndex[client]);
 
         char buffer[30];
         menu.GetItem(selection, buffer, sizeof(buffer));
@@ -453,7 +453,7 @@ public int SeedMenuHandler(Menu menu, MenuAction action, int client, int selecti
           RemoveWeaponPrefix(g_WeaponClasses[g_iIndex[client]], weaponName, sizeof(weaponName));
 
           char teamName[4];
-          teamName = team == CS_TEAM_T ? "" : "ct_";
+          GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
           Format(updateFields, sizeof(updateFields), "%s%s_seed = %d", teamName, weaponName,
                  g_iWeaponSeed[client][g_iIndex[client]][team]);
           UpdatePlayerData(client, updateFields);
@@ -469,7 +469,7 @@ public int SeedMenuHandler(Menu menu, MenuAction action, int client, int selecti
           RemoveWeaponPrefix(g_WeaponClasses[g_iIndex[client]], weaponName, sizeof(weaponName));
 
           char teamName[4];
-          teamName = team == CS_TEAM_T ? "" : "ct_";
+          GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
           Format(updateFields, sizeof(updateFields), "%s%s_seed = -1", teamName, weaponName);
           UpdatePlayerData(client, updateFields);
           CreateTimer(0.1, SeedMenuTimer, GetClientUserId(client));
@@ -508,7 +508,7 @@ Menu CreateNameTagMenu(int client) {
   Menu menu = new Menu(NameTagMenuHandler);
 
   char buffer[128];
-  int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+  int team = GetWeaponDataTeam(client, g_iIndex[client]);
   StripHtml(g_NameTag[client][g_iIndex[client]][team], buffer, sizeof(buffer));
   menu.SetTitle("%T: %s", "SetNameTag", client, buffer);
 
@@ -554,10 +554,10 @@ public int NameTagMenuHandler(Menu menu, MenuAction action, int client, int sele
           char weaponName[32];
           RemoveWeaponPrefix(g_WeaponClasses[g_iIndex[client]], weaponName, sizeof(weaponName));
 
-          int team = IsWeaponIndexInOnlyOneTeam(g_iIndex[client]) ? CS_TEAM_T : GetClientTeam(client);
+          int team = GetWeaponDataTeam(client, g_iIndex[client]);
           g_NameTag[client][g_iIndex[client]][team] = "";
           char teamName[4];
-          teamName = team == CS_TEAM_T ? "" : "ct_";
+          GetWeaponTeamPrefix(team, teamName, sizeof(teamName));
           Format(updateFields, sizeof(updateFields), "%s%s_tag = ''", teamName, weaponName);
           UpdatePlayerData(client, updateFields);
 
@@ -790,7 +790,7 @@ Menu CreateWeaponMenu(int client) {
   Format(buffer, sizeof(buffer), "%T", "SetSkin", client);
   menu.AddItem("skin", buffer);
 
-  int team = IsWeaponIndexInOnlyOneTeam(index) ? CS_TEAM_T : GetClientTeam(client);
+  int team = GetWeaponDataTeam(client, index);
   bool weaponHasSkin = (g_iSkins[client][index][team] != 0);
 
   if (g_bEnablePaints) {
