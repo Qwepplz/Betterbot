@@ -6,45 +6,75 @@ void GetPlayerData(int client)
 	}
 
 	char steamid[32];
-	GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid), true);
+	if (!GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid), true))
+	{
+		return;
+	}
+
 	char query[255];
 	FormatEx(query, sizeof(query), "SELECT * FROM %sgloves WHERE steamid = '%s'", g_TablePrefix, steamid);
-	db.Query(T_GetPlayerDataCallback, query, client);
+	db.Query(T_GetPlayerDataCallback, query, GetClientUserId(client));
 }
 
-public void T_GetPlayerDataCallback(Database database, DBResultSet results, const char[] error, int client)
+public void T_GetPlayerDataCallback(Database database, DBResultSet results, const char[] error, int userid)
 {
-	if (IsValidClient(client))
+	int client = GetClientOfUserId(userid);
+	if (!IsValidClient(client))
 	{
-		if (results == null)
+		return;
+	}
+
+	if (results == null)
+	{
+		LogError("Query failed! %s", error);
+		return;
+	}
+
+	g_iGroup[client][CS_TEAM_T] = 0;
+	g_iGloves[client][CS_TEAM_T] = 0;
+	g_fFloatValue[client][CS_TEAM_T] = 0.0;
+	g_iGroup[client][CS_TEAM_CT] = 0;
+	g_iGloves[client][CS_TEAM_CT] = 0;
+	g_fFloatValue[client][CS_TEAM_CT] = 0.0;
+
+	if (results.RowCount == 0)
+	{
+		char steamid[32];
+		if (GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid), true))
 		{
-			LogError("Query failed! %s", error);
-		}
-		else if (results.RowCount == 0)
-		{
-			char steamid[32];
-			GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid), true);
 			char query[255];
 			FormatEx(query, sizeof(query), "INSERT INTO %sgloves (steamid) VALUES ('%s')", g_TablePrefix, steamid);
 			db.Query(T_InsertCallback, query);
-			g_iGroup[client][CS_TEAM_T] = 0;
-			g_iGloves[client][CS_TEAM_T] = 0;
-			g_fFloatValue[client][CS_TEAM_T] = 0.0;
-			g_iGroup[client][CS_TEAM_CT] = 0;
-			g_iGloves[client][CS_TEAM_CT] = 0;
-			g_fFloatValue[client][CS_TEAM_CT] = 0.0;
 		}
-		else
+		return;
+	}
+
+	if (results.FetchRow())
+	{
+		int field;
+		if (results.FieldNameToNum("t_group", field))
 		{
-			if (results.FetchRow())
-			{
-				for (int i = 1, j = 2; j < 4; i += 3, j++)
-				{
-					g_iGroup[client][j] = results.FetchInt(i);
-					g_iGloves[client][j] = results.FetchInt(i + 1);
-					g_fFloatValue[client][j] = results.FetchFloat(i + 2);
-				}
-			}
+			g_iGroup[client][CS_TEAM_T] = results.FetchInt(field);
+		}
+		if (results.FieldNameToNum("t_glove", field))
+		{
+			g_iGloves[client][CS_TEAM_T] = results.FetchInt(field);
+		}
+		if (results.FieldNameToNum("t_float", field))
+		{
+			g_fFloatValue[client][CS_TEAM_T] = results.FetchFloat(field);
+		}
+		if (results.FieldNameToNum("ct_group", field))
+		{
+			g_iGroup[client][CS_TEAM_CT] = results.FetchInt(field);
+		}
+		if (results.FieldNameToNum("ct_glove", field))
+		{
+			g_iGloves[client][CS_TEAM_CT] = results.FetchInt(field);
+		}
+		if (results.FieldNameToNum("ct_float", field))
+		{
+			g_fFloatValue[client][CS_TEAM_CT] = results.FetchFloat(field);
 		}
 	}
 }
@@ -108,15 +138,41 @@ public void T_CreateTableCallback(Database database, DBResultSet results, const 
 	if (results == null)
 	{
 		LogError("Create table failed! %s", error);
+		return;
 	}
-	else
+
+	MigrateMainTableColumns();
+	LoadConnectedClients();
+}
+
+void MigrateMainTableColumns()
+{
+	char query[255];
+	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN t_group int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
+	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN t_glove int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
+	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN t_float decimal(3,2) NOT NULL DEFAULT '0.0'", g_TablePrefix);
+	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN ct_group int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
+	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN ct_glove int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
+	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN ct_float decimal(3,2) NOT NULL DEFAULT '0.0'", g_TablePrefix);
+	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+}
+
+public void T_MigrateTableCallback(Database database, DBResultSet results, const char[] error, any data)
+{
+}
+
+void LoadConnectedClients()
+{
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		for (int i = 1; i <= MaxClients; i++)
+		if (IsClientConnected(i))
 		{
-			if (IsClientConnected(i))
-			{
-				OnClientPostAdminCheck(i);
-			}
+			OnClientPostAdminCheck(i);
 		}
 	}
 }

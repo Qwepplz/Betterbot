@@ -45,3 +45,21 @@ stock void FixCustomArms(int client)
 		SetEntPropString(client, Prop_Send, "m_szArmsModel", "");
 	}
 }
+
+stock void ClearPlayerWearables(int client)
+{
+	int ent = GetEntPropEnt(client, Prop_Send, "m_hMyWearables");
+	if (ent != -1 && IsValidEntity(ent))
+	{
+		AcceptEntityInput(ent, "KillHierarchy");
+	}
+	SetEntPropEnt(client, Prop_Send, "m_hMyWearables", -1);
+}
+
+stock void ForceClientUpdate(int client)
+{
+	if (g_hForceUpdate != INVALID_HANDLE && IsValidClient(client))
+	{
+		SDKCall(g_hForceUpdate, client, -1);
+	}
+}

@@ -40,7 +40,17 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_eldiven", CommandGlove);
 	RegConsoleCmd("sm_gllang", CommandGloveLang);
 
-	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Pre);
+	GameData gameData = new GameData("botinventory.games");
+	if (gameData != null)
+	{
+		StartPrepSDKCall(SDKCall_Player);
+		PrepSDKCall_SetFromConf(gameData, SDKConf_Virtual, "CGameClient::UpdateAcknowledgedFramecount");
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		g_hForceUpdate = EndPrepSDKCall();
+		delete gameData;
+	}
+
+	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
 
 	AddCommandListener(ChatListener, "say");
 	AddCommandListener(ChatListener, "say2");
@@ -126,13 +136,9 @@ public void GivePlayerGloves(int client)
 	int playerTeam = GetClientTeam(client);
 	if (g_iGloves[client][playerTeam] != 0)
 	{
-		int ent = GetEntPropEnt(client, Prop_Send, "m_hMyWearables");
-		if (ent != -1)
-		{
-			AcceptEntityInput(ent, "KillHierarchy");
-		}
+		ClearPlayerWearables(client);
 		FixCustomArms(client);
-		ent = CreateEntityByName("wearable_item");
+		int ent = CreateEntityByName("wearable_item");
 		if (ent != -1)
 		{
 			SetEntProp(ent, Prop_Send, "m_iItemIDLow", -1);
@@ -161,6 +167,7 @@ public void GivePlayerGloves(int client)
 
 			SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
 			if (g_iEnableWorldModel) SetEntProp(client, Prop_Send, "m_nBody", 1);
+			ForceClientUpdate(client);
 		}
 	}
 }

@@ -68,10 +68,6 @@ stock bool CanApplyNamedItemOverride(int client) {
     return false;
   }
 
-  if (GameRules_GetProp("m_bWarmupPeriod") == 1) {
-    return false;
-  }
-
   return true;
 }
 

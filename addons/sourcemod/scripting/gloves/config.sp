@@ -50,7 +50,7 @@ public void ReadConfig()
 			char index[10];
 			char group[10];
 			char team[32];
-			char temp[1];
+			char temp[2];
 			char buffer[20];
 
 			KvGetSectionName(kv, name, sizeof(name));
