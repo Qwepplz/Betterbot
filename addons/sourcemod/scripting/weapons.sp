@@ -102,6 +102,7 @@ public void OnPluginStart() {
 
   PTaH(PTaH_GiveNamedItemPre, Hook, GiveNamedItemPre);
   PTaH(PTaH_GiveNamedItemPost, Hook, GiveNamedItemPost);
+  HookEvent("player_death", EventPlayerDeath, EventHookMode_Pre);
 
   // ConVar g_cvGameType = FindConVar("game_type");
   // ConVar g_cvGameMode = FindConVar("game_mode");
@@ -285,5 +286,6 @@ public Action ReserveAmmoTimer(Handle timer, DataPack pack) {
   if (clientIndex > 0 && IsClientInGame(clientIndex)) {
     SetEntData(clientIndex, offset, ammo, 4, true);
   }
+  return Plugin_Stop;
 }
 

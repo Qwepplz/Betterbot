@@ -106,6 +106,16 @@ stock void RemoveWeaponPrefix(const char[] source, char[] output, int size) {
   strcopy(output, size, source[7]);
 }
 
+stock bool GetKnifeIconFallbackName(const char[] weaponName, int team, char[] output, int size) {
+  if (StrEqual(weaponName, "knife_balisong") || StrEqual(weaponName, "weapon_knife_balisong") ||
+      StrEqual(weaponName, "knife_kunai") || StrEqual(weaponName, "weapon_knife_kunai") ||
+      StrEqual(weaponName, "knife_cs15") || StrEqual(weaponName, "weapon_knife_cs15")) {
+    strcopy(output, size, team == CS_TEAM_T ? "knife_t" : "knife");
+    return true;
+  }
+  return false;
+}
+
 stock bool ClassByDefIndex(int index, char[] class, int size) {
   switch (index) {
     case 42: {

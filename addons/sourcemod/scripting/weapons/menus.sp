@@ -214,7 +214,7 @@ public int WeaponMenuHandler(Menu menu, MenuAction action, int client, int selec
           }
         } else if (StrEqual(buffer, "applyother")) {
           if (IsWeaponIndexInOnlyOneTeam(g_iIndex[client])) {
-            return;
+            return 0;
           }
 
           char weaponName[32];
@@ -264,6 +264,7 @@ public int WeaponMenuHandler(Menu menu, MenuAction action, int client, int selec
       delete menu;
     }
   }
+  return 0;
 }
 
 public Action StatTrakMenuTimer(Handle timer, int userid) {
@@ -274,6 +275,7 @@ public Action StatTrakMenuTimer(Handle timer, int userid) {
       CreateWeaponMenu(clientIndex).Display(clientIndex, menuTime);
     }
   }
+  return Plugin_Stop;
 }
 
 Menu CreateFloatMenu(int client) {
@@ -364,6 +366,7 @@ public int FloatMenuHandler(Menu menu, MenuAction action, int client, int select
       delete menu;
     }
   }
+  return 0;
 }
 
 public Action FloatTimer(Handle timer, DataPack pack) {
@@ -387,6 +390,7 @@ public Action FloatTimer(Handle timer, DataPack pack) {
   }
 
   g_FloatTimer[clientIndex] = INVALID_HANDLE;
+  return Plugin_Stop;
 }
 
 Menu CreateSeedMenu(int client) {
@@ -486,6 +490,7 @@ public int SeedMenuHandler(Menu menu, MenuAction action, int client, int selecti
       delete menu;
     }
   }
+  return 0;
 }
 
 public Action SeedMenuTimer(Handle timer, int userid) {
@@ -496,6 +501,7 @@ public Action SeedMenuTimer(Handle timer, int userid) {
       CreateSeedMenu(clientIndex).Display(clientIndex, menuTime);
     }
   }
+  return Plugin_Stop;
 }
 
 Menu CreateNameTagMenu(int client) {
@@ -576,6 +582,7 @@ public int NameTagMenuHandler(Menu menu, MenuAction action, int client, int sele
       delete menu;
     }
   }
+  return 0;
 }
 
 /* NAMETAGCOLOR
@@ -725,6 +732,7 @@ public int AllWeaponsPaintsMenuHandler(Menu menu, MenuAction action, int client,
       delete menu;
     }
   }
+  return 0;
 }
 
 Menu CreateAllWeaponsMenu(int client) {
@@ -768,6 +776,7 @@ public int AllWeaponsMenuHandler(Menu menu, MenuAction action, int client, int s
       delete menu;
     }
   }
+  return 0;
 }
 
 Menu CreateWeaponMenu(int client) {
@@ -858,6 +867,7 @@ public int MainMenuHandler(Menu menu, MenuAction action, int client, int selecti
       delete menu;
     }
   }
+  return 0;
 }
 
 Menu CreateMainMenu(int client) {
@@ -985,5 +995,6 @@ public int LanguageMenuHandler(Menu menu, MenuAction action, int client, int sel
       delete menu;
     }
   }
+  return 0;
 }
 

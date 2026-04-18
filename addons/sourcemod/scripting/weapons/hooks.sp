@@ -62,6 +62,21 @@ public void GiveNamedItemPost(int client, const char[] classname, const CEconIte
   }
 }
 
+public Action EventPlayerDeath(Event event, const char[] name, bool dontBroadcast) {
+  char weapon[64];
+  event.GetString("weapon", weapon, sizeof(weapon));
+
+  int attacker = GetClientOfUserId(event.GetInt("attacker"));
+  int team = attacker > 0 && attacker <= MaxClients ? GetClientTeam(attacker) : CS_TEAM_CT;
+
+  if (GetKnifeIconFallbackName(weapon, team, weapon, sizeof(weapon))) {
+    event.SetString("weapon", weapon);
+    return Plugin_Changed;
+  }
+
+  return Plugin_Continue;
+}
+
 public Action ChatListener(int client, const char[] command, int args) {
   char msg[128];
   GetCmdArgString(msg, sizeof(msg));
