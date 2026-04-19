@@ -206,7 +206,22 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 		g_aLastKilledBy[attacker] = 0;
 		g_aLastKilledTime[attacker] = 0;
 		if (g_bAnnounceRevengeGlobal && IsClientInGame(attacker) && IsClientInGame(victim))
-			CPrintToChatAll("%s %t", MSG, "RevengeGlobal", g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], 2);
+		{
+			for (int i = 1; i <= MaxClients; i++)
+			{
+				if (!IsClientInGame(i) || IsFakeClient(i))
+					continue;
+				
+				if (CSkipList[i])
+				{
+					CSkipList[i] = false;
+					continue;
+				}
+				
+				CPrintToChat(i, "%s %T", MSG, "RevengeGlobal", i, g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], 2);
+				CSkipList[i] = false;
+			}
+		}
 	}
 
 	int bonus = 0;
@@ -244,7 +259,7 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 					continue;
 
 				Format(streakName, sizeof(streakName), "%T", streakPhrase, i);
-				CPrintToChat(i, "%s %t", MSG, "KillStreakGlobal", g_aClientName[attacker], g_aStats[attacker].SCORE, streakName, bonus);
+				CPrintToChat(i, "%s %T", MSG, "KillStreakGlobal", i, g_aClientName[attacker], g_aStats[attacker].SCORE, streakName, bonus);
 			}
 		}
 	}

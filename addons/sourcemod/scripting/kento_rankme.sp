@@ -1274,7 +1274,17 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			if (g_bChatChange && g_PointsFb > 0)
 				if(!hidechat[attacker])	CPrintToChat(attacker, "%s %T", MSG, "First Blood", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsFb);
 			if (g_bAnnounceFirstBloodGlobal && IsClientInGame(attacker) && IsClientInGame(victim))
-				CPrintToChatAll("%s %t", MSG, "FirstBloodGlobal", g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], g_PointsFb);
+			{
+				for (int i = 1; i <= MaxClients; i++)
+				{
+					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
+					{
+						CPrintToChat(i, "%s %T", MSG, "FirstBloodGlobal", i, g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], g_PointsFb);
+					}
+					
+					CSkipList[i] = false;
+				}
+			}
 		}
 		
 		/* No scope */
@@ -1966,22 +1976,50 @@ public Action RankConnectCallback(int client, int rank, any data)
 	{
 		if(g_bAnnounceConnect){
 			if(g_bAnnounceConnectChat){
-				CPrintToChatAll("%s %t",MSG,"PlayerJoinedChat",sClientName,g_aRankOnConnect[client],g_aPointsOnConnect[client],s_Country);
+				for (int i = 1; i <= MaxClients; i++)
+				{
+					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
+					{
+						CPrintToChat(i, "%s %T", MSG, "PlayerJoinedChat", i, sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
+					}
+					
+					CSkipList[i] = false;
+				}
 			}
 			
 			if(g_bAnnounceConnectHint){
-				PrintHintTextToAll("%t","PlayerJoinedHint",sClientName,g_aRankOnConnect[client],g_aPointsOnConnect[client],s_Country);		
+				for (int i = 1; i <= MaxClients; i++)
+				{
+					if (IsClientInGame(i))
+					{
+						PrintHintText(i, "%T", "PlayerJoinedHint", i, sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
+					}
+				}
 			}
 		}
 		
 		if(g_bAnnounceTopConnect && rank <= g_AnnounceTopPosConnect){
 			
 			if(g_bAnnounceTopConnectChat){	
-				CPrintToChatAll("%s %t",MSG,"TopPlayerJoinedChat",g_AnnounceTopPosConnect,sClientName,g_aRankOnConnect[client],s_Country);			
+				for (int i = 1; i <= MaxClients; i++)
+				{
+					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
+					{
+						CPrintToChat(i, "%s %T", MSG, "TopPlayerJoinedChat", i, g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
+					}
+					
+					CSkipList[i] = false;
+				}
 			}
 			
 			if(g_bAnnounceTopConnectHint){
-				PrintHintTextToAll("%t","TopPlayerJoinedHint",g_AnnounceTopPosConnect,sClientName,g_aRankOnConnect[client],s_Country);
+				for (int i = 1; i <= MaxClients; i++)
+				{
+					if (IsClientInGame(i))
+					{
+						PrintHintText(i, "%T", "TopPlayerJoinedHint", i, g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
+					}
+				}
 			}
 		}
 	}
@@ -2009,7 +2047,15 @@ public void Event_PlayerDisconnect(Handle event, const char[] name, bool dontBro
 	char disconnectReason[64];
 	GetEventString(event, "reason", disconnectReason, sizeof(disconnectReason));
 	
-	CPrintToChatAll("%s %t",MSG,"PlayerLeft",g_sBufferClientName[client], g_aPointsOnDisconnect[client], disconnectReason);
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
+		{
+			CPrintToChat(i, "%s %T", MSG, "PlayerLeft", i, g_sBufferClientName[client], g_aPointsOnDisconnect[client], disconnectReason);
+		}
+		
+		CSkipList[i] = false;
+	}
 }
 
 /* Enable Or Disable Points In Warmup */

@@ -495,7 +495,7 @@ public void SQL_TopHSCallback(Handle owner, Handle hndl, const char[] error, any
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Headshots",SQL_FetchInt(hndl,12));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Headshots",client,SQL_FetchInt(hndl,12));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
@@ -610,7 +610,7 @@ public void SQL_TopKillsCallback(Handle owner, Handle hndl, const char[] error, 
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Kills",SQL_FetchInt(hndl,5));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,5));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
@@ -725,7 +725,7 @@ public void SQL_TopDeathsCallback(Handle owner, Handle hndl, const char[] error,
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Deaths",SQL_FetchInt(hndl,6));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Deaths",client,SQL_FetchInt(hndl,6));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
@@ -1883,101 +1883,102 @@ public Action CMD_RankMe(int client, int args){
 	
 	SetMenuExitButton(hMenu,true);
 	
-	hMenu.SetTitle("%t", "RankMe Menu");
-	
 	char temp[512];
-	Format(temp, sizeof(temp), "%t", "My Rank");
+	Format(temp, sizeof(temp), "%T", "RankMe Menu", client);
+	hMenu.SetTitle(temp);
+	
+	Format(temp, sizeof(temp), "%T", "My Rank", client);
 	hMenu.AddItem("rank", temp);
 	
 	if(g_bResetOwnRank)
 	{
-		Format(temp, sizeof(temp), "%t", "Reset My Rank");
+		Format(temp, sizeof(temp), "%T", "Reset My Rank", client);
 		hMenu.AddItem("resetmyrank", temp);
 	}
 	
-	Format(temp, sizeof(temp), "%t", "My Stats");
+	Format(temp, sizeof(temp), "%T", "My Stats", client);
 	hMenu.AddItem("statsme", temp);
 
-	Format(temp, sizeof(temp), "%t", "Session");
+	Format(temp, sizeof(temp), "%T", "Session", client);
 	hMenu.AddItem("session", temp);
 	
-	Format(temp, sizeof(temp), "%t", "Show Other Players Stats");
+	Format(temp, sizeof(temp), "%T", "Show Other Players Stats", client);
 	hMenu.AddItem("statsme2", temp);
 	
-	Format(temp, sizeof(temp), "%t", "My HitBox Stats");
+	Format(temp, sizeof(temp), "%T", "My HitBox Stats", client);
 	hMenu.AddItem("hitboxme", temp);
 	
-	Format(temp, sizeof(temp), "%t", "My Weapon Stats");
+	Format(temp, sizeof(temp), "%T", "My Weapon Stats", client);
 	hMenu.AddItem("weaponme", temp);
 	
-	Format(temp, sizeof(temp), "%t", "Show Players Above Me");
+	Format(temp, sizeof(temp), "%T", "Show Players Above Me", client);
 	hMenu.AddItem("next", temp);
 	
-	Format(temp, sizeof(temp), "%t", "TOP 10");
+	Format(temp, sizeof(temp), "%T", "TOP 10", client);
 	hMenu.AddItem("top10", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Kills");
+	Format(temp, sizeof(temp), "%T", "TOP Kills", client);
 	hMenu.AddItem("topkills", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Deaths");
+	Format(temp, sizeof(temp), "%T", "TOP Deaths", client);
 	hMenu.AddItem("topdeaths", temp);
 	
-	Format(temp, sizeof(temp), "%t", "TOP Assists");
+	Format(temp, sizeof(temp), "%T", "TOP Assists", client);
 	hMenu.AddItem("topassists", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP HS");
+	Format(temp, sizeof(temp), "%T", "TOP HS", client);
 	hMenu.AddItem("tophs", temp);
 	
-	Format(temp, sizeof(temp), "%t", "TOP Weapon");
+	Format(temp, sizeof(temp), "%T", "TOP Weapon", client);
 	hMenu.AddItem("topweapon", temp);
 	
-	Format(temp, sizeof(temp), "%t", "TOP TK");
+	Format(temp, sizeof(temp), "%T", "TOP TK", client);
 	hMenu.AddItem("toptk", temp);
 	
-	Format(temp, sizeof(temp), "%t", "TOP MVP");
+	Format(temp, sizeof(temp), "%T", "TOP MVP", client);
 	hMenu.AddItem("topmvp", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Damage");
+	Format(temp, sizeof(temp), "%T", "TOP Damage", client);
 	hMenu.AddItem("topdamage", temp);
 	
-	Format(temp, sizeof(temp), "%t", "TOP Accuracy");
+	Format(temp, sizeof(temp), "%T", "TOP Accuracy", client);
 	hMenu.AddItem("topacc", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Time Connected");
+	Format(temp, sizeof(temp), "%T", "TOP Time Connected", client);
 	hMenu.AddItem("toptime", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP KDR");
+	Format(temp, sizeof(temp), "%T", "TOP KDR", client);
 	hMenu.AddItem("topkdr", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Points");
+	Format(temp, sizeof(temp), "%T", "TOP Points", client);
 	hMenu.AddItem("toppoints", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP First Blood");
+	Format(temp, sizeof(temp), "%T", "TOP First Blood", client);
 	hMenu.AddItem("topfb", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Noscope");
+	Format(temp, sizeof(temp), "%T", "TOP Noscope", client);
 	hMenu.AddItem("topns", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Noscope Distance");
+	Format(temp, sizeof(temp), "%T", "TOP Noscope Distance", client);
 	hMenu.AddItem("topnsd", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Flashed Kill");
+	Format(temp, sizeof(temp), "%T", "TOP Flashed Kill", client);
 	hMenu.AddItem("topfk", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Thru Smoke");
+	Format(temp, sizeof(temp), "%T", "TOP Thru Smoke", client);
 	hMenu.AddItem("topthrusmoke", temp);
 
-	Format(temp, sizeof(temp), "%t", "TOP Wallbang");
+	Format(temp, sizeof(temp), "%T", "TOP Wallbang", client);
 	hMenu.AddItem("topwall", temp);
 	
 	if(CheckCommandAccess(client, "sm_resetrank", ADMFLAG_ROOT))
 	{
-		Format(temp, sizeof(temp), "%t", "Reset a player rank");
+		Format(temp, sizeof(temp), "%T", "Reset a player rank", client);
 		hMenu.AddItem("resetrank", temp);
 	}	
 	if(CheckCommandAccess(client, "sm_resetrank_all", ADMFLAG_ROOT))
 	{
-		Format(temp, sizeof(temp), "%t", "Reset all the rank");
+		Format(temp, sizeof(temp), "%T", "Reset all the rank", client);
 		hMenu.AddItem("resetrankall", temp);
 	}
 	
@@ -2225,7 +2226,7 @@ public void SQL_TopAssistsCallback(Handle owner, Handle hndl, const char[] error
 		
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Assists",SQL_FetchInt(hndl,7));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Assists",client,SQL_FetchInt(hndl,7));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
@@ -2341,7 +2342,7 @@ public void SQL_TopTKCallback(Handle owner, Handle hndl, const char[] error, any
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"TKs",SQL_FetchInt(hndl,9));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"TKs",client,SQL_FetchInt(hndl,9));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
@@ -2457,7 +2458,7 @@ public void SQL_TopMVPCallback(Handle owner, Handle hndl, const char[] error, an
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"MVPs",SQL_FetchInt(hndl,75));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"MVPs",client,SQL_FetchInt(hndl,75));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
@@ -2573,7 +2574,7 @@ public void SQL_TopDamageCallback(Handle owner, Handle hndl, const char[] error,
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %t: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Damage",SQL_FetchInt(hndl,74));
+		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Damage",client,SQL_FetchInt(hndl,74));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
 			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
