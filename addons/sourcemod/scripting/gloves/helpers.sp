@@ -1,3 +1,29 @@
+enum Get5State {
+	Get5State_None,
+	Get5State_PreVeto,
+	Get5State_Veto,
+	Get5State_Warmup,
+	Get5State_KnifeRound,
+	Get5State_WaitingForKnifeRoundDecision,
+	Get5State_GoingLive,
+	Get5State_Live,
+	Get5State_PendingRestore,
+	Get5State_PostGame,
+};
+
+native Get5State Get5_GetGameState();
+
+stock bool IsGet5CosmeticUnsafePhase()
+{
+	if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available)
+	{
+		return false;
+	}
+
+	Get5State state = Get5_GetGameState();
+	return state == Get5State_KnifeRound || state == Get5State_WaitingForKnifeRoundDecision || state == Get5State_GoingLive;
+}
+
 stock void GetRandomSkin(int client, int team, char[] output, int outputSize, int group = -1)
 {
 	int max;

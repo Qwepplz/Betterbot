@@ -34,6 +34,11 @@
 #include "weapons/menus.sp"
 
 // clang-format off
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+  MarkNativeAsOptional("Get5_GetGameState");
+  return APLRes_Success;
+}
+
 public Plugin myinfo = 
 {
 	name = "Weapons & Knives (Modify by Bone)",
@@ -219,6 +224,10 @@ void SetWeaponProps(int client, int entity) {
 }
 
 void RefreshWeapon(int client, int index, bool defaultKnife = false) {
+  if (!CanApplyNamedItemOverride(client) || IsGet5CosmeticUnsafePhase()) {
+    return;
+  }
+
   int size = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 
   for (int i = 0; i < size; i++) {

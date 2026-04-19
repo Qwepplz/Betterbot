@@ -27,7 +27,7 @@ public void UnhookPlayer(int client) {
 
 public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView,
                         bool &OriginIsNULL, float Origin[3]) {
-  if (!CanApplyNamedItemOverride(client) || !IsKnifeClass(classname)) {
+  if (!CanApplyNamedItemOverride(client) || IsGet5CosmeticUnsafePhase() || !IsKnifeClass(classname)) {
     return Plugin_Continue;
   }
 
@@ -61,7 +61,7 @@ public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &it
 
 public void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL,
                        const float Origin[3]) {
-  if (!CanApplyNamedItemOverride(client) || !IsValidWeapon(entity)) {
+  if (!CanApplyNamedItemOverride(client) || IsGet5CosmeticUnsafePhase() || !IsValidWeapon(entity)) {
     return;
   }
 

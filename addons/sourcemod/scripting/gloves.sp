@@ -124,6 +124,11 @@ public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult res
 
 public void GivePlayerGloves(int client)
 {
+	if (!IsValidClient(client) || !IsPlayerAlive(client) || IsGet5CosmeticUnsafePhase())
+	{
+		return;
+	}
+
 	int playerTeam = GetClientGloveTeam(client);
 	if (playerTeam < CS_TEAM_T || playerTeam > CS_TEAM_CT || g_iGloves[client][playerTeam] == 0)
 	{

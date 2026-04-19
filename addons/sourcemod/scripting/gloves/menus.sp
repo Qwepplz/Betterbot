@@ -23,7 +23,7 @@ public int GloveMenuHandler(Menu menu, MenuAction action, int client, int select
 				Format(updateFields, sizeof(updateFields), "%s_group = %d, %s_glove = %d", teamName, groupId, teamName, gloveId);
 				UpdatePlayerData(client, updateFields);
 
-				if (IsClientsCurrentGloveTeam(client, team))
+				if (IsClientsCurrentGloveTeam(client, team) && !IsGet5CosmeticUnsafePhase())
 				{
 					int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 					if (activeWeapon != -1)

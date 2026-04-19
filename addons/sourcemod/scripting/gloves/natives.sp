@@ -1,5 +1,6 @@
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	MarkNativeAsOptional("Get5_GetGameState");
 	CreateNative("Gloves_IsClientUsingGloves", Native_IsClientUsingGloves);
 	CreateNative("Gloves_RegisterCustomArms", Native_RegisterCustomArms);
 	CreateNative("Gloves_SetArmsModel", Native_SetArmsModel);

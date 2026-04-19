@@ -15,6 +15,21 @@
  * this program. If not, see http://www.gnu.org/licenses/.
  */
 
+enum Get5State {
+  Get5State_None,
+  Get5State_PreVeto,
+  Get5State_Veto,
+  Get5State_Warmup,
+  Get5State_KnifeRound,
+  Get5State_WaitingForKnifeRoundDecision,
+  Get5State_GoingLive,
+  Get5State_Live,
+  Get5State_PendingRestore,
+  Get5State_PostGame,
+};
+
+native Get5State Get5_GetGameState();
+
 stock void StripHtml(const char[] source, char[] output, int size) {
   int start, end;
   strcopy(output, size, source);
@@ -56,6 +71,16 @@ stock bool IsValidClient(int client) {
     return false;
   }
   return true;
+}
+
+stock bool IsGet5CosmeticUnsafePhase() {
+  if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available) {
+    return false;
+  }
+
+  Get5State state = Get5_GetGameState();
+  return state == Get5State_KnifeRound || state == Get5State_WaitingForKnifeRoundDecision ||
+         state == Get5State_GoingLive;
 }
 
 stock bool CanApplyNamedItemOverride(int client) {
