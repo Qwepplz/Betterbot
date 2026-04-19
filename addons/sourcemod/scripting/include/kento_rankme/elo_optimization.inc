@@ -218,7 +218,9 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 					continue;
 				}
 				
-				CPrintToChat(i, "%s %T", MSG, "RevengeGlobal", i, g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], 2);
+				char message[256];
+				FormatRankMeRevengeGlobalMessage(i, message, sizeof(message), g_aClientName[attacker], g_aClientName[victim], 2);
+				CPrintToChat(i, "%s %s", MSG, message);
 				CSkipList[i] = false;
 			}
 		}
@@ -252,14 +254,14 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 		AddEloBonus(attacker, bonus);
 		if (g_bAnnounceKillStreakGlobal && IsClientInGame(attacker))
 		{
-			char streakName[64];
 			for (int i = 1; i <= MaxClients; i++)
 			{
 				if (!IsClientInGame(i) || IsFakeClient(i))
 					continue;
 
-				Format(streakName, sizeof(streakName), "%T", streakPhrase, i);
-				CPrintToChat(i, "%s %T", MSG, "KillStreakGlobal", i, g_aClientName[attacker], g_aStats[attacker].SCORE, streakName, bonus);
+				char message[256];
+				FormatRankMeKillStreakGlobalMessage(i, message, sizeof(message), g_aClientName[attacker], g_aStats[attacker].SCORE, streakPhrase, bonus);
+				CPrintToChat(i, "%s %s", MSG, message);
 			}
 		}
 	}

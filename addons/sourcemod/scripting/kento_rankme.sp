@@ -102,6 +102,10 @@ Handle hidechatcookie;
 bool hidechat[MAXPLAYERS+1];
 
 char MSG[64];
+int g_iRankMeLanguageEnglish = -1;
+int g_iRankMeLanguageChineseSimplified = -1;
+int g_iRankMeLanguageChineseTraditional = -1;
+int g_iRankMeClientLanguage[MAXPLAYERS + 1];
 
 #include <kento_rankme/cvars>
 #include <kento_rankme/elo_optimization>
@@ -206,6 +210,7 @@ public void OnPluginStart() {
 		
 	// LOAD TRANSLATIONS
 	LoadTranslations("kento.rankme.phrases");
+	InitializeRankMeLanguageTargets();
 	
 	//	Hook the say and say_team for chat triggers
 	AddCommandListener(OnSayText, "say");
@@ -227,6 +232,12 @@ public void OnPluginStart() {
 
 	Format(MSG, sizeof(MSG), "%t", "Chat Prefix");
 	InitializeErrorHandling();
+
+	for (int i = 1; i <= MaxClients; i++) {
+		if (IsClientConnected(i) && !IsFakeClient(i)) {
+			RefreshRankMeClientLanguage(i);
+		}
+	}
 }
 
 public void OnConVarChanged_SQLTable(Handle convar, const char[] oldValue, const char[] newValue) {
@@ -518,6 +529,271 @@ void LoadHideChatPreference(int client) {
 		hidechat[client] = false;
 	else if (StrEqual(buffer, "1"))
 		hidechat[client] = true;
+}
+
+void InitializeRankMeLanguageTargets() {
+	g_iRankMeLanguageEnglish = GetLanguageByCode("en");
+	g_iRankMeLanguageChineseSimplified = GetLanguageByCode("chi");
+	g_iRankMeLanguageChineseTraditional = GetLanguageByCode("zho");
+}
+
+bool IsRankMeTraditionalLanguageValue(const char[] value) {
+	return StrEqual(value, "tchinese", false)
+		|| StrEqual(value, "zho", false)
+		|| StrEqual(value, "zh-hant", false)
+		|| StrContains(value, "traditional", false) != -1;
+}
+
+bool IsRankMeChineseLanguageValue(const char[] value) {
+	return StrEqual(value, "schinese", false)
+		|| StrEqual(value, "chi", false)
+		|| StrEqual(value, "zh-hans", false)
+		|| StrContains(value, "simplified", false) != -1
+		|| StrContains(value, "chinese", false) != -1
+		|| IsRankMeTraditionalLanguageValue(value);
+}
+
+int ResolveRankMeLanguageFromValue(const char[] value) {
+	if (IsRankMeTraditionalLanguageValue(value) && g_iRankMeLanguageChineseTraditional >= 0) {
+		return g_iRankMeLanguageChineseTraditional;
+	}
+	
+	if (IsRankMeChineseLanguageValue(value)) {
+		if (g_iRankMeLanguageChineseSimplified >= 0) {
+			return g_iRankMeLanguageChineseSimplified;
+		}
+		
+		if (g_iRankMeLanguageChineseTraditional >= 0) {
+			return g_iRankMeLanguageChineseTraditional;
+		}
+	}
+	
+	return g_iRankMeLanguageEnglish;
+}
+
+int GetFallbackRankMeLanguage() {
+	if (g_iRankMeLanguageEnglish >= 0) {
+		return g_iRankMeLanguageEnglish;
+	}
+
+	return GetServerLanguage();
+}
+
+void ApplyRankMeLanguage(int client, int language) {
+	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
+		return;
+	}
+
+	if (language < 0) {
+		language = g_iRankMeLanguageEnglish;
+	}
+
+	g_iRankMeClientLanguage[client] = language;
+
+	if (GetClientLanguage(client) != language) {
+		SetClientLanguage(client, language);
+	}
+}
+
+void RefreshRankMeClientLanguage(int client) {
+	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
+		return;
+	}
+
+	ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
+	QueryClientConVar(client, "cl_language", OnRankMeLanguageQueried);
+}
+
+public void OnRankMeLanguageQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any value) {
+	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
+		return;
+	}
+	
+	if (result == ConVarQuery_Okay && cvarValue[0] != '\0') {
+		int sourceModLanguage = GetLanguageByName(cvarValue);
+		if (sourceModLanguage == -1) {
+			sourceModLanguage = GetLanguageByCode(cvarValue);
+		}
+		if (sourceModLanguage == -1) {
+			sourceModLanguage = ResolveRankMeLanguageFromValue(cvarValue);
+		}
+
+		ApplyRankMeLanguage(client, sourceModLanguage);
+		return;
+	}
+	
+	ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
+}
+
+bool IsRankMeTraditionalLanguage(int language) {
+	return language == g_iRankMeLanguageChineseTraditional;
+}
+
+bool IsRankMeChineseLanguage(int language) {
+	return language == g_iRankMeLanguageChineseSimplified || language == g_iRankMeLanguageChineseTraditional;
+}
+
+int GetRankMeClientOutputLanguage(int client) {
+	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
+		return g_iRankMeLanguageEnglish;
+	}
+
+	if (g_iRankMeClientLanguage[client] > 0) {
+		return g_iRankMeClientLanguage[client];
+	}
+
+	return GetFallbackRankMeLanguage();
+}
+
+bool IsRankMeTraditionalOutput(int client) {
+	return IsRankMeTraditionalLanguage(GetRankMeClientOutputLanguage(client));
+}
+
+void FormatRankMeJoinChatMessage(int client, char[] buffer, int maxlen, const char[] playerName, int rank, int points, const char[] country) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "玩家 {PINK}%s{NORMAL} 來自 {LIGHTGREEN}%s{NORMAL} 進入伺服器. {YELLOW}(排名 {GREEN}%d {YELLOW}- {PURPLE}%d {YELLOW}點)", playerName, country, rank, points);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "玩家 {PINK}%s{NORMAL} 来自 {LIGHTGREEN}%s{NORMAL} 进入服务器. {YELLOW}(排名 {GREEN}%d {YELLOW}- {PURPLE}%d {YELLOW}点)", playerName, country, rank, points);
+	}
+	else {
+		FormatEx(buffer, maxlen, "{PINK}%s{NORMAL} from {LIGHTGREEN}%s {NORMAL}joined the server. {YELLOW}(Pos {GREEN}%d {YELLOW}- {PURPLE}%d {YELLOW}Points){NORMAL}.", playerName, country, rank, points);
+	}
+}
+
+void FormatRankMeTopJoinChatMessage(int client, char[] buffer, int maxlen, int topPosition, const char[] playerName, int rank, const char[] country) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "Top {RED}%d{NORMAL} 玩家 {PINK}%s{NORMAL} 來自 {LIGHTGREEN}%s{NORMAL} 進入伺服器, 目前排名 {GREEN}%d", topPosition, playerName, country, rank);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "Top {RED}%d{NORMAL} 玩家 {PINK}%s{NORMAL} 来自 {LIGHTGREEN}%s{NORMAL} 进入服务器, 目前排名 {GREEN}%d", topPosition, playerName, country, rank);
+	}
+	else {
+		FormatEx(buffer, maxlen, "Top {RED}%d{NORMAL} player {PINK}%s{NORMAL} from {LIGHTGREEN}%s {NORMAL}connected, currently rank {GREEN}%d{NORMAL}.", topPosition, playerName, country, rank);
+	}
+}
+
+void FormatRankMeJoinHintMessage(int client, char[] buffer, int maxlen, const char[] playerName, int rank, int points, const char[] country) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "<font color='#28FF28'>訊息:</font> \n <font color='#B15BFF'>%s</font> 來自 <font color='#00FF7F'>%s</font> 加入遊戲. \n 排名 <font color='#28FF28'>%d</font> - <font color='#E800E8'>%d</font> 點", playerName, country, rank, points);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "<font color='#28FF28'>消息: </font> \n <font color='#B15BFF'>%s</font> 来自 <font color='#00FF7F'>%s</font> 加入游戏. \n 排名 <font color='#28FF28'>%d</font> - <font color='#E800E8'>%d</font> 点", playerName, country, rank, points);
+	}
+	else {
+		FormatEx(buffer, maxlen, "<font color='#28FF28'>Info</font> \n <font color='#B15BFF'>%s</font> from <font color='#00FF7F'>%s</font> joined the server. \n Pos <font color='#28FF28'>%d</font> - <font color='#E800E8'>%d</font> Points", playerName, country, rank, points);
+	}
+}
+
+void FormatRankMeTopJoinHintMessage(int client, char[] buffer, int maxlen, int topPosition, const char[] playerName, int rank, const char[] country) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "<font color='#28FF28'>訊息:</font> \n Top <font color='#FF0000'>%d</font> 玩家 <font color='#B15BFF'>%s</font> 來自 <font color='#00FF7F'>%s</font> 加入遊戲 \n 目前排名: <font color='#28FF28'>%d</font>", topPosition, playerName, country, rank);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "<font color='#28FF28'>消息: </font> \n Top <font color='#FF0000'>%d</font> 玩家 <font color='#B15BFF'>%s</font> 来自 <font color='#00FF7F'>%s</font> 加入游戏 \n 目前排名: <font color='#28FF28'>%d</font>", topPosition, playerName, country, rank);
+	}
+	else {
+		FormatEx(buffer, maxlen, "<font color='#28FF28'>Info</font> \n Top <font color='#FF0000'>%d</font> player <font color='#B15BFF'>%s</font> from <font color='#00FF7F'>%s</font> connected \n Currently rank <font color='#28FF28'>%d</font>", topPosition, playerName, country, rank);
+	}
+}
+
+void FormatRankMePlayerLeftMessage(int client, char[] buffer, int maxlen, const char[] playerName, int points, const char[] reason) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "玩家 {PINK}%s{PURPLE} (%d) {NORMAL} 離開伺服器. {YELLOW}(%s)", playerName, points, reason);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "玩家 {PINK}%s{PURPLE} (%d) {NORMAL} 离开服务器. {YELLOW}(%s)", playerName, points, reason);
+	}
+	else {
+		FormatEx(buffer, maxlen, "{PINK}%s{PURPLE} (%d) {NORMAL}left the server. {YELLOW}(%s)", playerName, points, reason);
+	}
+}
+
+void FormatRankMeFirstBloodGlobalMessage(int client, char[] buffer, int maxlen, const char[] attackerName, const char[] victimName, int bonusPoints) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "{GREEN}★首殺{NORMAL}! {PURPLE}%s {RED}擊殺了 {NORMAL}%s {LIGHTGREEN}並獲得 %d 點{NORMAL}!", attackerName, victimName, bonusPoints);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "{GREEN}★首杀{NORMAL}! {PURPLE}%s {RED}击杀了 {NORMAL}%s {LIGHTGREEN}并获得 %d 点{NORMAL}!", attackerName, victimName, bonusPoints);
+	}
+	else {
+		FormatEx(buffer, maxlen, "{GREEN}★ First Blood! {PURPLE}%s {RED}killed {NORMAL}%s {LIGHTGREEN}and got %d points{NORMAL}!", attackerName, victimName, bonusPoints);
+	}
+}
+
+void FormatRankMeRevengeGlobalMessage(int client, char[] buffer, int maxlen, const char[] attackerName, const char[] victimName, int bonusPoints) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "{GREEN}復仇成功{NORMAL}! {PURPLE}%s {RED}擊殺了 {NORMAL}%s {LIGHTGREEN}並獲得 %d 點{NORMAL}.", attackerName, victimName, bonusPoints);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "{GREEN}复仇成功{NORMAL}! {PURPLE}%s {RED}击杀了 {NORMAL}%s {LIGHTGREEN}并获得 %d 点{NORMAL}.", attackerName, victimName, bonusPoints);
+	}
+	else {
+		FormatEx(buffer, maxlen, "{GREEN}Revenge Success{NORMAL}! {PURPLE}%s {RED}killed {NORMAL}%s {LIGHTGREEN}and got %d points{NORMAL}!", attackerName, victimName, bonusPoints);
+	}
+}
+
+void FormatRankMeKillStreakName(int client, const char[] streakPhrase, char[] buffer, int maxlen) {
+	if (StrEqual(streakPhrase, "DoubleKill")) {
+		if (IsRankMeTraditionalOutput(client)) {
+			strcopy(buffer, maxlen, "{LIGHTGREEN}雙殺");
+		}
+		else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+			strcopy(buffer, maxlen, "{LIGHTGREEN}双杀");
+		}
+		else {
+			strcopy(buffer, maxlen, "{LIGHTGREEN}Double Kill");
+		}
+		return;
+	}
+
+	if (StrEqual(streakPhrase, "TripleKill")) {
+		if (IsRankMeTraditionalOutput(client)) {
+			strcopy(buffer, maxlen, "{YELLOW}三殺");
+		}
+		else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+			strcopy(buffer, maxlen, "{YELLOW}三杀");
+		}
+		else {
+			strcopy(buffer, maxlen, "{YELLOW}Triple Kill");
+		}
+		return;
+	}
+
+	if (StrEqual(streakPhrase, "MegaKill")) {
+		if (IsRankMeTraditionalOutput(client)) {
+			strcopy(buffer, maxlen, "{ORANGE}瘋狂殺戮");
+		}
+		else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+			strcopy(buffer, maxlen, "{ORANGE}疯狂杀戮");
+		}
+		else {
+			strcopy(buffer, maxlen, "{ORANGE}Mega Kill");
+		}
+		return;
+	}
+
+	if (IsRankMeTraditionalOutput(client)) {
+		strcopy(buffer, maxlen, "{RED}超神殺戮");
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		strcopy(buffer, maxlen, "{RED}超神杀戮");
+	}
+	else {
+		strcopy(buffer, maxlen, "{RED}Ultra Kill");
+	}
+}
+
+void FormatRankMeKillStreakGlobalMessage(int client, char[] buffer, int maxlen, const char[] attackerName, int score, const char[] streakPhrase, int bonusPoints) {
+	char streakName[64];
+	FormatRankMeKillStreakName(client, streakPhrase, streakName, sizeof(streakName));
+
+	if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} 正在 {RED}%s{NORMAL}! {LIGHTGREEN}并获得 %d 点{NORMAL}!", attackerName, score, streakName, bonusPoints);
+	}
+	else {
+		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} is on {RED}%s{NORMAL}! {LIGHTGREEN}and got %d points{NORMAL}!", attackerName, score, streakName, bonusPoints);
+	}
 }
 
 public void OnPluginEnd() {
@@ -1279,7 +1555,9 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				{
 					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
 					{
-						CPrintToChat(i, "%s %T", MSG, "FirstBloodGlobal", i, g_aClientName[attacker], g_aStats[attacker].SCORE, g_aClientName[attacker], g_aClientName[victim], g_PointsFb);
+						char message[256];
+						FormatRankMeFirstBloodGlobalMessage(i, message, sizeof(message), g_aClientName[attacker], g_aClientName[victim], g_PointsFb);
+						CPrintToChat(i, "%s %s", MSG, message);
 					}
 					
 					CSkipList[i] = false;
@@ -1574,6 +1852,9 @@ public void SQL_SaveCallback(Handle owner, Handle hndl, const char[] error, any 
 }
 
 public void OnClientPutInServer(int client) {
+
+	if (!IsFakeClient(client))
+		RefreshRankMeClientLanguage(client);
 	
 	// If the database isn't connected, you can't run SQL_EscapeString.
 	if (g_hStatsDb != INVALID_HANDLE)
@@ -1586,6 +1867,10 @@ public void OnClientPutInServer(int client) {
 	LoadHideChatPreference(client);
 
 	InitializePlayerEloOptimization(client);
+}
+
+public void OnClientSettingsChanged(int client) {
+	RefreshRankMeClientLanguage(client);
 }
 
 public void LoadPlayer(int client) {
@@ -1980,7 +2265,9 @@ public Action RankConnectCallback(int client, int rank, any data)
 				{
 					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
 					{
-						CPrintToChat(i, "%s %T", MSG, "PlayerJoinedChat", i, sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
+						char message[256];
+						FormatRankMeJoinChatMessage(i, message, sizeof(message), sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
+						CPrintToChat(i, "%s %s", MSG, message);
 					}
 					
 					CSkipList[i] = false;
@@ -1992,7 +2279,9 @@ public Action RankConnectCallback(int client, int rank, any data)
 				{
 					if (IsClientInGame(i))
 					{
-						PrintHintText(i, "%T", "PlayerJoinedHint", i, sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
+						char message[256];
+						FormatRankMeJoinHintMessage(i, message, sizeof(message), sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
+						PrintHintText(i, "%s", message);
 					}
 				}
 			}
@@ -2005,7 +2294,9 @@ public Action RankConnectCallback(int client, int rank, any data)
 				{
 					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
 					{
-						CPrintToChat(i, "%s %T", MSG, "TopPlayerJoinedChat", i, g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
+						char message[256];
+						FormatRankMeTopJoinChatMessage(i, message, sizeof(message), g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
+						CPrintToChat(i, "%s %s", MSG, message);
 					}
 					
 					CSkipList[i] = false;
@@ -2017,7 +2308,9 @@ public Action RankConnectCallback(int client, int rank, any data)
 				{
 					if (IsClientInGame(i))
 					{
-						PrintHintText(i, "%T", "TopPlayerJoinedHint", i, g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
+						char message[256];
+						FormatRankMeTopJoinHintMessage(i, message, sizeof(message), g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
+						PrintHintText(i, "%s", message);
 					}
 				}
 			}
@@ -2051,7 +2344,9 @@ public void Event_PlayerDisconnect(Handle event, const char[] name, bool dontBro
 	{
 		if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
 		{
-			CPrintToChat(i, "%s %T", MSG, "PlayerLeft", i, g_sBufferClientName[client], g_aPointsOnDisconnect[client], disconnectReason);
+			char message[256];
+			FormatRankMePlayerLeftMessage(i, message, sizeof(message), g_sBufferClientName[client], g_aPointsOnDisconnect[client], disconnectReason);
+			CPrintToChat(i, "%s %s", MSG, message);
 		}
 		
 		CSkipList[i] = false;
