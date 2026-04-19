@@ -302,11 +302,6 @@ public void GetRanksOverlays()
 
 stock void PrecacheDecalAnyDownload(const char[] decal)
 {
-	char path[PLATFORM_MAX_PATH];
-	Format(path, sizeof(path), "materials/vgui/%s.vmt", decal);
-	AddFileToDownloadsTable(path);
-	Format(path, sizeof(path), "materials/vgui/%s.vtf", decal);
-	AddFileToDownloadsTable(path);
 	PrecacheDecal(decal, true);
 }
 
