@@ -106,6 +106,8 @@ int g_iRankMeLanguageEnglish = -1;
 int g_iRankMeLanguageChineseSimplified = -1;
 int g_iRankMeLanguageChineseTraditional = -1;
 int g_iRankMeClientLanguage[MAXPLAYERS + 1];
+bool g_bRankMeLanguageReady[MAXPLAYERS + 1];
+bool g_bPendingRankConnectAnnounce[MAXPLAYERS + 1];
 
 #include <kento_rankme/cvars>
 #include <kento_rankme/elo_optimization>
@@ -517,6 +519,9 @@ void ResetPlayerCombatData(int client) {
 void ResetPlayerRuntimeData(int client) {
 	ResetPlayerCombatData(client);
 	g_aMaxKillStreak[client] = 0;
+	g_iRankMeClientLanguage[client] = 0;
+	g_bRankMeLanguageReady[client] = false;
+	g_bPendingRankConnectAnnounce[client] = false;
 }
 
 void LoadHideChatPreference(int client) {
@@ -600,6 +605,7 @@ void RefreshRankMeClientLanguage(int client) {
 		return;
 	}
 
+	g_bRankMeLanguageReady[client] = false;
 	ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
 	QueryClientConVar(client, "cl_language", OnRankMeLanguageQueried);
 }
@@ -619,10 +625,16 @@ public void OnRankMeLanguageQueried(QueryCookie cookie, int client, ConVarQueryR
 		}
 
 		ApplyRankMeLanguage(client, sourceModLanguage);
-		return;
 	}
-	
-	ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
+	else {
+		ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
+	}
+
+	g_bRankMeLanguageReady[client] = true;
+
+	if (g_bPendingRankConnectAnnounce[client]) {
+		AnnounceRankConnect(client);
+	}
 }
 
 bool IsRankMeTraditionalLanguage(int language) {
@@ -2222,49 +2234,60 @@ public Action RankMe_OnPlayerLoaded(int client){
 
 public Action RankConnectCallback(int client, int rank, any data)
 {
-	
 	if (!g_bRankBots && (!IsValidClient(client) || IsFakeClient(client)))
 		return Plugin_Continue;
 		
 	g_aPointsOnConnect[client] = RankMe_GetPoints(client);
-	
 	g_aRankOnConnect[client] = rank;
-		
+	
+	if (IsFakeClient(client) || g_bRankMeLanguageReady[client]) {
+		AnnounceRankConnect(client);
+	}
+	else {
+		g_bPendingRankConnectAnnounce[client] = true;
+	}
+	
+	return Plugin_Continue;
+}
+
+void AnnounceRankConnect(int client)
+{
+	if (client <= 0 || client > MaxClients || !IsClientConnected(client)) {
+		return;
+	}
+
+	g_bPendingRankConnectAnnounce[client] = false;
+	
 	char sClientName[MAX_NAME_LENGTH];
-	GetClientName(client,sClientName,sizeof(sClientName));
+	GetClientName(client, sClientName, sizeof(sClientName));
 	
 	/* Geoip, code from cksurf */
 	char s_Country[32];
-	char s_address[32];		
-	GetClientIP(client, s_address, 32);
+	char s_address[32];
+	GetClientIP(client, s_address, sizeof(s_address));
 	Format(s_Country, sizeof(s_Country), "Unknown");
 	GeoipCountry(s_address, s_Country, sizeof(s_Country));
-	// if(!strcmp(s_Country, NULL_STRING))
-	if (s_Country[0] == 0)
-		Format( s_Country, sizeof(s_Country), "Unknown", s_Country );
-	else				
-		if( StrContains( s_Country, "United", false ) != -1 || 
-			StrContains( s_Country, "Republic", false ) != -1 || 
-			StrContains( s_Country, "Federation", false ) != -1 || 
-			StrContains( s_Country, "Island", false ) != -1 || 
-			StrContains( s_Country, "Netherlands", false ) != -1 || 
-			StrContains( s_Country, "Isle", false ) != -1 || 
-			StrContains( s_Country, "Bahamas", false ) != -1 || 
-			StrContains( s_Country, "Maldives", false ) != -1 || 
-			StrContains( s_Country, "Philippines", false ) != -1 || 
-			StrContains( s_Country, "Vatican", false ) != -1 )
-		{
-			Format( s_Country, sizeof(s_Country), "The %s", s_Country );
-		}			
+	if (s_Country[0] == 0) {
+		Format(s_Country, sizeof(s_Country), "Unknown", s_Country);
+	}
+	else if (StrContains(s_Country, "United", false) != -1 || 
+		StrContains(s_Country, "Republic", false) != -1 || 
+		StrContains(s_Country, "Federation", false) != -1 || 
+		StrContains(s_Country, "Island", false) != -1 || 
+		StrContains(s_Country, "Netherlands", false) != -1 || 
+		StrContains(s_Country, "Isle", false) != -1 || 
+		StrContains(s_Country, "Bahamas", false) != -1 || 
+		StrContains(s_Country, "Maldives", false) != -1 || 
+		StrContains(s_Country, "Philippines", false) != -1 || 
+		StrContains(s_Country, "Vatican", false) != -1) {
+		Format(s_Country, sizeof(s_Country), "The %s", s_Country);
+	}
 	
-	if(!ShouldHideAnnounce(client))
-	{
-		if(g_bAnnounceConnect){
-			if(g_bAnnounceConnectChat){
-				for (int i = 1; i <= MaxClients; i++)
-				{
-					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
-					{
+	if (!ShouldHideAnnounce(client)) {
+		if (g_bAnnounceConnect) {
+			if (g_bAnnounceConnectChat) {
+				for (int i = 1; i <= MaxClients; i++) {
+					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i]) {
 						char message[256];
 						FormatRankMeJoinChatMessage(i, message, sizeof(message), sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
 						CPrintToChat(i, "%s %s", MSG, message);
@@ -2274,11 +2297,9 @@ public Action RankConnectCallback(int client, int rank, any data)
 				}
 			}
 			
-			if(g_bAnnounceConnectHint){
-				for (int i = 1; i <= MaxClients; i++)
-				{
-					if (IsClientInGame(i))
-					{
+			if (g_bAnnounceConnectHint) {
+				for (int i = 1; i <= MaxClients; i++) {
+					if (IsClientInGame(i)) {
 						char message[256];
 						FormatRankMeJoinHintMessage(i, message, sizeof(message), sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
 						PrintHintText(i, "%s", message);
@@ -2287,13 +2308,10 @@ public Action RankConnectCallback(int client, int rank, any data)
 			}
 		}
 		
-		if(g_bAnnounceTopConnect && rank <= g_AnnounceTopPosConnect){
-			
-			if(g_bAnnounceTopConnectChat){	
-				for (int i = 1; i <= MaxClients; i++)
-				{
-					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i])
-					{
+		if (g_bAnnounceTopConnect && g_aRankOnConnect[client] <= g_AnnounceTopPosConnect) {
+			if (g_bAnnounceTopConnectChat) {
+				for (int i = 1; i <= MaxClients; i++) {
+					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i]) {
 						char message[256];
 						FormatRankMeTopJoinChatMessage(i, message, sizeof(message), g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
 						CPrintToChat(i, "%s %s", MSG, message);
@@ -2303,11 +2321,9 @@ public Action RankConnectCallback(int client, int rank, any data)
 				}
 			}
 			
-			if(g_bAnnounceTopConnectHint){
-				for (int i = 1; i <= MaxClients; i++)
-				{
-					if (IsClientInGame(i))
-					{
+			if (g_bAnnounceTopConnectHint) {
+				for (int i = 1; i <= MaxClients; i++) {
+					if (IsClientInGame(i)) {
 						char message[256];
 						FormatRankMeTopJoinHintMessage(i, message, sizeof(message), g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
 						PrintHintText(i, "%s", message);
@@ -2316,7 +2332,6 @@ public Action RankConnectCallback(int client, int rank, any data)
 			}
 		}
 	}
-	return Plugin_Continue;
 }
 
 public void Event_PlayerDisconnect(Handle event, const char[] name, bool dontBroadcast)
