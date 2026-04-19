@@ -1,7 +1,7 @@
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
 	int clientIndex = GetClientOfUserId(event.GetInt("userid"));
-	if (IsValidClient(clientIndex))
+	if (IsValidClient(clientIndex) && HasConfiguredGlovesForCurrentTeam(clientIndex))
 	{
 		GivePlayerGloves(clientIndex);
 	}

@@ -125,39 +125,51 @@ public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult res
 public void GivePlayerGloves(int client)
 {
 	int playerTeam = GetClientGloveTeam(client);
-	if (g_iGloves[client][playerTeam] != 0)
+	if (playerTeam < CS_TEAM_T || playerTeam > CS_TEAM_CT || g_iGloves[client][playerTeam] == 0)
 	{
-		ClearPlayerWearables(client);
+		return;
+	}
+
+	if (IsCurrentGloveStateApplied(client, playerTeam))
+	{
 		FixCustomArms(client);
-		int ent = CreateEntityByName("wearable_item");
-		if (ent != -1)
+		if (g_iEnableWorldModel)
 		{
-			SetEntProp(ent, Prop_Send, "m_iItemIDLow", -1);
-
-			if (g_iGloves[client][playerTeam] == -1)
-			{
-				char buffer[20];
-				char buffers[2][10];
-				GetRandomSkin(client, playerTeam, buffer, sizeof(buffer), g_iGroup[client][playerTeam]);
-				ExplodeString(buffer, ";", buffers, 2, 10);
-				SetEntProp(ent, Prop_Send, "m_iItemDefinitionIndex", StringToInt(buffers[0]));
-				SetEntProp(ent, Prop_Send, "m_nFallbackPaintKit", StringToInt(buffers[1]));
-			}
-			else
-			{
-				SetEntProp(ent, Prop_Send, "m_iItemDefinitionIndex", g_iGroup[client][playerTeam]);
-				SetEntProp(ent, Prop_Send, "m_nFallbackPaintKit", g_iGloves[client][playerTeam]);
-			}
-			SetEntPropFloat(ent, Prop_Send, "m_flFallbackWear", g_fFloatValue[client][playerTeam]);
-			SetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity", client);
-			SetEntPropEnt(ent, Prop_Data, "m_hParent", client);
-			if (g_iEnableWorldModel) SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client);
-			SetEntProp(ent, Prop_Send, "m_bInitialized", 1);
-
-			DispatchSpawn(ent);
-
-			SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
-			if (g_iEnableWorldModel) SetEntProp(client, Prop_Send, "m_nBody", 1);
+			SetEntProp(client, Prop_Send, "m_nBody", 1);
 		}
+		return;
+	}
+
+	ClearPlayerWearables(client);
+	FixCustomArms(client);
+	int ent = CreateEntityByName("wearable_item");
+	if (ent != -1)
+	{
+		SetEntProp(ent, Prop_Send, "m_iItemIDLow", -1);
+
+		if (g_iGloves[client][playerTeam] == -1)
+		{
+			char buffer[20];
+			char buffers[2][10];
+			GetRandomSkin(client, playerTeam, buffer, sizeof(buffer), g_iGroup[client][playerTeam]);
+			ExplodeString(buffer, ";", buffers, 2, 10);
+			SetEntProp(ent, Prop_Send, "m_iItemDefinitionIndex", StringToInt(buffers[0]));
+			SetEntProp(ent, Prop_Send, "m_nFallbackPaintKit", StringToInt(buffers[1]));
+		}
+		else
+		{
+			SetEntProp(ent, Prop_Send, "m_iItemDefinitionIndex", g_iGroup[client][playerTeam]);
+			SetEntProp(ent, Prop_Send, "m_nFallbackPaintKit", g_iGloves[client][playerTeam]);
+		}
+		SetEntPropFloat(ent, Prop_Send, "m_flFallbackWear", g_fFloatValue[client][playerTeam]);
+		SetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity", client);
+		SetEntPropEnt(ent, Prop_Data, "m_hParent", client);
+		if (g_iEnableWorldModel) SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client);
+		SetEntProp(ent, Prop_Send, "m_bInitialized", 1);
+
+		DispatchSpawn(ent);
+
+		SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
+		if (g_iEnableWorldModel) SetEntProp(client, Prop_Send, "m_nBody", 1);
 	}
 }

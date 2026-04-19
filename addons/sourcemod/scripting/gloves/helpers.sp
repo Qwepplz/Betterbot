@@ -61,6 +61,51 @@ stock void FixCustomArms(int client)
 	}
 }
 
+stock bool HasConfiguredGlovesForCurrentTeam(int client)
+{
+	int playerTeam = GetClientGloveTeam(client);
+	return playerTeam >= CS_TEAM_T && playerTeam <= CS_TEAM_CT && g_iGloves[client][playerTeam] != 0;
+}
+
+stock bool IsCurrentGloveStateApplied(int client, int team)
+{
+	if (g_iGloves[client][team] <= 0)
+	{
+		return false;
+	}
+
+	int ent = GetEntPropEnt(client, Prop_Send, "m_hMyWearables");
+	if (ent <= MaxClients || !IsValidEntity(ent))
+	{
+		return false;
+	}
+
+	if (GetEntProp(ent, Prop_Send, "m_iItemDefinitionIndex") != g_iGroup[client][team]
+		|| GetEntProp(ent, Prop_Send, "m_nFallbackPaintKit") != g_iGloves[client][team])
+	{
+		return false;
+	}
+
+	float currentWear = GetEntPropFloat(ent, Prop_Send, "m_flFallbackWear");
+	float targetWear = g_fFloatValue[client][team];
+	if (currentWear < targetWear - 0.00001 || currentWear > targetWear + 0.00001)
+	{
+		return false;
+	}
+
+	if (GetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity") != client || GetEntPropEnt(ent, Prop_Data, "m_hParent") != client)
+	{
+		return false;
+	}
+
+	if (g_iEnableWorldModel && GetEntPropEnt(ent, Prop_Data, "m_hMoveParent") != client)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 stock void ClearPlayerWearables(int client)
 {
 	int ent = GetEntPropEnt(client, Prop_Send, "m_hMyWearables");

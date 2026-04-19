@@ -27,35 +27,36 @@ public void UnhookPlayer(int client) {
 
 public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView,
                         bool &OriginIsNULL, float Origin[3]) {
-  if (!CanApplyNamedItemOverride(client)) {
+  if (!CanApplyNamedItemOverride(client) || !IsKnifeClass(classname)) {
     return Plugin_Continue;
   }
 
   int team = GetClientTeam(client);
-  int knifeIndex = NormalizeKnifeIndex(g_iKnife[client][team]);
+  int knifeIndex = g_iKnife[client][team];
+  if (knifeIndex == 0) {
+    return Plugin_Continue;
+  }
+
+  knifeIndex = NormalizeKnifeIndex(knifeIndex);
   if (knifeIndex != g_iKnife[client][team]) {
     g_iKnife[client][team] = knifeIndex;
   }
 
-  if (knifeIndex != 0 && IsKnifeClass(classname)) {
-    if (knifeIndex == -1) {
-      int max = menuKnife.ItemCount - 1;
-      int random = GetRandomInt(2, max);
+  if (knifeIndex == -1) {
+    int max = menuKnife.ItemCount - 1;
+    int random = GetRandomInt(2, max);
 
-      char output[4];
-      menuKnife.GetItem(random, output, sizeof(output));
-      knifeIndex = NormalizeKnifeIndex(StringToInt(output));
-      if (knifeIndex == 0) {
-        return Plugin_Continue;
-      }
+    char output[4];
+    menuKnife.GetItem(random, output, sizeof(output));
+    knifeIndex = NormalizeKnifeIndex(StringToInt(output));
+    if (knifeIndex == 0) {
+      return Plugin_Continue;
     }
-
-    ignoredCEconItemView = true;
-    strcopy(classname, sizeof(classname), g_WeaponClasses[knifeIndex]);
-    return Plugin_Changed;
   }
 
-  return Plugin_Continue;
+  ignoredCEconItemView = true;
+  strcopy(classname, sizeof(classname), g_WeaponClasses[knifeIndex]);
+  return Plugin_Changed;
 }
 
 public void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL,
@@ -69,12 +70,18 @@ public void GiveNamedItemPost(int client, const char[] classname, const CEconIte
     return;
   }
 
+  bool isKnifeClassName = IsKnifeClass(classname);
+  int team = GetWeaponDataTeam(client, index);
+  if (!isKnifeClassName && g_iSkins[client][index][team] == 0) {
+    return;
+  }
+
   int prevOwner = GetEntPropEnt(entity, Prop_Send, "m_hPrevOwner");
   if (prevOwner != -1) {
     return;
   }
 
-  if (IsKnifeClass(classname)) {
+  if (isKnifeClassName) {
     EquipPlayerWeapon(client, entity);
   }
   SetWeaponProps(client, entity);
