@@ -110,7 +110,6 @@ bool g_bDumpDB;
 bool g_bEnabled;
 bool g_bEloDebugLog;
 bool g_bFfa;
-bool g_bGatherStats;
 bool g_bGatherStatsWarmup;
 bool g_bMysql;
 bool g_bNSAllSnipers;
@@ -218,12 +217,12 @@ void CreateCvars()
 	g_cvarMinimalKills = CreateConVar("rankme_minimal_kills", "0", "Minimal kills for entering the rank", _, true, 0.0);
 	g_cvarPercentPointsLose = CreateConVar("rankme_percent_points_lose", "1.0", "Multiplier of losing points. (WARNING: MAKE SURE TO INPUT IT AS FLOAT) 1.0 equals lose same amount as won by the killer, 0.0 equals no lose", _, true, 0.0);
 	g_cvarPointsLoseRoundCeil = CreateConVar("rankme_points_lose_round_ceil", "1", "If the points is f1oat, round it to next the highest or lowest? 1 = highest 0 = lowest", _, true, 0.0, true, 1.0);
-	g_cvarChatChange = CreateConVar("rankme_changes_chat", "1", "Show points changes on chat? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarChatChange = CreateConVar("rankme_changes_chat", "0", "Show points changes on chat? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarShowRankAll = CreateConVar("rankme_show_rank_all", "0", "When rank command is used, show for all the rank of the player? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarRankAllTimer = CreateConVar("rankme_rank_all_timer", "30.0", "Cooldown timer to prevent rank command spam.\n0.0 = disabled", _, true, 0.0);
 	g_cvarShowBotsOnRank = CreateConVar("rankme_show_bots_on_rank", "0", "Show bots on rank/top/etc? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarResetOwnRank = CreateConVar("rankme_resetownrank", "0", "Allow player to reset his own rank? 1 = true 0 = false", _, true, 0.0, true, 1.0);
-	g_cvarMinimumPlayers = CreateConVar("rankme_minimumplayers", "2", "Minimum players to start giving points", _, true, 0.0);
+	g_cvarMinimumPlayers = CreateConVar("rankme_minimumplayers", "1", "Minimum players to start giving points", _, true, 0.0);
 	g_cvarVipEnabled = CreateConVar("rankme_vip_enabled", "0", "Show AS_ maps statiscs (VIP mod) on statsme and session?", _, true, 0.0, true, 1.0);
 	g_cvarPointsVipEscapedTeam = CreateConVar("rankme_points_vip_escaped_team", "2", "How many points CTs got helping the VIP to escaping?", _, true, 0.0);
 	g_cvarPointsVipEscapedPlayer = CreateConVar("rankme_points_vip_escaped_player", "2", "How many points the VIP got for escaping?", _, true, 0.0);
@@ -237,7 +236,7 @@ void CreateCvars()
 	g_cvarNSAllSnipers = CreateConVar("rankme_points_ns_allsnipers", "0", "0: ssg08 and awp only, 1: ssg08, awp, g3sg1, scar20", _, true, 0.0, true, 1.0);	
 	g_cvarRankBy = CreateConVar("rankme_rank_by", "0", "Rank players by? 0 = STEAM:ID 1 = Name 2 = IP", _, true, 0.0, true, 2.0);
 	g_cvarFfa = CreateConVar("rankme_ffa", "0", "Free-For-All (FFA) mode? 1 = true 0 = false", _, true, 0.0, true, 1.0);
-	g_cvarMysql = CreateConVar("rankme_mysql", "0", "Using MySQL? 1 = true 0 = false (SQLite)", _, true, 0.0, true, 1.0);
+	g_cvarMysql = CreateConVar("rankme_mysql", "1", "Using MySQL? 1 = true 0 = false (SQLite)", _, true, 0.0, true, 1.0);
 	g_cvarDumpDB = CreateConVar("rankme_dump_db", "0", "Dump the Database to SQL file? (required to be 1 if using the web interface and SQLite, case MySQL, it won't be dumped) 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarGatherStats = CreateConVar("rankme_gather_stats", "1", "Gather Statistics (a.k.a count points)? (turning this off won't disallow to see the stats already gathered) 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarDaysToNotShowOnRank = CreateConVar("rankme_days_to_not_show_on_rank", "0", "Days inactive to not be shown on rank? X = days 0 = off", _, true, 0.0);
@@ -254,7 +253,7 @@ void CreateCvars()
 	g_cvarPointsAssistKill = CreateConVar("rankme_points_assiist_kill","1","How many points a player gets for assist kill?",_,true,0.0);
 	g_cvarPointsAssistFlash = CreateConVar("rankme_points_assiist_flash","1","How many points a player gets for assist flash kill?",_,true,0.0);
 	g_cvarPointsAssistTeamFlash = CreateConVar("rankme_points_lose_atf","1","How many points a lose for team assist flash kill?",_,true,0.0);
-	g_cvarGatherStatsWarmup = CreateConVar("rankme_gather_stats_warmup","1","Gather Statistics In Warmup?", _, true, 0.0, true, 1.0);
+	g_cvarGatherStatsWarmup = CreateConVar("rankme_gather_stats_warmup","0","Gather Statistics In Warmup?", _, true, 0.0, true, 1.0);
 	g_cvarPointsMinEnabled = CreateConVar("rankme_points_min_enabled", "1", "Is minimum points enabled? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarPointsMin = CreateConVar("rankme_points_min", "0", "Minimum points", _, true, 0.0);
 	g_cvarRankCache = CreateConVar("rankme_rank_cache", "0", "Get player rank via cache, auto build cache on every OnMapStart.", _, true, 0.0, true, 1.0);
@@ -278,8 +277,8 @@ void CreateCvars()
 	g_cvarAnnounceTopConnectChat = CreateConVar("rankme_announcer_top_player_connect_chat","1","Announce when a top player connect at chat?",_,true,0.0,true,1.0);
 	g_cvarAnnounceTopConnectHint = CreateConVar("rankme_announcer_top_player_connect_hint","0","Announce when a top player connect at hintbox?",_,true,0.0,true,1.0);
 	g_cvarAnnounceAdmin = CreateConVar("rankme_announcer_admin","","Admin flag to disable announce. blank = disabled");
-	g_cvarAnnounceKillStreakGlobal = CreateConVar("rankme_announce_kill_streak_global", "1", "Announce kill streaks to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
-	g_cvarAnnounceRevengeGlobal = CreateConVar("rankme_announce_revenge_global", "1", "Announce revenge kills to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarAnnounceKillStreakGlobal = CreateConVar("rankme_announce_kill_streak_global", "0", "Announce kill streaks to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarAnnounceRevengeGlobal = CreateConVar("rankme_announce_revenge_global", "0", "Announce revenge kills to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarAnnounceFirstBloodGlobal = CreateConVar("rankme_announce_first_blood_global", "1", "Announce first blood to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 
 	// CVAR HOOK
@@ -426,7 +425,6 @@ void GetCvarValues()
 	g_PointsLoseATk = g_cvarPointsLoseATk.IntValue;
 	g_PointsLoseSuicide = g_cvarPointsLoseSuicide.IntValue;
 	g_DaysToNotShowOnRank = g_cvarDaysToNotShowOnRank.IntValue;
-	g_bGatherStats = g_cvarGatherStats.BoolValue;
 	g_RankMode = g_cvarRankMode.IntValue;
 	g_bChatTriggers = g_cvarChatTriggers.BoolValue;
 	g_PointsMvpCt = g_cvarPointsMvpCt.IntValue;
@@ -632,9 +630,6 @@ public void OnConVarChanged(Handle convar, const char[] oldValue, const char[] n
 	else if (convar == g_cvarDaysToNotShowOnRank) {
 		g_DaysToNotShowOnRank = g_cvarDaysToNotShowOnRank.IntValue;
 		g_bQueryPlayerCount = true;
-	}
-	else if (convar == g_cvarGatherStats) {
-		g_bGatherStats = g_cvarGatherStats.BoolValue;
 	}
 	else if (convar == g_cvarRankMode) {
 		g_RankMode = g_cvarRankMode.IntValue;

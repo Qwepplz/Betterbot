@@ -23,6 +23,21 @@
 #define KILL_STREAK_WINDOW 8
 #define REVENGE_WINDOW 30
 
+enum Get5State {
+	Get5State_None,
+	Get5State_PreVeto,
+	Get5State_Veto,
+	Get5State_Warmup,
+	Get5State_KnifeRound,
+	Get5State_WaitingForKnifeRoundDecision,
+	Get5State_GoingLive,
+	Get5State_Live,
+	Get5State_PendingRestore,
+	Get5State_PostGame,
+};
+
+native Get5State Get5_GetGameState();
+
 static const char g_sSqliteCreate[] = "CREATE TABLE IF NOT EXISTS `%s` (id INTEGER PRIMARY KEY, steam VARCHAR(40) NOT NULL, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, assists NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,hkp2000 NUMERIC,usp_silencer NUMERIC,p250 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,tec9 NUMERIC,cz75a NUMERIC,revolver NUMERIC,nova NUMERIC,xm1014 NUMERIC,mag7 NUMERIC,sawedoff NUMERIC,bizon NUMERIC,mac10 NUMERIC,mp9 NUMERIC,mp7 NUMERIC,ump45 NUMERIC,p90 NUMERIC,galilar NUMERIC,ak47 NUMERIC,scar20 NUMERIC,famas NUMERIC,m4a1 NUMERIC,m4a1_silencer NUMERIC,aug NUMERIC,ssg08 NUMERIC,sg556 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,negev NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC,inferno NUMERIC,decoy NUMERIC,taser NUMERIC,mp5sd NUMERIC,breachcharge NUMERIC,head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC, mvp NUMERIC, damage NUMERIC, match_win NUMERIC, match_draw NUMERIC, match_lose NUMERIC, first_blood NUMERIC, no_scope NUMERIC, no_scope_dis NUMERIC, thru_smoke NUMERIC, blind NUMERIC, assist_flash NUMERIC, assist_team_flash NUMERIC, assist_team_kill NUMERIC, wallbang NUMERIC)";
 static const char g_sMysqlCreate[] = "CREATE TABLE IF NOT EXISTS `%s` (id INTEGER PRIMARY KEY, steam TEXT, name TEXT, lastip TEXT, score NUMERIC, kills NUMERIC, deaths NUMERIC, assists NUMERIC, suicides NUMERIC, tk NUMERIC, shots NUMERIC, hits NUMERIC, headshots NUMERIC, connected NUMERIC, rounds_tr NUMERIC, rounds_ct NUMERIC, lastconnect NUMERIC,knife NUMERIC,glock NUMERIC,hkp2000 NUMERIC,usp_silencer NUMERIC,p250 NUMERIC,deagle NUMERIC,elite NUMERIC,fiveseven NUMERIC,tec9 NUMERIC,cz75a NUMERIC,revolver NUMERIC,nova NUMERIC,xm1014 NUMERIC,mag7 NUMERIC,sawedoff NUMERIC,bizon NUMERIC,mac10 NUMERIC,mp9 NUMERIC,mp7 NUMERIC,ump45 NUMERIC,p90 NUMERIC,galilar NUMERIC,ak47 NUMERIC,scar20 NUMERIC,famas NUMERIC,m4a1 NUMERIC,m4a1_silencer NUMERIC,aug NUMERIC,ssg08 NUMERIC,sg556 NUMERIC,awp NUMERIC,g3sg1 NUMERIC,m249 NUMERIC,negev NUMERIC,hegrenade NUMERIC,flashbang NUMERIC,smokegrenade NUMERIC,inferno NUMERIC,decoy NUMERIC,taser NUMERIC,mp5sd NUMERIC,breachcharge NUMERIC,head NUMERIC, chest NUMERIC, stomach NUMERIC, left_arm NUMERIC, right_arm NUMERIC, left_leg NUMERIC, right_leg NUMERIC,c4_planted NUMERIC,c4_exploded NUMERIC,c4_defused NUMERIC,ct_win NUMERIC, tr_win NUMERIC, hostages_rescued NUMERIC, vip_killed NUMERIC, vip_escaped NUMERIC, vip_played NUMERIC, mvp NUMERIC, damage NUMERIC, match_win NUMERIC, match_draw NUMERIC, match_lose NUMERIC, first_blood NUMERIC, no_scope NUMERIC, no_scope_dis NUMERIC, thru_smoke NUMERIC, blind NUMERIC, assist_flash NUMERIC, assist_team_flash NUMERIC, assist_team_kill NUMERIC, wallbang NUMERIC) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 static const char g_sSqlInsert[] = "INSERT INTO `%s` VALUES (NULL,'%s','%s','%s','%d','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');";
@@ -100,6 +115,28 @@ public Plugin myinfo =  {
 	version = PLUGIN_VERSION, 
 	url = "https://github.com/rogeraabbccdd/Kento-Rankme"
 };
+
+bool IsGet5KnifePhase() {
+	if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available)
+		return false;
+
+	Get5State state = Get5_GetGameState();
+	return state == Get5State_KnifeRound || state == Get5State_WaitingForKnifeRoundDecision;
+}
+
+bool ShouldGatherRankStats() {
+	if (!g_bEnabled)
+		return false;
+	if (!g_cvarGatherStats.BoolValue)
+		return false;
+	if (!g_bGatherStatsWarmup && GameRules_GetProp("m_bWarmupPeriod") == 1)
+		return false;
+	if (IsGet5KnifePhase())
+		return false;
+	if (g_MinimumPlayers > GetCurrentPlayers())
+		return false;
+	return true;
+}
 
 public void OnPluginStart() {
 	
@@ -584,7 +621,7 @@ public int GetWeaponNum(char[] weaponname)
 }
 
 public void Event_VipEscaped(Handle event, const char[] name, bool dontBroadcast) {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	
@@ -616,7 +653,7 @@ public void Event_VipEscaped(Handle event, const char[] name, bool dontBroadcast
 }
 
 public void Event_VipKilled(Handle event, const char[] name, bool dontBroadcast) {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	int killer = GetClientOfUserId(GetEventInt(event, "attacker"));
@@ -652,7 +689,7 @@ public void Event_VipKilled(Handle event, const char[] name, bool dontBroadcast)
 }
 
 public void Event_HostageRescued(Handle event, const char[] name, bool dontBroadcast) {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	
@@ -686,7 +723,7 @@ public void Event_HostageRescued(Handle event, const char[] name, bool dontBroad
 }
 
 public void Event_RoundMVP(Handle event, const char[] name, bool dontBroadcast) {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -717,7 +754,7 @@ public void Event_RoundMVP(Handle event, const char[] name, bool dontBroadcast) 
 	g_aSession[client].MVP++;
 }
 public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int i;
 	int Winner = GetEventInt(event, "winner");
@@ -812,7 +849,7 @@ public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) 
 public void EventPlayerSpawn(Handle event, const char[] name, bool dontBroadcast)
 {
 	/* Old rounds played, this have been moved to round start.
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -831,7 +868,7 @@ public void EventPlayerSpawn(Handle event, const char[] name, bool dontBroadcast
 
 public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 		
 	firstblood = false;
@@ -860,7 +897,7 @@ public void Event_RoundStart(Handle event, const char[] name, bool dontBroadcast
 
 public void Event_BombPlanted(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -897,7 +934,7 @@ public void Event_BombPlanted(Handle event, const char[] name, bool dontBroadcas
 
 public void Event_BombDefused(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	
@@ -929,7 +966,7 @@ public void Event_BombDefused(Handle event, const char[] name, bool dontBroadcas
 
 public void Event_BombExploded(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 		
 	int client = g_C4PlantedBy;
@@ -965,7 +1002,7 @@ public void Event_BombExploded(Handle event, const char[] name, bool dontBroadca
 
 public void Event_BombPickup(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -982,7 +1019,7 @@ public void Event_BombPickup(Handle event, const char[] name, bool dontBroadcast
 
 public void Event_BombDropped(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -1012,7 +1049,7 @@ public void Event_BombDropped(Handle event, const char[] name, bool dontBroadcas
 public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcast)
 // ----------------------------------------------------------------------------
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	
 	int victim = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -1332,7 +1369,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 public void EventPlayerHurt(Handle event, const char [] name, bool dontBroadcast)
 // ----------------------------------------------------------------------------
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
@@ -1390,7 +1427,7 @@ public void EventPlayerHurt(Handle event, const char [] name, bool dontBroadcast
 
 public void EventWeaponFire(Handle event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (!g_bRankBots && (!IsValidClient(client) || IsFakeClient(client)))
@@ -1424,7 +1461,7 @@ public void EventWeaponFire(Handle event, const char[] name, bool dontBroadcast)
 }
 
 public void SalvarPlayer(int client) {
-	if (!g_bEnabled || !g_bGatherStats || g_MinimumPlayers > GetCurrentPlayers())
+	if (!ShouldGatherRankStats())
 		return;
 	if (!g_bRankBots && (!IsValidClient(client) || IsFakeClient(client)))
 		return;
@@ -1974,24 +2011,6 @@ public void Event_PlayerDisconnect(Handle event, const char[] name, bool dontBro
 }
 
 /* Enable Or Disable Points In Warmup */
-public void OnGameFrame()
-{
-	//If cvar disable
-	if(!g_bGatherStatsWarmup)
-	{
-		//In Warmup
-		if(GameRules_GetProp("m_bWarmupPeriod") == 1)
-		{
-			g_bGatherStats = false;
-		}
-		
-		//Not in warmup
-		else 
-		{
-			g_bGatherStats = true;
-		}
-	}	
-}
 
 public void Event_WinPanelMatch(Handle event, const char[] name, bool dontBroadcast) {
 	if(CS_GetTeamScore(CT) > CS_GetTeamScore(TR))

@@ -1,5 +1,6 @@
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	MarkNativeAsOptional("Get5_GetGameState");
 	CreateNative("RankMe_GivePoint", Native_GivePoint);
 	CreateNative("RankMe_GetRank", Native_GetRank);
 	CreateNative("RankMe_GetPoints", Native_GetPoints);
