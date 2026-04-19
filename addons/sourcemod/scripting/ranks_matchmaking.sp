@@ -116,13 +116,9 @@ ConVar g_CVAR_RanksPoints[RANK_COUNT];
 ConVar g_CVAR_RankPoints_Type;
 ConVar g_CVAR_RankPoints_Flag;
 ConVar g_CVAR_RankPoints_Prefix;
-ConVar g_CVAR_RankPoints_HudOverlay;
-ConVar g_CVAR_RankPoints_OverlayTime;
 
 int g_RankPoints_Type;
 int g_RankPoints_Flag;
-int g_RankPoints_HudOverlay;
-float g_RankPoints_OverlayTime;
 char g_RankPoints_Prefix[RANK_PREFIX_LENGTH];
 int RankPoints[RANK_COUNT];
 
@@ -131,7 +127,6 @@ bool g_kentorankme;
 bool g_hlstatsx;
 
 char RankStrings[RANK_NAME_COUNT][RANK_STRING_LENGTH];
-char RankOverlays[RANK_COUNT][RANK_STRING_LENGTH];
 
 public Plugin myinfo = 
 {
@@ -153,8 +148,6 @@ public void OnPluginStart()
 	g_CVAR_RankPoints_Type = CreateConVar("ranks_matchmaking_typeofrank", "0", "Type of Rank that you want to use for this plugin (0 for Kento Rankme, 1 for GameMe, 2 for ZR Rank, 3 for HLStatsX)", _, true, 0.0, true, 3.0);
 	g_CVAR_RankPoints_Prefix = CreateConVar("ranks_matchmaking_prefix", "[{purple}Fake Ranks{default}]", "Chat Prefix");
 	g_CVAR_RankPoints_Flag = CreateConVar("ranks_matchmaking_flag", "", "Flag to restrict the ranks to certain players (leave it empty to enable for everyone)");
-	g_CVAR_RankPoints_HudOverlay = CreateConVar("ranks_matchmaking_hudoverlay", "1", "Chooses between a HUD Text Message (0) or an Overlay (1)", _, true, 0.0, true, 1.0);
-	g_CVAR_RankPoints_OverlayTime = CreateConVar("ranks_matchmaking_overlaytime", "5.0", "Time between showing and deleting the overlay (need \"ranks_matchmaking_hudoverlay\" set to 1). 0.0 means forever", _, true, 0.0);
 	CreateRankPointConVars();
 	
 	LoadTranslations("ranks_matchmaking.phrases");
@@ -191,8 +184,6 @@ void LoadRankSettings()
 	
 	g_CVAR_RankPoints_Prefix.GetString(g_RankPoints_Prefix, sizeof(g_RankPoints_Prefix));
 	g_RankPoints_Type = g_CVAR_RankPoints_Type.IntValue;
-	g_RankPoints_HudOverlay = g_CVAR_RankPoints_HudOverlay.IntValue;
-	g_RankPoints_OverlayTime = g_CVAR_RankPoints_OverlayTime.FloatValue;
 	g_CVAR_RankPoints_Flag.GetString(flagBuffer, sizeof(flagBuffer));
 	
 	if (StrEqual(flagBuffer, "0") || strlen(flagBuffer) < 1)
@@ -227,11 +218,6 @@ int GetRankFromPoints(int points)
 bool CanUseRank(int client)
 {
 	return g_RankPoints_Flag == -1 || CheckCommandAccess(client, "", g_RankPoints_Flag, true);
-}
-
-bool ShouldShowOverlay(int client)
-{
-	return rank[client] > 0 && g_RankPoints_HudOverlay == 1 && !IsFakeClient(client);
 }
 
 void RevealAllRanksToClient(int client)
@@ -280,7 +266,6 @@ public void OnMapStart()
 	LoadRankSettings();
 	SDKHook(GetPlayerManagerEntity(), SDKHook_ThinkPost, Hook_OnThinkPost);
 	GetRanksNames();
-	GetRanksOverlays();
 }
 
 public void GetRanksNames()
@@ -289,45 +274,6 @@ public void GetRanksNames()
 	{
 		FormatEx(RankStrings[i], sizeof(RankStrings[]), "%t", g_RankPhraseKeys[i]);
 	}
-}
-
-public void GetRanksOverlays()
-{
-	for (int i = 0; i < RANK_COUNT; i++)
-	{
-		Format(RankOverlays[i], sizeof(RankOverlays[]), "lvl_overlays/overlay_hd_%d", i + 1);
-		PrecacheDecalAnyDownload(RankOverlays[i]);
-	}
-}
-
-stock void PrecacheDecalAnyDownload(const char[] decal)
-{
-	PrecacheDecal(decal, true);
-}
-
-stock void ShowOverlay(int client, const char[] overlay, float duration)
-{
-	if (IsClientInGame(client))
-	{
-		ClientCommand(client, "r_screenoverlay %s", overlay);
-		if (duration > 0.0)
-			CreateTimer(duration, Timer_DeleteOverlay, GetClientUserId(client), TIMER_FLAG_NO_MAPCHANGE);
-	}
-}
-
-stock void DeleteOverlay(int client)
-{
-	if (IsClientInGame(client))
-		ClientCommand(client, "r_screenoverlay ");
-}
-
-public Action Timer_DeleteOverlay(Handle timer, any userid)
-{
-	int client = GetClientOfUserId(userid);
-	if (client > 0 && client <= MaxClients && IsClientInGame(client))
-		DeleteOverlay(client);
-	
-	return Plugin_Stop;
 }
 
 public Action RankMe_OnPlayerLoaded(int client)
@@ -517,8 +463,6 @@ public void cs_win_panel_match(Handle event, const char[] eventname, bool dontBr
 		if (IsValidClient(i))
 		{
 			CheckPoints(i);
-			if (ShouldShowOverlay(i))
-				ShowOverlay(i, RankOverlays[rank[i] - 1], g_RankPoints_OverlayTime);
 		}
 	}
 }
