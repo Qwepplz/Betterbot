@@ -224,7 +224,7 @@ void SetWeaponProps(int client, int entity) {
 }
 
 void RefreshWeapon(int client, int index, bool defaultKnife = false) {
-  if (!CanApplyNamedItemOverride(client) || IsGet5CosmeticUnsafePhase()) {
+  if (!CanApplyNamedItemOverride(client) || IsGet5ImmediateCosmeticBlockedPhase()) {
     return;
   }
 

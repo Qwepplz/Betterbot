@@ -23,7 +23,7 @@ public int GloveMenuHandler(Menu menu, MenuAction action, int client, int select
 				Format(updateFields, sizeof(updateFields), "%s_group = %d, %s_glove = %d", teamName, groupId, teamName, gloveId);
 				UpdatePlayerData(client, updateFields);
 
-				if (IsClientsCurrentGloveTeam(client, team) && !IsGet5CosmeticUnsafePhase())
+				if (IsClientsCurrentGloveTeam(client, team) && !IsGet5ImmediateCosmeticBlockedPhase())
 				{
 					int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 					if (activeWeapon != -1)
@@ -109,10 +109,10 @@ public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int se
 					Format(updateFields, sizeof(updateFields), "%s_group = %d, %s_glove = %d", teamName, index, teamName, index);
 					UpdatePlayerData(client, updateFields);
 
-					if (IsClientsCurrentGloveTeam(client, team))
+				if (IsClientsCurrentGloveTeam(client, team) && !IsGet5ImmediateCosmeticBlockedPhase())
+				{
+					if (index == 0)
 					{
-						if (index == 0)
-						{
 							ClearPlayerWearables(client);
 							SetEntPropString(client, Prop_Send, "m_szArmsModel", g_CustomArms[client][team]);
 							if (g_iEnableWorldModel)
@@ -294,7 +294,7 @@ public Action FloatTimer(Handle timer, DataPack pack)
 		Format(updateFields, sizeof(updateFields), "%s_float = %.2f", teamName, g_fFloatValue[clientIndex][team]);
 		UpdatePlayerData(clientIndex, updateFields);
 
-		if (IsClientsCurrentGloveTeam(clientIndex, team))
+		if (IsClientsCurrentGloveTeam(clientIndex, team) && !IsGet5ImmediateCosmeticBlockedPhase())
 			GivePlayerGloves(clientIndex);
 
 		g_FloatTimer[clientIndex] = INVALID_HANDLE;

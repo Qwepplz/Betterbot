@@ -79,8 +79,16 @@ stock bool IsGet5CosmeticUnsafePhase() {
   }
 
   Get5State state = Get5_GetGameState();
-  return state == Get5State_KnifeRound || state == Get5State_WaitingForKnifeRoundDecision ||
-         state == Get5State_GoingLive;
+  return state == Get5State_KnifeRound;
+}
+
+stock bool IsGet5ImmediateCosmeticBlockedPhase() {
+  if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available) {
+    return false;
+  }
+
+  Get5State state = Get5_GetGameState();
+  return state == Get5State_KnifeRound;
 }
 
 stock bool CanApplyNamedItemOverride(int client) {

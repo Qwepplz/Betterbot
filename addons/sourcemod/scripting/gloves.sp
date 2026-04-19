@@ -124,7 +124,7 @@ public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult res
 
 public void GivePlayerGloves(int client)
 {
-	if (!IsValidClient(client) || !IsPlayerAlive(client) || IsGet5CosmeticUnsafePhase())
+	if (!IsValidClient(client) || !IsPlayerAlive(client))
 	{
 		return;
 	}
