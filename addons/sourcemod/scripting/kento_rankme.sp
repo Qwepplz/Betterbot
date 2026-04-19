@@ -1657,6 +1657,8 @@ public void SQL_LoadPlayerCallback(Handle owner, Handle hndl, const char[] error
 	{
 		//Player infos
 		g_aStats[client].SCORE = SQL_FetchInt(hndl, 4);
+		if (g_bUseEloSystem && g_aStats[client].SCORE <= 0)
+			g_aStats[client].SCORE = g_iEloStartScore;
 		g_aStats[client].KILLS = SQL_FetchInt(hndl, 5);
 		g_aStats[client].DEATHS = SQL_FetchInt(hndl, 6);
 		g_aStats[client].ASSISTS = SQL_FetchInt(hndl, 7);

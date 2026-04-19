@@ -217,7 +217,7 @@ void CreateCvars()
 	g_cvarMinimalKills = CreateConVar("rankme_minimal_kills", "0", "Minimal kills for entering the rank", _, true, 0.0);
 	g_cvarPercentPointsLose = CreateConVar("rankme_percent_points_lose", "1.0", "Multiplier of losing points. (WARNING: MAKE SURE TO INPUT IT AS FLOAT) 1.0 equals lose same amount as won by the killer, 0.0 equals no lose", _, true, 0.0);
 	g_cvarPointsLoseRoundCeil = CreateConVar("rankme_points_lose_round_ceil", "1", "If the points is f1oat, round it to next the highest or lowest? 1 = highest 0 = lowest", _, true, 0.0, true, 1.0);
-	g_cvarChatChange = CreateConVar("rankme_changes_chat", "0", "Show points changes on chat? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarChatChange = CreateConVar("rankme_changes_chat", "1", "Show points changes on chat? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarShowRankAll = CreateConVar("rankme_show_rank_all", "0", "When rank command is used, show for all the rank of the player? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarRankAllTimer = CreateConVar("rankme_rank_all_timer", "30.0", "Cooldown timer to prevent rank command spam.\n0.0 = disabled", _, true, 0.0);
 	g_cvarShowBotsOnRank = CreateConVar("rankme_show_bots_on_rank", "0", "Show bots on rank/top/etc? 1 = true 0 = false", _, true, 0.0, true, 1.0);
@@ -277,8 +277,8 @@ void CreateCvars()
 	g_cvarAnnounceTopConnectChat = CreateConVar("rankme_announcer_top_player_connect_chat","1","Announce when a top player connect at chat?",_,true,0.0,true,1.0);
 	g_cvarAnnounceTopConnectHint = CreateConVar("rankme_announcer_top_player_connect_hint","0","Announce when a top player connect at hintbox?",_,true,0.0,true,1.0);
 	g_cvarAnnounceAdmin = CreateConVar("rankme_announcer_admin","","Admin flag to disable announce. blank = disabled");
-	g_cvarAnnounceKillStreakGlobal = CreateConVar("rankme_announce_kill_streak_global", "0", "Announce kill streaks to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
-	g_cvarAnnounceRevengeGlobal = CreateConVar("rankme_announce_revenge_global", "0", "Announce revenge kills to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarAnnounceKillStreakGlobal = CreateConVar("rankme_announce_kill_streak_global", "1", "Announce kill streaks to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
+	g_cvarAnnounceRevengeGlobal = CreateConVar("rankme_announce_revenge_global", "1", "Announce revenge kills to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 	g_cvarAnnounceFirstBloodGlobal = CreateConVar("rankme_announce_first_blood_global", "1", "Announce first blood to all players globally? 1 = true 0 = false", _, true, 0.0, true, 1.0);
 
 	// CVAR HOOK

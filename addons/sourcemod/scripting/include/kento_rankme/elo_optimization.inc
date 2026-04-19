@@ -1,3 +1,11 @@
+int GetEffectiveEloScore(int client)
+{
+	int score = g_iPlayerElo[client] > 0 ? g_iPlayerElo[client] : g_aStats[client].SCORE;
+	if (g_bUseEloSystem && score <= 0)
+		return g_iEloStartScore;
+	return score;
+}
+
 stock int CalculateEloScoreDifference(int attacker, int victim, bool headshot = false, bool flashed = false, bool throughSmoke = false, bool wallbang = false, bool firstBloodKill = false, bool noScope = false, bool knife = false, bool taser = false)
 {
 	if (attacker < 1 || attacker > MaxClients || victim < 1 || victim > MaxClients)
@@ -5,8 +13,8 @@ stock int CalculateEloScoreDifference(int attacker, int victim, bool headshot = 
 	if (!IsClientInGame(attacker) || !IsClientInGame(victim))
 		return 0;
 
-	int attackerElo = g_iPlayerElo[attacker] > 0 ? g_iPlayerElo[attacker] : g_aStats[attacker].SCORE;
-	int victimElo = g_iPlayerElo[victim] > 0 ? g_iPlayerElo[victim] : g_aStats[victim].SCORE;
+	int attackerElo = GetEffectiveEloScore(attacker);
+	int victimElo = GetEffectiveEloScore(victim);
 	float expected = 1.0 / (1.0 + Pow(10.0, float(victimElo - attackerElo) / 400.0));
 	int scoreDiff = RoundToFloor(float(GetDynamicKFactor(attackerElo)) * (1.0 - expected));
 
@@ -29,8 +37,8 @@ int CalculateScoreDifference(int attacker, int victim, int team)
 	{
 		if (g_bUseEloSystem)
 		{
-			int attackerScore = g_aStats[attacker].SCORE;
-			int victimScore = g_aStats[victim].SCORE;
+			int attackerScore = GetEffectiveEloScore(attacker);
+			int victimScore = GetEffectiveEloScore(victim);
 			float expected = 1.0 / (1.0 + Pow(10.0, float(victimScore - attackerScore) / 400.0));
 			int scoreDiff = RoundToFloor(float(GetDynamicKFactor(attackerScore)) * (1.0 - expected));
 			scoreDiff = RoundToFloor(float(scoreDiff) * GetPerformanceMultiplier(attacker));
@@ -119,7 +127,7 @@ int ValidateEloChange(int client, int change)
 	if (client >= MAXPLAYERS)
 		return change;
 
-	int score = g_iPlayerElo[client] > 0 ? g_iPlayerElo[client] : g_aStats[client].SCORE;
+	int score = GetEffectiveEloScore(client);
 	int maxChange = GetMaxSingleGameChange(score);
 	if (change > maxChange)
 		return maxChange;
