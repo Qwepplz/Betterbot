@@ -546,19 +546,43 @@ bool IsRankMeTraditionalLanguageValue(const char[] value) {
 	return StrEqual(value, "tchinese", false)
 		|| StrEqual(value, "zho", false)
 		|| StrEqual(value, "zh-hant", false)
+		|| StrEqual(value, "zh_hant", false)
+		|| StrEqual(value, "zh-tw", false)
+		|| StrEqual(value, "zh_tw", false)
+		|| StrEqual(value, "zh-hk", false)
+		|| StrEqual(value, "zh_hk", false)
 		|| StrContains(value, "traditional", false) != -1;
 }
 
 bool IsRankMeChineseLanguageValue(const char[] value) {
 	return StrEqual(value, "schinese", false)
 		|| StrEqual(value, "chi", false)
+		|| StrEqual(value, "zh", false)
 		|| StrEqual(value, "zh-hans", false)
+		|| StrEqual(value, "zh_hans", false)
+		|| StrEqual(value, "zh-cn", false)
+		|| StrEqual(value, "zh_cn", false)
+		|| StrEqual(value, "zh-sg", false)
+		|| StrEqual(value, "zh_sg", false)
 		|| StrContains(value, "simplified", false) != -1
 		|| StrContains(value, "chinese", false) != -1
 		|| IsRankMeTraditionalLanguageValue(value);
 }
 
 int ResolveRankMeLanguageFromValue(const char[] value) {
+	int sourceModLanguage = GetLanguageByName(value);
+	if (sourceModLanguage == -1) {
+		sourceModLanguage = GetLanguageByCode(value);
+	}
+	
+	if (sourceModLanguage == g_iRankMeLanguageChineseTraditional && g_iRankMeLanguageChineseTraditional >= 0) {
+		return g_iRankMeLanguageChineseTraditional;
+	}
+	
+	if (sourceModLanguage == g_iRankMeLanguageChineseSimplified && g_iRankMeLanguageChineseSimplified >= 0) {
+		return g_iRankMeLanguageChineseSimplified;
+	}
+	
 	if (IsRankMeTraditionalLanguageValue(value) && g_iRankMeLanguageChineseTraditional >= 0) {
 		return g_iRankMeLanguageChineseTraditional;
 	}
@@ -573,7 +597,7 @@ int ResolveRankMeLanguageFromValue(const char[] value) {
 		}
 	}
 	
-	return g_iRankMeLanguageEnglish;
+	return GetFallbackRankMeLanguage();
 }
 
 int GetFallbackRankMeLanguage() {
@@ -584,14 +608,24 @@ int GetFallbackRankMeLanguage() {
 	return GetServerLanguage();
 }
 
+int NormalizeRankMeOutputLanguage(int language) {
+	if (language == g_iRankMeLanguageChineseTraditional && g_iRankMeLanguageChineseTraditional >= 0) {
+		return g_iRankMeLanguageChineseTraditional;
+	}
+	
+	if (language == g_iRankMeLanguageChineseSimplified && g_iRankMeLanguageChineseSimplified >= 0) {
+		return g_iRankMeLanguageChineseSimplified;
+	}
+	
+	return GetFallbackRankMeLanguage();
+}
+
 void ApplyRankMeLanguage(int client, int language) {
 	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
 		return;
 	}
 
-	if (language < 0) {
-		language = g_iRankMeLanguageEnglish;
-	}
+	language = NormalizeRankMeOutputLanguage(language);
 
 	g_iRankMeClientLanguage[client] = language;
 
@@ -606,7 +640,9 @@ void RefreshRankMeClientLanguage(int client) {
 	}
 
 	g_bRankMeLanguageReady[client] = false;
-	ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
+	if (g_iRankMeClientLanguage[client] <= 0) {
+		ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
+	}
 	QueryClientConVar(client, "cl_language", OnRankMeLanguageQueried);
 }
 
@@ -616,15 +652,7 @@ public void OnRankMeLanguageQueried(QueryCookie cookie, int client, ConVarQueryR
 	}
 	
 	if (result == ConVarQuery_Okay && cvarValue[0] != '\0') {
-		int sourceModLanguage = GetLanguageByName(cvarValue);
-		if (sourceModLanguage == -1) {
-			sourceModLanguage = GetLanguageByCode(cvarValue);
-		}
-		if (sourceModLanguage == -1) {
-			sourceModLanguage = ResolveRankMeLanguageFromValue(cvarValue);
-		}
-
-		ApplyRankMeLanguage(client, sourceModLanguage);
+		ApplyRankMeLanguage(client, ResolveRankMeLanguageFromValue(cvarValue));
 	}
 	else {
 		ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
@@ -647,11 +675,11 @@ bool IsRankMeChineseLanguage(int language) {
 
 int GetRankMeClientOutputLanguage(int client) {
 	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
-		return g_iRankMeLanguageEnglish;
+		return GetFallbackRankMeLanguage();
 	}
 
 	if (g_iRankMeClientLanguage[client] > 0) {
-		return g_iRankMeClientLanguage[client];
+		return NormalizeRankMeOutputLanguage(g_iRankMeClientLanguage[client]);
 	}
 
 	return GetFallbackRankMeLanguage();
@@ -800,7 +828,10 @@ void FormatRankMeKillStreakGlobalMessage(int client, char[] buffer, int maxlen, 
 	char streakName[64];
 	FormatRankMeKillStreakName(client, streakPhrase, streakName, sizeof(streakName));
 
-	if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
+	if (IsRankMeTraditionalOutput(client)) {
+		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} 正在 {RED}%s{NORMAL}! {LIGHTGREEN}並獲得 %d 點{NORMAL}!", attackerName, score, streakName, bonusPoints);
+	}
+	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
 		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} 正在 {RED}%s{NORMAL}! {LIGHTGREEN}并获得 %d 点{NORMAL}!", attackerName, score, streakName, bonusPoints);
 	}
 	else {

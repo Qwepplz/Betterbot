@@ -145,6 +145,44 @@
 		"#format"	"{1:s},{2:d},{3:d},{4:s},{5:s},{6:.2f}"
 		"zho"		"{PINK}{1}{PURPLE} ({2}) {NORMAL}在 {RED}{6} {NORMAL}公尺外使用 {ORANGE}{5} {RED}盲狙 {PINK}{4} {LIGHTGREEN}獲得 {3} 點{NORMAL}"
 	}
+
+	"KillStreakGlobal"
+	{
+		"#format"	"{1:s},{2:d},{3:s},{4:d}"
+		"zho"		"{PURPLE}★ {1} {PINK}({2}){NORMAL} 正在 {RED}{3}{NORMAL}! {LIGHTGREEN}並獲得 {4} 點{NORMAL}!"
+	}
+
+	"RevengeGlobal"
+	{
+		"#format"	"{1:s},{2:d},{3:s},{4:s},{5:d}"
+		"zho"		"{GREEN}復仇成功{NORMAL}! {PURPLE}{3} {RED}擊殺了 {NORMAL}{4} {LIGHTGREEN}並獲得 {5} 點{NORMAL}."
+	}
+
+	"FirstBloodGlobal"
+	{
+		"#format"	"{1:s},{2:d},{3:s},{4:s},{5:d}"
+		"zho"		"{GREEN}★首殺{NORMAL}! {PURPLE}{3} {RED}擊殺了 {NORMAL}{4} {LIGHTGREEN}並獲得 {5} 點{NORMAL}!"
+	}
+
+	"DoubleKill"
+	{
+		"zho"		"{LIGHTGREEN}雙殺"
+	}
+
+	"TripleKill"
+	{
+		"zho"		"{YELLOW}三殺"
+	}
+
+	"MegaKill"
+	{
+		"zho"		"{ORANGE}瘋狂殺戮"
+	}
+
+	"UltraKill"
+	{
+		"zho"		"{RED}超神殺戮"
+	}
 	
 	"TR_Planting"
 	{
@@ -267,6 +305,12 @@
 		"#format"	"{1:s},{2:d},{3:d},{4:s},{5:s}"
 		"zho"		"{PINK}{1}{PURPLE} ({2}) {RED}閃光助攻 {PINK}{4} {RED}擊殺隊友 {PINK}{5} {NORMAL},{RED}失去 {3} 點{NORMAL}."
 	}
+
+	"AntiTeamKill"
+	{
+		"#format"	"{1:s},{2:d},{3:d},{4:s}"
+		"zho"		"{PINK}{1}{PURPLE} ({2}) {RED}失去 {3} 點{NORMAL}, 因為{RED}協助團隊擊殺{PINK}{4}{NORMAL}."
+	}
 	
 	"The rank has been reset"
 	{
@@ -333,10 +377,10 @@
 		"zho"		"{RED}比賽平手{NORMAL}, {PINK}雙方 {LIGHTGREEN}獲得 {1} 點{NORMAL}."
 	}
 	
-	"Draw"
+	"RankCooldown"
 	{
 		"#format"	""
-		"zho"		"{RED}我們知道你很厲害，所以請你不要洗頻."
+		"zho"		"{NORMAL}我們知道你很厲害，但請停止{RED}洗頻{NORMAL}!"
 	}
 	
 	//****************** PrintHintText ******************
@@ -648,6 +692,21 @@
 	{
 		"zho"		"武器排名"
 	}
+
+	"TOP Grenade"
+	{
+		"zho"		"投擲物排名"
+	}
+
+	"TOP Knife"
+	{
+		"zho"		"刀子排名"
+	}
+
+	"TOP Taser"
+	{
+		"zho"		"電擊槍排名"
+	}
 	
 	"TOP Accuracy"
 	{
@@ -797,6 +856,137 @@
 	"Wallbangs"
 	{
 		"zho"		"穿牆"
+	}
+	
+	//******************* ELO 系統 *******************
+	
+	"ELO Rating"
+	{
+		"#format"	"{1:s},{2:d}"
+		"zho"		"{PINK}{1}{NORMAL} - ELO 評分: {GREEN}{2}{NORMAL}"
+	}
+	
+	"ELO Rank"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"zho"		"{PINK}{1}{NORMAL} - ELO 排名: {GREEN}{2}/{3}{NORMAL}"
+	}
+	
+	"ELO Change"
+	{
+		"#format"	"{1:s},{2:d},{3:d}"
+		"zho"		"{PINK}{1}{NORMAL} - ELO {GREEN}{2:+d}{NORMAL} (目前: {GREEN}{3}{NORMAL})"
+	}
+	
+	"Performance Evaluation"
+	{
+		"#format"	"{1:s},{2:s}"
+		"zho"		"{PINK}{1}{NORMAL} - 表現評估: {GREEN}{2}{NORMAL}"
+	}
+	
+	"ELO Kill Calculation"
+	{
+		"zho"		"{GREEN}★ ELO 系統已啟用{NORMAL} - 基於技能的公平計分系統"
+	}
+	
+	"ELO Score Protection"
+	{
+		"#format"	"{1:s},{2:d}"
+		"zho"		"{PINK}{1}{NORMAL} - ELO 保護已啟用 (評分: {GREEN}{2}{NORMAL})"
+	}
+	
+	"ELO Tier Upgrade"
+	{
+		"#format"	"{1:s},{2:s},{3:d}"
+		"zho"		"{GREEN}★ {PINK}{1}{NORMAL} 晉升至 {GREEN}{2}{NORMAL}! (ELO: {GREEN}{3}{NORMAL})"
+	}
+	
+	"ELO Tier Downgrade"
+	{
+		"#format"	"{1:s},{2:s},{3:d}"
+		"zho"		"{RED}☆ {PINK}{1}{NORMAL} 降級至 {RED}{2}{NORMAL}! (ELO: {GREEN}{3}{NORMAL})"
+	}
+	
+	"Beginner"
+	{
+		"zho"		"新手"
+	}
+	
+	"Intermediate"
+	{
+		"zho"		"中級"
+	}
+	
+	"Advanced"
+	{
+		"zho"		"高級"
+	}
+	
+	"Expert"
+	{
+		"zho"		"專家"
+	}
+	
+	"Professional"
+	{
+		"zho"		"職業"
+	}
+	
+	"Excellent"
+	{
+		"zho"		"優秀"
+	}
+	
+	"Good"
+	{
+		"zho"		"良好"
+	}
+	
+	"Average"
+	{
+		"zho"		"一般"
+	}
+	
+	"Poor"
+	{
+		"zho"		"較差"
+	}
+	
+	//******************* ELO 段位 *******************
+	
+	"ELO Tier Silver"
+	{
+		"zho"		"{GRAY}★ 白銀段位{NORMAL}"
+	}
+	
+	"ELO Tier Gold"
+	{
+		"zho"		"{YELLOW}★ 黃金段位{NORMAL}"
+	}
+	
+	"ELO Tier Platinum"
+	{
+		"zho"		"{CYAN}★ 鉑金段位{NORMAL}"
+	}
+	
+	"ELO Tier Diamond"
+	{
+		"zho"		"{BLUE}★ 鑽石段位{NORMAL}"
+	}
+	
+	"ELO Tier Master"
+	{
+		"zho"		"{PURPLE}★ 大師段位{NORMAL}"
+	}
+	
+	"ELO Tier Grandmaster"
+	{
+		"zho"		"{ORANGE}★ 宗師段位{NORMAL}"
+	}
+	
+	"ELO Tier Legend"
+	{
+		"zho"		"{RED}★ 傳奇段位{NORMAL}"
 	}
 }
  
