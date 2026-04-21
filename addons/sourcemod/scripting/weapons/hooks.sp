@@ -136,14 +136,6 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     PrintToChat(client, " %s \x04%t: \x01\"%s\"", g_ChatPrefix, "NameTagSuccess", msg);
 
-    /* NAMETAGCOLOR
-    int menuTime;
-    if((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0)
-    {
-            CreateColorsMenu(client).Display(client, menuTime);
-    }
-    */
-
     return Plugin_Handled;
   } else if (g_bWaitingForSeed[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
     g_bWaitingForSeed[client] = false;
@@ -222,17 +214,6 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
     return Plugin_Continue;
 
   g_iStatTrakCount[attacker][index][team]++;
-  /*
-  if (IsKnife(weapon))
-  {
-          SetEntProp(weapon, Prop_Send, "m_nFallbackStatTrak", g_iKnifeStatTrakMode == 0 ?
-  GetTotalKnifeStatTrakCount(attacker) : g_iStatTrakCount[attacker][index]);
-  }
-  else
-  {
-          SetEntProp(weapon, Prop_Send, "m_nFallbackStatTrak", g_iStatTrakCount[attacker][index]);
-  }
-  */
 
   char updateFields[256];
   char weaponName[32];
@@ -247,13 +228,5 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
 
 public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast) {
   g_iRoundStartTime = GetTime();
-}
-
-stock Action WeaponCanUsePre(int client, int weapon, bool &pickup) {
-  if (IsKnife(weapon) && IsValidClient(client)) {
-    pickup = true;
-    return Plugin_Changed;
-  }
-  return Plugin_Continue;
 }
 

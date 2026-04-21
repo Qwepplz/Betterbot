@@ -15,6 +15,28 @@
  * this program. If not, see http://www.gnu.org/licenses/.
  */
 
+void TryFinalizeDatabaseConnection(bool mysql) {
+  if (++g_iDatabaseState > 1) {
+    LogMessage("%s DB connection successful", (mysql ? "MySQL" : "SQLite"));
+    for (int i = 1; i <= MaxClients; i++) {
+      if (IsClientInGame(i) && IsClientAuthorized(i)) {
+        OnClientPostAdminCheck(i);
+      }
+    }
+    DeleteInactivePlayerData();
+  }
+}
+
+public void T_QueryErrorCallback(Database database, DBResultSet results, const char[] error, DataPack pack) {
+  if (results == null) {
+    pack.Reset();
+    char buffer[1024];
+    pack.ReadString(buffer, 1024);
+    LogError("Query failed! query: \"%s\" error: \"%s\"", buffer, error);
+  }
+  delete pack;
+}
+
 void GetPlayerData(int client) {
   char steamid[32];
   if (GetClientAuthId(client, AuthId_Steam2, steamid, sizeof(steamid), true)) {
@@ -147,7 +169,7 @@ public void T_GetPlayerDataCallback(Database database, DBResultSet results, cons
                  g_TablePrefix, steamid, GetTime());
         DataPack pack = new DataPack();
         pack.WriteString(query);
-        db.Query(T_TimestampCallback, query, pack);
+        db.Query(T_QueryErrorCallback, query,pack);
       }
     }
   }
@@ -167,17 +189,7 @@ public void T_InsertCallback(Database database, DBResultSet results, const char[
              g_TablePrefix, steamid, GetTime());
     DataPack newPack = new DataPack();
     newPack.WriteString(query);
-    db.Query(T_TimestampCallback, query, newPack);
-  }
-  delete pack;
-}
-
-public void T_TimestampCallback(Database database, DBResultSet results, const char[] error, DataPack pack) {
-  if (results == null) {
-    pack.Reset();
-    char buffer[1024];
-    pack.ReadString(buffer, 1024);
-    LogError("Timestamp Query failed! query: \"%s\" error: \"%s\"", buffer, error);
+    db.Query(T_QueryErrorCallback, query,newPack);
   }
   delete pack;
 }
@@ -190,18 +202,8 @@ void UpdatePlayerData(int client, char[] updateFields) {
              steamid);
     DataPack pack = new DataPack();
     pack.WriteString(query);
-    db.Query(T_UpdatePlayerDataCallback, query, pack);
+    db.Query(T_QueryErrorCallback, query, pack);
   }
-}
-
-public void T_UpdatePlayerDataCallback(Database database, DBResultSet results, const char[] error, DataPack pack) {
-  if (results == null) {
-    pack.Reset();
-    char buffer[1024];
-    pack.ReadString(buffer, 1024);
-    LogError("Update Player failed! query: \"%s\" error: \"%s\"", buffer, error);
-  }
-  delete pack;
 }
 
 public void SQLConnectCallback(Database database, const char[] error, any data) {
@@ -655,15 +657,7 @@ public void T_DropOldTableCallback(Database database, DBResultSet results, const
     LogError("%s Dropping old table has failed! %s", (mysql ? "MySQL" : "SQLite"), error);
   } else {
     LogMessage("%s Old table has been dropped successfully", (mysql ? "MySQL" : "SQLite"));
-    if (++g_iDatabaseState > 1) {
-      LogMessage("%s DB connection successful", (mysql ? "MySQL" : "SQLite"));
-      for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && IsClientAuthorized(i)) {
-          OnClientPostAdminCheck(i);
-        }
-      }
-      DeleteInactivePlayerData();
-    }
+    TryFinalizeDatabaseConnection(mysql);
   }
 }
 
@@ -769,15 +763,7 @@ public void T_SeedColumnCallback(Database database, DBResultSet results, const c
       db.Query(T_RenameCallback, renameQuery, mysql, DBPrio_High);
     }
   } else {
-    if (++g_iDatabaseState > 1) {
-      LogMessage("%s DB connection successful", (mysql ? "MySQL" : "SQLite"));
-      for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && IsClientAuthorized(i)) {
-          OnClientPostAdminCheck(i);
-        }
-      }
-      DeleteInactivePlayerData();
-    }
+    TryFinalizeDatabaseConnection(mysql);
   }
 }
 
@@ -794,15 +780,7 @@ public void T_SeedConfirmationCallback(Database database, DBResultSet results, c
     LogError("%s Seed column creation failed! %s", (mysql ? "MySQL" : "SQLite"), error);
   } else {
     LogMessage("Successfully created seed columns");
-    if (++g_iDatabaseState > 1) {
-      LogMessage("%s DB connection successful", (mysql ? "MySQL" : "SQLite"));
-      for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && IsClientAuthorized(i)) {
-          OnClientPostAdminCheck(i);
-        }
-      }
-      DeleteInactivePlayerData();
-    }
+    TryFinalizeDatabaseConnection(mysql);
   }
 }
 
@@ -848,15 +826,7 @@ public void Txn_OnFail(Database database, bool mysql, int numQueries, const char
 
 public void T_CreateTimestampTableCallback(Database database, DBResultSet results, const char[] error, bool mysql) {
   if (results == null) {
-    if (++g_iDatabaseState > 1) {
-      LogMessage("%s DB connection successful", (mysql ? "MySQL" : "SQLite"));
-      for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && IsClientAuthorized(i)) {
-          OnClientPostAdminCheck(i);
-        }
-      }
-      DeleteInactivePlayerData();
-    }
+    TryFinalizeDatabaseConnection(mysql);
   } else {
     char insertQuery[512];
     Format(insertQuery, sizeof(insertQuery), "	\
@@ -872,15 +842,7 @@ public void T_InsertTimestampsCallback(Database database, DBResultSet results, c
   if (results == null) {
     LogError("%s Insert timestamps failed! %s", (mysql ? "MySQL" : "SQLite"), error);
   } else {
-    if (++g_iDatabaseState > 1) {
-      LogMessage("%s DB connection successful", (mysql ? "MySQL" : "SQLite"));
-      for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && IsClientAuthorized(i)) {
-          OnClientPostAdminCheck(i);
-        }
-      }
-      DeleteInactivePlayerData();
-    }
+    TryFinalizeDatabaseConnection(mysql);
   }
 }
 

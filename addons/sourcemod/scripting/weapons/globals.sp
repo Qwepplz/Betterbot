@@ -182,6 +182,24 @@ char g_MigrationWeapons[][] = {
 	"ct_knife_cs15"
 };
 
+char g_KnifeMenuIndex[][4] = {
+  "0", "-1", "49", "50", "51", "52", "53", "54", "55", "48",
+  "43", "44", "45", "46", "33", "34", "35", "36", "37", "38",
+  "39", "40", "41", "42"
+};
+
+char g_KnifeMenuPhrase[][32] = {
+  "OwnKnife", "RandomKnife",
+  "weapon_knife_cord", "weapon_knife_canis", "weapon_knife_outdoor",
+  "weapon_knife_skeleton", "weapon_knife_balisong", "weapon_knife_kunai",
+  "weapon_knife_cs15", "weapon_knife_css", "weapon_knife_ursus",
+  "weapon_knife_gypsy_jackknife", "weapon_knife_stiletto", "weapon_knife_widowmaker",
+  "weapon_knife_karambit", "weapon_knife_m9_bayonet", "weapon_bayonet",
+  "weapon_knife_survival_bowie", "weapon_knife_butterfly", "weapon_knife_flip",
+  "weapon_knife_push", "weapon_knife_tactical", "weapon_knife_falchion",
+  "weapon_knife_gut"
+};
+
 char g_Language[MAX_LANG][32];
 int g_iClientLanguage[MAXPLAYERS+1];
 int g_iDefaultLanguage;

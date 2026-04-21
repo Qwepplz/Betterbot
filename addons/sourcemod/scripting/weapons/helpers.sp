@@ -49,15 +49,19 @@ stock void CleanNameTag(char[] nameTag, int size) {
   StripQuotes(nameTag);
 }
 
-stock int GetRandomSkin(int client, int index) {
+stock int GetClientMenuLanguage(int client) {
   int language = g_iClientLanguage[client];
-  if (language < 0 || language >= MAX_LANG || menuWeapons[language][index] == null) {
+  if (language < 0 || language >= MAX_LANG || menuWeapons[language][0] == null) {
     language = g_iDefaultLanguage;
   }
-  if (language < 0 || language >= MAX_LANG || menuWeapons[language][index] == null) {
+  if (language < 0 || language >= MAX_LANG || menuWeapons[language][0] == null) {
     language = 0;
   }
+  return language;
+}
 
+stock int GetRandomSkin(int client, int index) {
+  int language = GetClientMenuLanguage(client);
   int max = menuWeapons[language][index].ItemCount - 1;
   int random = GetRandomInt(2, max);
   char idStr[4];
@@ -71,15 +75,6 @@ stock bool IsValidClient(int client) {
     return false;
   }
   return true;
-}
-
-stock bool IsGet5CosmeticUnsafePhase() {
-  if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available) {
-    return false;
-  }
-
-  Get5State state = Get5_GetGameState();
-  return state == Get5State_KnifeRound;
 }
 
 stock bool IsGet5ImmediateCosmeticBlockedPhase() {

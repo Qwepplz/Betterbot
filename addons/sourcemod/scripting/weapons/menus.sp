@@ -15,17 +15,6 @@
  * this program. If not, see http://www.gnu.org/licenses/.
  */
 
-int GetClientMenuLanguage(int client) {
-  int language = g_iClientLanguage[client];
-  if (language < 0 || language >= MAX_LANG || menuWeapons[language][0] == null) {
-    language = g_iDefaultLanguage;
-  }
-  if (language < 0 || language >= MAX_LANG || menuWeapons[language][0] == null) {
-    language = 0;
-  }
-  return language;
-}
-
 void DisplayWeaponPaintMenu(int client, int weaponIndex, int menuTime, int menuSelectionPosition = -1) {
   if (weaponIndex < 0 || weaponIndex >= sizeof(g_WeaponClasses)) {
     return;
@@ -55,30 +44,9 @@ Menu CreateKnifeMenu(int client) {
   Menu menu = new Menu(KnifeMenuHandler, MENU_ACTIONS_DEFAULT | MenuAction_DrawItem);
   menu.SetTitle("%T", "KnifeMenuTitle", client);
 
-  AddKnifeMenuItem(menu, client, "0", "OwnKnife");
-  AddKnifeMenuItem(menu, client, "-1", "RandomKnife");
-  AddKnifeMenuItem(menu, client, "49", "weapon_knife_cord");
-  AddKnifeMenuItem(menu, client, "50", "weapon_knife_canis");
-  AddKnifeMenuItem(menu, client, "51", "weapon_knife_outdoor");
-  AddKnifeMenuItem(menu, client, "52", "weapon_knife_skeleton");
-  AddKnifeMenuItem(menu, client, "53", "weapon_knife_balisong");
-  AddKnifeMenuItem(menu, client, "54", "weapon_knife_kunai");
-  AddKnifeMenuItem(menu, client, "55", "weapon_knife_cs15");
-  AddKnifeMenuItem(menu, client, "48", "weapon_knife_css");
-  AddKnifeMenuItem(menu, client, "43", "weapon_knife_ursus");
-  AddKnifeMenuItem(menu, client, "44", "weapon_knife_gypsy_jackknife");
-  AddKnifeMenuItem(menu, client, "45", "weapon_knife_stiletto");
-  AddKnifeMenuItem(menu, client, "46", "weapon_knife_widowmaker");
-  AddKnifeMenuItem(menu, client, "33", "weapon_knife_karambit");
-  AddKnifeMenuItem(menu, client, "34", "weapon_knife_m9_bayonet");
-  AddKnifeMenuItem(menu, client, "35", "weapon_bayonet");
-  AddKnifeMenuItem(menu, client, "36", "weapon_knife_survival_bowie");
-  AddKnifeMenuItem(menu, client, "37", "weapon_knife_butterfly");
-  AddKnifeMenuItem(menu, client, "38", "weapon_knife_flip");
-  AddKnifeMenuItem(menu, client, "39", "weapon_knife_push");
-  AddKnifeMenuItem(menu, client, "40", "weapon_knife_tactical");
-  AddKnifeMenuItem(menu, client, "41", "weapon_knife_falchion");
-  AddKnifeMenuItem(menu, client, "42", "weapon_knife_gut");
+  for (int i = 0; i < sizeof(g_KnifeMenuIndex); i++) {
+    AddKnifeMenuItem(menu, client, g_KnifeMenuIndex[i], g_KnifeMenuPhrase[i]);
+  }
 
   if (LibraryExists("diy")) {
     menu.ExitBackButton = true;
@@ -515,11 +483,6 @@ Menu CreateNameTagMenu(int client) {
   Format(buffer, sizeof(buffer), "%T", "ChangeNameTag", client);
   menu.AddItem("nametag", buffer);
 
-  /* NAMETAGCOLOR
-  Format(buffer, sizeof(buffer), "%T", "NameTagColor", client);
-  menu.AddItem("color", buffer, strlen(g_NameTag[client][g_iIndex[client]]) > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-  */
-
   Format(buffer, sizeof(buffer), "%T", "DeleteNameTag", client);
   menu.AddItem("delete", buffer,
                strlen(g_NameTag[client][g_iIndex[client]][team]) > 0 ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
@@ -539,16 +502,6 @@ public int NameTagMenuHandler(Menu menu, MenuAction action, int client, int sele
           g_bWaitingForNametag[client] = true;
           PrintToChat(client, " %s \x04%t", g_ChatPrefix, "NameTagInstruction");
         }
-        /* NAMETAGCOLOR
-        else if(StrEqual(buffer, "color"))
-        {
-                int menuTime;
-                if((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0)
-                {
-                        CreateColorsMenu(client).Display(client, menuTime);
-                }
-        }
-        */
         else if (StrEqual(buffer, "delete")) {
           char updateFields[256];
           char weaponName[32];
@@ -584,109 +537,6 @@ public int NameTagMenuHandler(Menu menu, MenuAction action, int client, int sele
   }
   return 0;
 }
-
-/* NAMETAGCOLOR
-Menu CreateColorsMenu(int client)
-{
-        Menu menu = new Menu(ColorsMenuHandler);
-        menu.SetTitle("%T", "ChooseColor", client);
-
-        char buffer[128];
-
-        Format(buffer, sizeof(buffer), "%T", "DefaultColor", client);
-        menu.AddItem("default", buffer);
-
-        Format(buffer, sizeof(buffer), "%T", "Black", client);
-        menu.AddItem("000000", buffer);
-
-        Format(buffer, sizeof(buffer), "%T", "Yellow", client);
-        menu.AddItem("FFFF00", buffer);
-
-        Format(buffer, sizeof(buffer), "%T", "Red", client);
-        menu.AddItem("FF0000", buffer);
-
-        Format(buffer, sizeof(buffer), "%T", "Green", client);
-        menu.AddItem("00FF00", buffer);
-
-        Format(buffer, sizeof(buffer), "%T", "Blue", client);
-        menu.AddItem("0000AA", buffer);
-
-        menu.ExitBackButton = true;
-
-        return menu;
-}
-
-public int ColorsMenuHandler(Menu menu, MenuAction action, int client, int selection)
-{
-        switch(action)
-        {
-                case MenuAction_Select:
-                {
-                        if(IsClientInGame(client))
-                        {
-                                char buffer[30];
-                                menu.GetItem(selection, buffer, sizeof(buffer));
-
-                                char stripped[128];
-                                char escaped[257];
-                                char colored[128];
-                                char updateFields[512];
-                                StripHtml(g_NameTag[client][g_iIndex[client]], stripped, sizeof(stripped));
-                                if (StrEqual(buffer, "default"))
-                                {
-                                        g_NameTag[client][g_iIndex[client]] = stripped;
-
-                                        db.Escape(stripped, escaped, sizeof(escaped));
-                                }
-                                else
-                                {
-                                        Format(colored, sizeof(colored), "<font color='#%s'>%s</font>", buffer,
-stripped); g_NameTag[client][g_iIndex[client]] = colored;
-
-                                        db.Escape(colored, escaped, sizeof(escaped));
-                                }
-
-                                char weaponName[32];
-                                RemoveWeaponPrefix(g_WeaponClasses[g_iIndex[client]], weaponName, sizeof(weaponName));
-                                Format(updateFields, sizeof(updateFields), "%s_tag = '%s'", weaponName, escaped);
-                                UpdatePlayerData(client, updateFields);
-
-                                RefreshWeapon(client, g_iIndex[client]);
-
-                                CreateTimer(1.0, NameTagColorsMenuTimer, GetClientUserId(client));
-                        }
-                }
-                case MenuAction_Cancel:
-                {
-                        if(IsClientInGame(client) && selection == MenuCancel_ExitBack)
-                        {
-                                int menuTime;
-                                if((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0)
-                                {
-                                        CreateNameTagMenu(client).Display(client, menuTime);
-                                }
-                        }
-                }
-                case MenuAction_End:
-                {
-                        delete menu;
-                }
-        }
-}
-
-public Action NameTagColorsMenuTimer(Handle timer, int userid)
-{
-        int clientIndex = GetClientOfUserId(userid);
-        if(IsValidClient(clientIndex))
-        {
-                int menuTime;
-                if((menuTime = GetRemainingGracePeriodSeconds(clientIndex)) >= 0)
-                {
-                        CreateColorsMenu(clientIndex).Display(clientIndex, menuTime);
-                }
-        }
-}
-*/
 
 Menu CreateAllWeaponsPaintsMenu(int client) {
   int index = g_iIndex[client];

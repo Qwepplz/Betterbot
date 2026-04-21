@@ -52,7 +52,6 @@ public Plugin myinfo =
 public void OnPluginStart() {
   if (GetEngineVersion() != Engine_CSGO) {
     SetFailState("Only CS:GO servers are supported!");
-    return;
   }
 
   if (PTaH_Version() < 101000) {
@@ -61,7 +60,6 @@ public void OnPluginStart() {
     SetFailState(
         "PTaH extension needs to be updated. (Installed Version: %s - Required Version: 1.1.0+) [ Download from: https://ptah.zizt.ru ]",
         sBuf);
-    return;
   }
 
   LoadTranslations("weapons.phrases");
@@ -108,14 +106,6 @@ public void OnPluginStart() {
   PTaH(PTaH_GiveNamedItemPre, Hook, GiveNamedItemPre);
   PTaH(PTaH_GiveNamedItemPost, Hook, GiveNamedItemPost);
   HookEvent("player_death", EventPlayerDeath, EventHookMode_Pre);
-
-  // ConVar g_cvGameType = FindConVar("game_type");
-  // ConVar g_cvGameMode = FindConVar("game_mode");
-
-  // if(g_cvGameType.IntValue == 1 && g_cvGameMode.IntValue == 2)
-  // {
-  // 	PTaH(PTaH_WeaponCanUsePre, Hook, WeaponCanUsePre);
-  // }
 
   AddCommandListener(ChatListener, "say");
   AddCommandListener(ChatListener, "say2");
