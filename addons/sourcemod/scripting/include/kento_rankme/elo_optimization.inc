@@ -110,18 +110,6 @@ int CalculateScoreLoss(int client, int scoreDiff)
 	return scoreDiff;
 }
 
-stock float GetConsistencyReward(int client)
-{
-	if (client >= MAXPLAYERS)
-		return 0.0;
-	float multiplier = GetPerformanceMultiplier(client);
-	if (multiplier >= 1.5)
-		return 0.05;
-	if (multiplier >= 1.2)
-		return 0.02;
-	return 0.0;
-}
-
 int ValidateEloChange(int client, int change)
 {
 	if (client >= MAXPLAYERS)
@@ -265,53 +253,6 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 			}
 		}
 	}
-}
-
-stock void UpdateBasicKillStats(int attacker, int victim, const char[] weapon, int scoreDiff)
-{
-	g_aStats[victim].DEATHS++;
-	g_aSession[victim].DEATHS++;
-	if (attacker < MAXPLAYERS)
-	{
-		g_aStats[attacker].KILLS++;
-		g_aSession[attacker].KILLS++;
-		g_aStats[attacker].SCORE += scoreDiff;
-		g_aSession[attacker].SCORE += scoreDiff;
-		char weaponName[64];
-		strcopy(weaponName, sizeof(weaponName), weapon);
-		int weaponNum = GetWeaponNum(weaponName);
-		if (weaponNum < 42)
-			g_aWeapons[attacker].AddKill(weaponNum);
-		UpdateKillRecords(attacker, victim);
-	}
-
-	if (!g_bUseEloSystem)
-	{
-		int loss = g_bPointsLoseRoundCeil ? RoundToCeil(scoreDiff * g_fPercentPointsLose) : RoundToFloor(scoreDiff * g_fPercentPointsLose);
-		g_aStats[victim].SCORE -= loss;
-		if (g_bPointsMinEnabled && g_aStats[victim].SCORE < g_PointsMin)
-		{
-			int diff = g_PointsMin - g_aStats[victim].SCORE;
-			g_aStats[victim].SCORE = g_PointsMin;
-			g_aSession[victim].SCORE -= diff;
-		}
-		else
-		{
-			g_aSession[victim].SCORE -= loss;
-		}
-	}
-}
-
-stock void ProcessEloOptimizationKill(int attacker, int victim, const char[] weapon, bool headshot, bool flashed, bool throughSmoke, bool wallbang, bool firstBloodKill, bool noScope)
-{
-	if (!g_bUseEloSystem || attacker < 1 || attacker > MaxClients || victim < 1 || victim > MaxClients)
-		return;
-
-	bool knife = StrEqual(weapon, "knife", true);
-	bool taser = StrEqual(weapon, "taser", true);
-	int eloChange = CalculateEloScoreDifference(attacker, victim, headshot, flashed, throughSmoke, wallbang, firstBloodKill, noScope, knife, taser);
-	UpdateBasicKillStats(attacker, victim, weapon, eloChange);
-	ProcessRevengeAndStreakBonuses(attacker, victim);
 }
 
 void InitializeErrorHandling()
