@@ -16,9 +16,6 @@
 #define RANK_COUNT 18
 #define RANK_NAME_COUNT 19
 #define RANK_STRING_LENGTH 256
-#define RANK_PREFIX_LENGTH 40
-#define FLAG_BUFFER_LENGTH 10
-#define MENU_INDEX_LENGTH 4
 
 static const char g_RankPhraseKeys[RANK_NAME_COUNT][] =
 {
@@ -119,7 +116,7 @@ ConVar g_CVAR_RankPoints_Prefix;
 
 int g_RankPoints_Type;
 int g_RankPoints_Flag;
-char g_RankPoints_Prefix[RANK_PREFIX_LENGTH];
+char g_RankPoints_Prefix[40];
 int RankPoints[RANK_COUNT];
 
 bool g_zrank;
@@ -180,7 +177,7 @@ void LoadRankPointValues()
 
 void LoadRankSettings()
 {
-	char flagBuffer[FLAG_BUFFER_LENGTH];
+	char flagBuffer[10];
 	
 	g_CVAR_RankPoints_Prefix.GetString(g_RankPoints_Prefix, sizeof(g_RankPoints_Prefix));
 	g_RankPoints_Type = g_CVAR_RankPoints_Type.IntValue;
@@ -223,18 +220,14 @@ bool CanUseRank(int client)
 void RevealAllRanksToClient(int client)
 {
 	Handle message = StartMessageOne("ServerRankRevealAll", client);
-	if (message == INVALID_HANDLE)
-		PrintToChat(client, "INVALID_HANDLE");
-	else
+	if (message != null)
 		EndMessage();
 }
 
 void RevealAllRanksToAll()
 {
 	Handle message = StartMessageAll("ServerRankRevealAll");
-	if (message == INVALID_HANDLE)
-		PrintToServer("ServerRankRevealAll = INVALID_HANDLE");
-	else
+	if (message != null)
 		EndMessage();
 }
 
@@ -412,22 +405,15 @@ public void Hook_OnThinkPost(int iEnt)
 	static int rankOffset = -1;
 	if (rankOffset == -1)
 		rankOffset = FindSendPropInfo("CCSPlayerResource", "m_iCompetitiveRanking");
-	
-	int currentRanks[MAXPLAYERS + 1] = {0, ...};
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsValidClient(i))
-			currentRanks[i] = rank[i];
-	}
-	
-	SetEntDataArray(iEnt, rankOffset, currentRanks, MaxClients + 1);
+
+	SetEntDataArray(iEnt, rankOffset, rank, MaxClients + 1);
 }
 
 public Action Menu_Points(int client, int args)
 {
 	Menu menu = new Menu(Panel_Handler);
 	char buffer[RANK_STRING_LENGTH];
-	char indexText[MENU_INDEX_LENGTH];
+	char indexText[4];
 	
 	Format(buffer, sizeof(buffer), "%t", "Rank Menu Title");
 	menu.SetTitle(buffer);
@@ -483,5 +469,5 @@ public Action Event_AnnouncePhaseEnd(Handle event, const char[] name, bool dontB
 
 stock bool IsValidClient(int client)
 {
-	return client >= 1 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client);
+	return client >= 1 && client <= MaxClients && IsClientInGame(client);
 }

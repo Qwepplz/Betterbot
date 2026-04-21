@@ -27,10 +27,8 @@ public void OnPluginStart()
         "say_team"
     };
 
-    for (int index = 0; index < sizeof(commands); index++)
-    {
-        AddCommandListener(ChatListener, commands[index]);
-    }
+    for (int i; i < sizeof(commands); i++)
+        AddCommandListener(ChatListener, commands[i]);
 }
 
 public Action ChatListener(int client, const char[] command, int args)
@@ -51,7 +49,10 @@ public Action ChatListener(int client, const char[] command, int args)
     }
 
     char loweredCommand[COMMAND_NAME_LENGTH];
-    String_ToLower(message[prefixLength], loweredCommand, sizeof(loweredCommand));
+    strcopy(loweredCommand, sizeof(loweredCommand), message[prefixLength]);
+
+    for (int i; loweredCommand[i] != '\0'; i++)
+        loweredCommand[i] = CharToLower(loweredCommand[i]);
 
     char commandToRun[COMMAND_NAME_LENGTH];
     FormatEx(commandToRun, sizeof(commandToRun), "sm_%s", loweredCommand);
@@ -84,21 +85,7 @@ int GetPrefixLength(const char[] message)
     return 0;
 }
 
-void String_ToLower(const char[] input, char[] output, int size)
-{
-    int maxLength = size - 1;
-    int index = 0;
-
-    while (index < maxLength && input[index] != '\0')
-    {
-        output[index] = CharToLower(input[index]);
-        index++;
-    }
-
-    output[index] = '\0';
-}
-
 bool IsPlayer(int client)
 {
-    return client > 0 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) && !IsFakeClient(client);
+    return client > 0 && client <= MaxClients && IsClientInGame(client) && !IsFakeClient(client);
 }

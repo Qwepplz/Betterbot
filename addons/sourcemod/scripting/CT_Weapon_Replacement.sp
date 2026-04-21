@@ -7,8 +7,7 @@
 
 enum
 {
-    WEAPON_CLASSNAME_LENGTH = 64,
-    PLAYER_WEAPON_SLOT_COUNT = 5
+    WEAPON_CLASSNAME_LENGTH = 64
 };
 
 static const float WEAPON_REPLACE_DELAY = 0.2;
@@ -72,27 +71,21 @@ public Action Event_ItemPurchase(Event event, const char[] name, bool dontBroadc
         return Plugin_Continue;
     }
 
-    DataPack dataPack = new DataPack();
-    dataPack.WriteCell(GetClientUserId(client));
-    CreateTimer(WEAPON_REPLACE_DELAY, Timer_ReplaceWeapon, dataPack);
+    CreateTimer(WEAPON_REPLACE_DELAY, Timer_ReplaceWeapon, GetClientUserId(client));
 
     return Plugin_Continue;
 }
 
-public Action Timer_ReplaceWeapon(Handle timer, DataPack dataPack)
+public Action Timer_ReplaceWeapon(Handle timer, int userId)
 {
-    dataPack.Reset(false);
-    int userId = dataPack.ReadCell();
-    delete dataPack;
-
     int client = GetClientOfUserId(userId);
     if (!IsValidBotClient(client) || !IsPlayerAlive(client) || !g_Cvar_ReplaceM4A4.BoolValue)
     {
         return Plugin_Stop;
     }
 
-    int weaponEntity = -1;
-    while ((weaponEntity = GetPlayerWeaponByClassname(client, PURCHASED_M4A4)) != -1)
+    int weaponEntity = GetPlayerWeaponByClassname(client, PURCHASED_M4A4);
+    if (weaponEntity != -1)
     {
         RemovePlayerItem(client, weaponEntity);
         AcceptEntityInput(weaponEntity, "Kill");
@@ -110,7 +103,7 @@ public Action Timer_ReplaceWeapon(Handle timer, DataPack dataPack)
 
 int GetPlayerWeaponByClassname(int client, const char[] targetClassname)
 {
-    for (int slot = 0; slot < PLAYER_WEAPON_SLOT_COUNT; slot++)
+    for (int slot; slot < 5; slot++)
     {
         int weaponEntity = GetPlayerWeaponSlot(client, slot);
         if (weaponEntity == -1)

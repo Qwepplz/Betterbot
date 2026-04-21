@@ -33,7 +33,7 @@ ConVar g_hCvarDebug;
 ConVar g_hCvarColorLow;
 ConVar g_hCvarColorMedium;
 ConVar g_hCvarColorHigh;
-Handle g_hTimer_Countdown = INVALID_HANDLE;
+Handle g_hTimer_Countdown;
 float g_fDetonateTime;
 float g_fC4Timer;
 float g_fDefuseEndTime;
@@ -184,7 +184,7 @@ public Action EventBombPlantedPost(Event event, const char[] name, bool dontBroa
         BroadcastSimpleC4Message("Bomb Planted");
     }
 
-    BombTime_BombPlanted();
+    ResetDefuseState();
     return Plugin_Continue;
 }
 
@@ -215,21 +215,21 @@ public Action EventRoundStart(Event event, const char[] name, bool dontBroadcast
 
 public Action TimerCountdown(Handle timer, any data)
 {
-    if (timer == INVALID_HANDLE || g_hTimer_Countdown != timer)
+    if (g_hTimer_Countdown != timer)
     {
         return Plugin_Stop;
     }
 
     if (g_fDetonateTime <= 0.0)
     {
-        g_hTimer_Countdown = INVALID_HANDLE;
+        g_hTimer_Countdown = null;
         return Plugin_Stop;
     }
 
     float timeLeft = g_fDetonateTime - GetGameTime();
     if (timeLeft < -1.0)
     {
-        g_hTimer_Countdown = INVALID_HANDLE;
+        g_hTimer_Countdown = null;
         return Plugin_Stop;
     }
 
@@ -308,11 +308,6 @@ void BombTime_PlayerDeath(Event event)
         FormatSeconds(-timeAway, seconds, sizeof(seconds));
         BroadcastC4Message("PostDefuseKillTimeMessage", attackerName, seconds);
     }
-}
-
-void BombTime_BombPlanted()
-{
-    ResetDefuseState();
 }
 
 void BombTime_BombDefused(Event event)
@@ -462,21 +457,13 @@ void GetCountdownColor(int seconds, char[] color, int maxlen)
 
 void FormatSeconds(float seconds, char[] buffer, int maxlen)
 {
-    if (seconds < 0.0)
-    {
-        seconds = -seconds;
-    }
-
-    Format(buffer, maxlen, "%.1f", seconds);
+    Format(buffer, maxlen, "%.1f", FloatAbs(seconds));
 }
 
 void StopCountdownTimer()
 {
-    if (g_hTimer_Countdown != INVALID_HANDLE)
-    {
-        KillTimer(g_hTimer_Countdown);
-        g_hTimer_Countdown = INVALID_HANDLE;
-    }
+    delete g_hTimer_Countdown;
+    g_hTimer_Countdown = null;
 }
 
 void ResetDefuseState()
@@ -489,7 +476,6 @@ bool IsClientValid(int client)
 {
     return client > 0
         && client <= MaxClients
-        && IsClientConnected(client)
         && IsClientInGame(client)
         && !IsClientSourceTV(client)
         && !IsClientReplay(client);
@@ -502,11 +488,6 @@ bool IsHumanClient(int client)
 
 stock void CPrintToChat(int client, const char[] format, any ...)
 {
-    if (!IsHumanClient(client))
-    {
-        return;
-    }
-
     char message[CHAT_MESSAGE_MAX];
     SetGlobalTransTarget(client);
     VFormat(message, sizeof(message), format, 3);
