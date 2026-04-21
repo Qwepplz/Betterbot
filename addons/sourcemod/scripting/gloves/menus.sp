@@ -25,19 +25,7 @@ public int GloveMenuHandler(Menu menu, MenuAction action, int client, int select
 
 				if (IsClientsCurrentGloveTeam(client, team) && !IsGet5ImmediateCosmeticBlockedPhase())
 				{
-					int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-					if (activeWeapon != -1)
-					{
-						SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", -1);
-					}
-					GivePlayerGloves(client);
-					if (activeWeapon != -1)
-					{
-						DataPack dpack;
-						CreateDataTimer(0.1, ResetGlovesTimer, dpack);
-						dpack.WriteCell(client);
-						dpack.WriteCell(activeWeapon);
-					}
+					ApplyGlovesWithWeaponReset(client);
 				}
 
 				DataPack pack;
@@ -122,19 +110,7 @@ public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int se
 						}
 						else
 						{
-							int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-							if (activeWeapon != -1)
-							{
-								SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", -1);
-							}
-							GivePlayerGloves(client);
-							if (activeWeapon != -1)
-							{
-								DataPack dpack;
-								CreateDataTimer(0.1, ResetGlovesTimer, dpack);
-								dpack.WriteCell(client);
-								dpack.WriteCell(activeWeapon);
-							}
+							ApplyGlovesWithWeaponReset(client);
 						}
 					}
 
@@ -227,42 +203,24 @@ public int FloatMenuHandler(Menu menu, MenuAction action, int client, int select
 			{
 				char buffer[30];
 				menu.GetItem(selection, buffer, sizeof(buffer));
-				if (StrEqual(buffer, "increase"))
+				float direction = StrEqual(buffer, "increase") ? -1.0 : 1.0;
+
+				g_fFloatValue[client][g_iTeam[client]] += direction * g_fFloatIncrementSize;
+				if (g_fFloatValue[client][g_iTeam[client]] < 0.0)
+					g_fFloatValue[client][g_iTeam[client]] = 0.0;
+				if (g_fFloatValue[client][g_iTeam[client]] > 1.0)
+					g_fFloatValue[client][g_iTeam[client]] = 1.0;
+
+				if (g_FloatTimer[client] != INVALID_HANDLE)
 				{
-					g_fFloatValue[client][g_iTeam[client]] = g_fFloatValue[client][g_iTeam[client]] - g_fFloatIncrementSize;
-					if (g_fFloatValue[client][g_iTeam[client]] < 0.0)
-					{
-						g_fFloatValue[client][g_iTeam[client]] = 0.0;
-					}
-					if (g_FloatTimer[client] != INVALID_HANDLE)
-					{
-						KillTimer(g_FloatTimer[client]);
-						g_FloatTimer[client] = INVALID_HANDLE;
-					}
-					DataPack pack;
-					g_FloatTimer[client] = CreateDataTimer(2.0, FloatTimer, pack);
-					pack.WriteCell(client);
-					pack.WriteCell(g_iTeam[client]);
-					CreateFloatMenu(client).Display(client, MENU_TIME_FOREVER);
+					KillTimer(g_FloatTimer[client]);
+					g_FloatTimer[client] = INVALID_HANDLE;
 				}
-				else if (StrEqual(buffer, "decrease"))
-				{
-					g_fFloatValue[client][g_iTeam[client]] = g_fFloatValue[client][g_iTeam[client]] + g_fFloatIncrementSize;
-					if (g_fFloatValue[client][g_iTeam[client]] > 1.0)
-					{
-						g_fFloatValue[client][g_iTeam[client]] = 1.0;
-					}
-					if (g_FloatTimer[client] != INVALID_HANDLE)
-					{
-						KillTimer(g_FloatTimer[client]);
-						g_FloatTimer[client] = INVALID_HANDLE;
-					}
-					DataPack pack;
-					g_FloatTimer[client] = CreateDataTimer(1.0, FloatTimer, pack);
-					pack.WriteCell(client);
-					pack.WriteCell(g_iTeam[client]);
-					CreateFloatMenu(client).Display(client, MENU_TIME_FOREVER);
-				}
+				DataPack pack;
+				g_FloatTimer[client] = CreateDataTimer(StrEqual(buffer, "increase") ? 2.0 : 1.0, FloatTimer, pack);
+				pack.WriteCell(client);
+				pack.WriteCell(g_iTeam[client]);
+				CreateFloatMenu(client).Display(client, MENU_TIME_FOREVER);
 			}
 		}
 		case MenuAction_Cancel:

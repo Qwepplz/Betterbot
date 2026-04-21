@@ -52,29 +52,20 @@ public void T_GetPlayerDataCallback(Database database, DBResultSet results, cons
 	if (results.FetchRow())
 	{
 		int field;
-		if (results.FieldNameToNum("t_group", field))
+		static const int teams[] = { CS_TEAM_T, CS_TEAM_CT };
+		static const char prefixes[][] = { "t", "ct" };
+		for (int i = 0; i < sizeof(teams); i++)
 		{
-			g_iGroup[client][CS_TEAM_T] = results.FetchInt(field);
-		}
-		if (results.FieldNameToNum("t_glove", field))
-		{
-			g_iGloves[client][CS_TEAM_T] = results.FetchInt(field);
-		}
-		if (results.FieldNameToNum("t_float", field))
-		{
-			g_fFloatValue[client][CS_TEAM_T] = results.FetchFloat(field);
-		}
-		if (results.FieldNameToNum("ct_group", field))
-		{
-			g_iGroup[client][CS_TEAM_CT] = results.FetchInt(field);
-		}
-		if (results.FieldNameToNum("ct_glove", field))
-		{
-			g_iGloves[client][CS_TEAM_CT] = results.FetchInt(field);
-		}
-		if (results.FieldNameToNum("ct_float", field))
-		{
-			g_fFloatValue[client][CS_TEAM_CT] = results.FetchFloat(field);
+			char fieldName[16];
+			FormatEx(fieldName, sizeof(fieldName), "%s_group", prefixes[i]);
+			if (results.FieldNameToNum(fieldName, field))
+				g_iGroup[client][teams[i]] = results.FetchInt(field);
+			FormatEx(fieldName, sizeof(fieldName), "%s_glove", prefixes[i]);
+			if (results.FieldNameToNum(fieldName, field))
+				g_iGloves[client][teams[i]] = results.FetchInt(field);
+			FormatEx(fieldName, sizeof(fieldName), "%s_float", prefixes[i]);
+			if (results.FieldNameToNum(fieldName, field))
+				g_fFloatValue[client][teams[i]] = results.FetchFloat(field);
 		}
 	}
 }
@@ -148,18 +139,19 @@ public void T_CreateTableCallback(Database database, DBResultSet results, const 
 void MigrateMainTableColumns()
 {
 	char query[255];
-	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN t_group int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
-	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
-	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN t_glove int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
-	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
-	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN t_float decimal(3,2) NOT NULL DEFAULT '0.0'", g_TablePrefix);
-	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
-	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN ct_group int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
-	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
-	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN ct_glove int(5) NOT NULL DEFAULT '0'", g_TablePrefix);
-	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
-	FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN ct_float decimal(3,2) NOT NULL DEFAULT '0.0'", g_TablePrefix);
-	db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	static const char columnDefs[][] = {
+		"t_group int(5) NOT NULL DEFAULT '0'",
+		"t_glove int(5) NOT NULL DEFAULT '0'",
+		"t_float decimal(3,2) NOT NULL DEFAULT '0.0'",
+		"ct_group int(5) NOT NULL DEFAULT '0'",
+		"ct_glove int(5) NOT NULL DEFAULT '0'",
+		"ct_float decimal(3,2) NOT NULL DEFAULT '0.0'"
+	};
+	for (int i = 0; i < sizeof(columnDefs); i++)
+	{
+		FormatEx(query, sizeof(query), "ALTER TABLE %sgloves ADD COLUMN %s", g_TablePrefix, columnDefs[i]);
+		db.Query(T_MigrateTableCallback, query, _, DBPrio_Low);
+	}
 }
 
 public void T_MigrateTableCallback(Database database, DBResultSet results, const char[] error, any data)

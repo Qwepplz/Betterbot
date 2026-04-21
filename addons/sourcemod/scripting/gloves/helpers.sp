@@ -13,17 +13,6 @@ enum Get5State {
 
 native Get5State Get5_GetGameState();
 
-stock bool IsGet5CosmeticUnsafePhase()
-{
-	if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available)
-	{
-		return false;
-	}
-
-	Get5State state = Get5_GetGameState();
-	return state == Get5State_KnifeRound;
-}
-
 stock bool IsGet5ImmediateCosmeticBlockedPhase()
 {
 	if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available)
@@ -149,5 +138,22 @@ stock void ClearPlayerWearables(int client)
 	if (ent != -1)
 	{
 		AcceptEntityInput(ent, "KillHierarchy");
+	}
+}
+
+stock void ApplyGlovesWithWeaponReset(int client)
+{
+	int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+	if (activeWeapon != -1)
+	{
+		SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", -1);
+	}
+	GivePlayerGloves(client);
+	if (activeWeapon != -1)
+	{
+		DataPack dpack;
+		CreateDataTimer(0.1, ResetGlovesTimer, dpack);
+		dpack.WriteCell(client);
+		dpack.WriteCell(activeWeapon);
 	}
 }
