@@ -448,7 +448,7 @@ void GetCvarValues()
 	
 	/* Min points */
 	g_PointsMin = g_cvarPointsMin.IntValue;
-	g_bPointsMinEnabled = g_cvarPointsMin.BoolValue;
+	g_bPointsMinEnabled = g_cvarPointsMinEnabled.BoolValue;
 	
 	/*RankMe Connect Announcer*/
 	g_bAnnounceConnect = g_cvarAnnounceConnect.BoolValue;
@@ -456,7 +456,7 @@ void GetCvarValues()
 	g_bAnnounceConnectHint = g_cvarAnnounceConnectHint.BoolValue;
 	g_bAnnounceDisconnect = g_cvarAnnounceDisconnect.BoolValue;
 	g_bAnnounceTopConnect = g_cvarAnnounceTopConnect.BoolValue;
-	g_AnnounceTopPosConnect = g_cvarAnnounceTopPosConnect.BoolValue;
+	g_AnnounceTopPosConnect = g_cvarAnnounceTopPosConnect.IntValue;
 	g_bAnnounceTopConnectChat = g_cvarAnnounceTopConnectChat.BoolValue;
 	g_bAnnounceTopConnectHint = g_cvarAnnounceTopConnectHint.BoolValue;
 	g_bAnnounceKillStreakGlobal = g_cvarAnnounceKillStreakGlobal.BoolValue;
@@ -472,6 +472,9 @@ void GetCvarValues()
 	g_iEloKHigh = g_cvarEloKHigh.IntValue;
 	g_iEloKPro = g_cvarEloKPro.IntValue;
 	g_bEloDebugLog = g_cvarEloDebugLog.BoolValue;
+
+	/* Rank Cache */
+	g_bRankCache = g_cvarRankCache.BoolValue;
 }
 
 public void OnConVarChanged(Handle convar, const char[] oldValue, const char[] newValue) {
