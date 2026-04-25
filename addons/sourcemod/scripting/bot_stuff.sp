@@ -69,6 +69,7 @@ float g_fBotOrigin[MAXPLAYERS+1][3], g_fTargetPos[MAXPLAYERS+1][3], g_fNadeTarge
 float g_fOriginalNoisePos[MAXPLAYERS+1][3];
 float g_fRoundStart, g_fFreezeTimeEnd;
 float g_fLookAngleMaxAccel[MAXPLAYERS+1], g_fReactionTime[MAXPLAYERS+1], g_fAggression[MAXPLAYERS+1], g_fShootTimestamp[MAXPLAYERS+1], g_fThrowNadeTimestamp[MAXPLAYERS+1], g_fCrouchTimestamp[MAXPLAYERS+1];
+float g_fSniperRetreatCooldown[MAXPLAYERS+1];
 float g_fBombPos[3];
 bool g_bNadeResolved[MAXPLAYERS+1];
 int g_iNadeSolveDefIndex[MAXPLAYERS+1];
@@ -130,42 +131,42 @@ static const char g_szTopBotNames[][] =
 };
 
 static char g_szBoneNames[][] =  {
-	"neck_0", 
-	"pelvis", 
-	"spine_0", 
-	"spine_1", 
-	"spine_2", 
-	"spine_3", 
+	"neck_0",
+	"pelvis",
+	"spine_0",
+	"spine_1",
+	"spine_2",
+	"spine_3",
 	"clavicle_l",
 	"clavicle_r",
-	"arm_upper_L", 
-	"arm_lower_L", 
-	"hand_L", 
-	"arm_upper_R", 
-	"arm_lower_R", 
-	"hand_R", 
-	"leg_upper_L",  
-	"leg_lower_L", 
+	"arm_upper_L",
+	"arm_lower_L",
+	"hand_L",
+	"arm_upper_R",
+	"arm_lower_R",
+	"hand_R",
+	"leg_upper_L",
+	"leg_lower_L",
 	"ankle_L",
-	"leg_upper_R", 
+	"leg_upper_R",
 	"leg_lower_R",
 	"ankle_R"
 };
 
 enum RouteType
 {
-	DEFAULT_ROUTE = 0, 
-	FASTEST_ROUTE, 
-	SAFEST_ROUTE, 
+	DEFAULT_ROUTE = 0,
+	FASTEST_ROUTE,
+	SAFEST_ROUTE,
 	RETREAT_ROUTE
 }
 
 enum PriorityType
 {
 	PRIORITY_LOWEST = -1,
-	PRIORITY_LOW, 
-	PRIORITY_MEDIUM, 
-	PRIORITY_HIGH, 
+	PRIORITY_LOW,
+	PRIORITY_MEDIUM,
+	PRIORITY_HIGH,
 	PRIORITY_UNINTERRUPTABLE
 }
 
@@ -224,20 +225,20 @@ enum DispositionType
 enum GamePhase
 {
 	GAMEPHASE_WARMUP_ROUND,
-	GAMEPHASE_PLAYING_STANDARD,	
+	GAMEPHASE_PLAYING_STANDARD,
 	GAMEPHASE_PLAYING_FIRST_HALF,
 	GAMEPHASE_PLAYING_SECOND_HALF,
 	GAMEPHASE_HALFTIME,
-	GAMEPHASE_MATCH_ENDED,    
+	GAMEPHASE_MATCH_ENDED,
 	GAMEPHASE_MAX
 }
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
-	name = "BOT Improvement", 
-	author = "manico", 
-	description = "Improves bots and does other things.", 
-	version = "1.4.3", 
+	name = "BOT Improvement",
+	author = "manico",
+	description = "Improves bots and does other things.",
+	version = "1.4.4",
 	url = "http://steamcommunity.com/id/manico001"
 };
 
@@ -254,17 +255,17 @@ public void OnPluginStart()
     g_cvGravity = FindConVar("sv_gravity");
     g_cvMolotovDetonateTime = FindConVar("molotov_throw_detonate_time");
     g_cvMolotovMaxSlope = FindConVar("weapon_molotov_maxdetonateslope");
-    
+
     g_bIsCompetitive = (g_cvGameMode.IntValue == 1 && g_cvGameType.IntValue == 0);
-    
+
     HookEventEx("round_prestart", OnRoundPreStart);
     HookEventEx("round_start", OnRoundStart);
     HookEventEx("round_end", OnRoundEnd);
     HookEventEx("round_freeze_end", OnFreezetimeEnd);
-    
+
     HookEventEx("player_spawn", OnPlayerSpawn);
     HookEventEx("player_death", OnPlayerDeath);
-    
+
     HookEventEx("weapon_zoom", OnWeaponZoom);
     HookEventEx("weapon_fire", OnWeaponFire);
 
@@ -272,11 +273,11 @@ public void OnPluginStart()
     HookEventEx("bomb_defused", OnBombDefused);
     HookEventEx("bomb_beginplant", OnBombBeginPlant);
     HookEventEx("player_jump", OnPlayerJump);
-    
+
     LoadSDK();
     LoadDetours();
 	InitializeMapRuntime();
-     
+
     RegServerCmd("team", Command_Team);
     RegConsoleCmd("sm_validate_bots", Command_ValidateBots);
 }
@@ -336,7 +337,7 @@ public Action Command_Team(int iArgs)
         TrimString(szPlayerNames[i]);
         if (szPlayerNames[i][0] != '\0')
         {
-            ServerCommand("bot_add_%s %s", szSide, szPlayerNames[i]);
+            ServerCommand("bot_add_%s \"%s\"", szSide, szPlayerNames[i]);
         }
     }
 
@@ -442,7 +443,7 @@ void InitializeMapRuntime()
     {
         LogError("Failed to find m_nPersonaDataPublicLevel offset");
     }
-    
+
     g_iPlayerColorOffset = FindSendPropInfo("CCSPlayerResource", "m_iCompTeammateColor");
     if (g_iPlayerColorOffset == -1)
     {
@@ -535,21 +536,21 @@ public Action Timer_CheckPlayer(Handle hTimer, any data)
 		char szCurrentWeapon[64];
 		GetClientWeapon(i, szCurrentWeapon, sizeof(szCurrentWeapon));
 		bool bDefaultPistol = IsDefaultPistol(szCurrentWeapon);
-		
+
 		bool bHasPrimary = IsValidEntity(iPrimary);
 		int iFriendsWithPrimary = GetFriendsWithPrimary(i);
 
 		if (g_iCurrentRound == 0 || g_iCurrentRound == iHalfRound)
 		{
 			int iRand = Math_GetRandomInt(1, 100);
-			
+
 			if (iRand <= 2)
 				FakeClientCommand(i, "buy %s", (iTeam == CS_TEAM_CT) ? "elite" : "vest");
 			else if (iRand <= 32)
 				FakeClientCommand(i, "buy %s", (iTeam == CS_TEAM_CT) ? "defuser" : "p250");
 			else if (iRand <= 92)
 				FakeClientCommand(i, "buy vest");
-			
+
 			continue;
 		}
 
@@ -570,7 +571,7 @@ public Action Timer_CheckPlayer(Handle hTimer, any data)
 				FakeClientCommand(i, "buy smokegrenade");
 				FakeClientCommand(i, "buy flashbang");
 				FakeClientCommand(i, "buy flashbang");
-				
+
 				switch (Math_GetRandomInt(1, 3))
 				{
 					case 1: FakeClientCommand(i, "buy hegrenade");
@@ -583,7 +584,7 @@ public Action Timer_CheckPlayer(Handle hTimer, any data)
 				}
 			}
 		}
-		else if ((!IsTeamForcing(iTeam) && ((iTeam == CS_TEAM_T) ? g_iAvgMoneyT : g_iAvgMoneyCT) < 3000 && iAccount > 2000 && !bHasPrimary) || iFriendsWithPrimary >= 1)
+		else if (!IsTeamForcing(iTeam) && ((((iTeam == CS_TEAM_T) ? g_iAvgMoneyT : g_iAvgMoneyCT) < 3000 && iAccount > 2000 && !bHasPrimary) || iFriendsWithPrimary >= 1))
 		{
 			BuyEcoPistolAndGear(i, bDefaultPistol, iTeam, bHasDefuser);
 		}
@@ -615,65 +616,37 @@ void BuyEcoPistolAndGear(int iClient, bool bDefaultPistol, int iTeam, bool bHasD
 
 public Action Timer_MoveToBomb(Handle hTimer, any data)
 {
-	if (g_bBombPlanted)
+	if (!g_bBombPlanted)
+		return Plugin_Continue;
+
+	int iPlantedC4 = FindEntityByClassname(-1, "planted_c4");
+	if (!IsValidEntity(iPlantedC4))
+		return Plugin_Continue;
+
+	float fC4Pos[3];
+	GetEntPropVector(iPlantedC4, Prop_Send, "m_vecOrigin", fC4Pos);
+
+	bool bLastManStanding = (g_iAliveCountT == 0 && g_iAliveCountCT == 1);
+
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		int iPlantedC4 = FindEntityByClassname(-1, "planted_c4");
-		if (!IsValidEntity(iPlantedC4))
-			return Plugin_Continue;
+		if (!IsValidClient(i) || !IsFakeClient(i) || !IsPlayerAlive(i) || GetClientTeam(i) != CS_TEAM_CT)
+			continue;
 
-		float fC4Pos[3];
-		GetEntPropVector(iPlantedC4, Prop_Send, "m_vecOrigin", fC4Pos);
+		if (!bLastManStanding && (g_bDontSwitch[i] || GetEntData(i, g_iBotNearbyEnemiesOffset) != 0))
+			continue;
 
-		bool bLastManStanding = (g_iAliveCountT == 0 && g_iAliveCountCT == 1);
+		float fDistanceToBomb = GetVectorDistance(g_fBotOrigin[i], fC4Pos);
 
-		for (int i = 1; i <= MaxClients; i++)
+		if (GetTask(i) == ESCAPE_FROM_BOMB || GetTask(i) == ESCAPE_FROM_FLAMES)
+			continue;
+
+		bool bShouldMoveToBomb = (bLastManStanding && fDistanceToBomb > 30.0) || fDistanceToBomb > 2000.0;
+
+		if (bShouldMoveToBomb)
 		{
-			if (!IsValidClient(i) || !IsFakeClient(i) || !IsPlayerAlive(i) || GetClientTeam(i) != CS_TEAM_CT)
-				continue;
-
-			if (!bLastManStanding && (g_bDontSwitch[i] || GetEntData(i, g_iBotNearbyEnemiesOffset) != 0))
-				continue;
-
-			float fDistanceToBomb = GetVectorDistance(g_fBotOrigin[i], fC4Pos);
-
-			if (GetTask(i) == ESCAPE_FROM_BOMB || GetTask(i) == ESCAPE_FROM_FLAMES)
-				continue;
-
-			bool bShouldMoveToBomb = (bLastManStanding && fDistanceToBomb > 30.0) || fDistanceToBomb > 2000.0;
-
-			if (bShouldMoveToBomb)
-			{
-				SwitchWeapon(i, GetPlayerWeaponSlot(i, CS_SLOT_KNIFE));
-				BotMoveTo(i, fC4Pos, FASTEST_ROUTE);
-			}
-		}
-	}
-	else if (g_bIsBombScenario && g_bFreezetimeEnd)
-	{
-		int iLooseC4 = FindLooseBomb();
-		if (!IsValidEntity(iLooseC4))
-			return Plugin_Continue;
-
-		float fC4Pos[3];
-		GetEntPropVector(iLooseC4, Prop_Send, "m_vecOrigin", fC4Pos);
-
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (!IsValidClient(i) || !IsFakeClient(i) || !IsPlayerAlive(i) || GetClientTeam(i) != CS_TEAM_CT)
-				continue;
-
-			if (GetEntData(i, g_iBotNearbyEnemiesOffset) != 0)
-				continue;
-
-			TaskType eTask = GetTask(i);
-			if (eTask == GUARD_LOOSE_BOMB || eTask == DEFUSE_BOMB || eTask == ESCAPE_FROM_BOMB || eTask == ESCAPE_FROM_FLAMES || eTask == GUARD_HOSTAGES || eTask == COLLECT_HOSTAGES || eTask == RESCUE_HOSTAGES)
-				continue;
-
-			float fDist = GetVectorDistance(g_fBotOrigin[i], fC4Pos);
-			if (fDist < 500.0)
-				SetTask(i, GUARD_LOOSE_BOMB);
-			else
-				BotMoveTo(i, fC4Pos, FASTEST_ROUTE);
+			SwitchWeapon(i, GetPlayerWeaponSlot(i, CS_SLOT_KNIFE));
+			BotMoveTo(i, fC4Pos, FASTEST_ROUTE);
 		}
 	}
 
@@ -766,7 +739,7 @@ void AssignDrops(ArrayList aBotsT, ArrayList aBotsCT, bool &bNeedDropT, bool &bN
             continue;
 
         ArrayList aTeamBots = (iTeam == CS_TEAM_T) ? aBotsT : aBotsCT;
-        
+
         if (aTeamBots.Length == 0)
         {
             if (iTeam == CS_TEAM_T)
@@ -785,7 +758,7 @@ void AssignDrops(ArrayList aBotsT, ArrayList aBotsCT, bool &bNeedDropT, bool &bN
         float fEyePos[3];
         GetClientEyePosition(iClient, fEyePos);
         BotSetLookAt(iDropBot, "Use entity", fEyePos, PRIORITY_HIGH, 3.0, false, 5.0, false);
-        
+
         g_bDropWeapon[iDropBot] = true;
         g_bHasGottenDrop[iClient] = true;
     }
@@ -986,6 +959,7 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 		g_fShootTimestamp[i] = 0.0;
 		g_fThrowNadeTimestamp[i] = 0.0;
 		g_fCrouchTimestamp[i] = 0.0;
+		g_fSniperRetreatCooldown[i] = 0.0;
 
 		if (bIsScenario)
 		{
@@ -1008,7 +982,7 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 public void OnRoundEnd(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
     int iEnt = -1;
-    
+
     while ((iEnt = FindEntityByClassname(iEnt, "cs_team_manager")) != -1)
     {
         int iTeamNum = GetEntProp(iEnt, Prop_Send, "m_iTeamNum");
@@ -1019,7 +993,7 @@ public void OnRoundEnd(Event eEvent, const char[] szName, bool bDontBroadcast)
         else if (iTeamNum == CS_TEAM_T)
             g_iTScore = iScore;
     }
-    
+
     g_iRoundsPlayed = GameRules_GetProp("m_totalRoundsPlayed");
 }
 
@@ -1126,10 +1100,10 @@ void UpdateAliveTeamCounts()
 public void OnWeaponZoom(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(eEvent.GetInt("userid"));
-	
+
 	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
 		return;
-	
+
 	g_fShootTimestamp[iClient] = GetGameTime();
 }
 
@@ -1146,7 +1120,7 @@ public void OnWeaponFire(Event eEvent, const char[] szName, bool bDontBroadcast)
 	{
 		float fTargetLoc[3];
 		GetClientAbsOrigin(g_iTarget[iClient], fTargetLoc);
-		
+
 		float fRangeToEnemy = GetVectorDistance(g_fBotOrigin[iClient], fTargetLoc);
 		if (fRangeToEnemy > 100.0)
 			SetEntDataFloat(iClient, g_iFireWeaponOffset, GetEntDataFloat(iClient, g_iFireWeaponOffset) + Math_GetRandomFloat(0.20, 0.40));
@@ -1155,8 +1129,8 @@ public void OnWeaponFire(Event eEvent, const char[] szName, bool bDontBroadcast)
 	if ((StrEqual(szWeaponName, "weapon_awp") || StrEqual(szWeaponName, "weapon_ssg08")) && IsItMyChance(50.0))
 		RequestFrame(BeginQuickSwitch, GetClientUserId(iClient));
 
-	if (StrEqual(szWeaponName, "weapon_awp") || StrEqual(szWeaponName, "weapon_ssg08"))
-		RequestFrame(CheckSniperRetreat, GetClientUserId(iClient));
+	if (StrEqual(szWeaponName, "weapon_flashbang"))
+		CreateTimer(1.1, Timer_AvoidSelfFlash, GetClientUserId(iClient));
 }
 
 public void OnThinkPost(int iEnt)
@@ -1350,6 +1324,30 @@ public MRESReturn CCSBot_OnAudibleEvent(int iBot, DHookParam hParams)
 	return MRES_Ignored;
 }
 
+public MRESReturn CCSBot_CanSeeLooseBomb(int iClient, DHookReturn hReturn)
+{
+	if (!g_bBombPlanted && g_bIsBombScenario && g_bFreezetimeEnd && GetClientTeam(iClient) == CS_TEAM_CT)
+	{
+		int iLooseC4 = FindLooseBomb();
+		if (iLooseC4 != -1)
+		{
+			if (GetTask(iClient) != GUARD_LOOSE_BOMB && GetEntData(iClient, g_iBotNearbyEnemiesOffset) == 0)
+			{
+				float fC4Pos[3];
+				GetEntPropVector(iLooseC4, Prop_Send, "m_vecOrigin", fC4Pos);
+
+				if (GetVectorDistance(g_fBotOrigin[iClient], fC4Pos) > 500.0)
+					BotMoveTo(iClient, fC4Pos, FASTEST_ROUTE);
+			}
+
+			hReturn.Value = true;
+			return MRES_Override;
+		}
+	}
+
+	return MRES_Ignored;
+}
+
 public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 {
 	if (!IsValidClient(iClient) || !IsFakeClient(iClient) || hParams == null)
@@ -1360,13 +1358,8 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 	char szDesc[64];
 	DHookGetParamString(hParams, 1, szDesc, sizeof(szDesc));
 
-	if (strcmp(szDesc, "Defuse bomb") == 0 || strcmp(szDesc, "Use entity") == 0 || strcmp(szDesc, "Open door") == 0 || strcmp(szDesc, "Hostage") == 0)
+	if (strcmp(szDesc, "Defuse bomb") == 0 || strcmp(szDesc, "Use entity") == 0 || strcmp(szDesc, "Open door") == 0 || strcmp(szDesc, "Hostage") == 0 || strcmp(szDesc, "Avoid Flashbang") == 0)
 		return MRES_Ignored;
-	else if (strcmp(szDesc, "Avoid Flashbang") == 0)
-	{
-		DHookSetParam(hParams, 3, PRIORITY_HIGH);
-		return MRES_ChangedHandled;
-	}
 	else if (strcmp(szDesc, "Blind") == 0 || strcmp(szDesc, "Face outward") == 0)
 		return MRES_Supercede;
 	else if (strcmp(szDesc, "Breakable") == 0 || strcmp(szDesc, "Plant bomb on floor") == 0)
@@ -1417,7 +1410,7 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 
 		if (CanThrowNade(iClient) && IsItMyChance(3.0) && GetTask(iClient) != ESCAPE_FROM_BOMB && GetTask(iClient) != ESCAPE_FROM_FLAMES && GetEntityMoveType(iClient) != MOVETYPE_LADDER)
 		{
-			int iNades[] = {DEFIDX_HE, DEFIDX_MOLOTOV, DEFIDX_INCENDIARY, DEFIDX_FLASH};
+			int iNades[] = {DEFIDX_HE, DEFIDX_MOLOTOV, DEFIDX_INCENDIARY, DEFIDX_FLASH, DEFIDX_SMOKE};
 			int iNade = FindNadeByDefIndex(iClient, iNades, sizeof(iNades));
 			if (iNade != -1 && (ProcessGrenadeThrow(iClient, g_fOriginalNoisePos[iClient], iNade) || ProcessGrenadeThrow(iClient, fNoisePos, iNade)))
 				return MRES_Supercede;
@@ -1537,13 +1530,28 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fV
 		Array_Copy(g_fBotOrigin[iClient], g_fLastNavUpdate[iClient], 3);
 	}
 
+	int iPrimary = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
+	if (IsValidEntity(iPrimary) && fNow >= g_fSniperRetreatCooldown[iClient])
+	{
+		int iPrimaryDef = GetEntProp(iPrimary, Prop_Send, "m_iItemDefinitionIndex");
+		if (iPrimaryDef == DEFIDX_AWP || iPrimaryDef == DEFIDX_SSG08)
+		{
+			bool bTargetAlive = IsValidClient(g_iTarget[iClient]) && IsPlayerAlive(g_iTarget[iClient]);
+			if (bTargetAlive || GetEntData(iClient, g_iBotNearbyEnemiesOffset) > 1)
+			{
+				BotTryToRetreat(iClient, 400.0, 1.5);
+				g_fSniperRetreatCooldown[iClient] = fNow + 3.0;
+			}
+		}
+	}
+
 	if ((g_iAliveCountT == 0 || g_iAliveCountCT == 0) && !g_bDontSwitch[iClient])
 	{
 		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
-		
+
 		if (BotMimic_IsPlayerMimicing(iClient))
             BotMimic_StopPlayerMimic(iClient);
-			
+
 		ResetNadeTimestamps();
 		g_iDoingSmokeNum[iClient] = -1;
 	}
@@ -1643,23 +1651,31 @@ void ProcessWeaponPickup(int iClient)
 	float fClientEyes[3];
 	GetClientEyePosition(iClient, fClientEyes);
 
-	int iSkipAK[2] = {DEFIDX_AK47, DEFIDX_AWP};
+	int iSkipAK[] = {DEFIDX_AK47, DEFIDX_AWP};
 	TryPickupWeapon(iClient, "weapon_ak47", iSkipAK, sizeof(iSkipAK), CS_SLOT_PRIMARY, fClientEyes, g_fBotOrigin[iClient]);
 
-	int iSkipM4[4] = {DEFIDX_AK47, DEFIDX_AWP, DEFIDX_M4A4, DEFIDX_M4A1S};
+	int iSkipM4[] = {DEFIDX_AK47, DEFIDX_AWP, DEFIDX_M4A4, DEFIDX_M4A1S};
 	TryPickupWeapon(iClient, "weapon_m4a1", iSkipM4, sizeof(iSkipM4), CS_SLOT_PRIMARY, fClientEyes, g_fBotOrigin[iClient]);
 
-	int iSkipDeagle[1] = {DEFIDX_DEAGLE};
+	int iSkipGalilFamas[] = {DEFIDX_AK47, DEFIDX_AWP, DEFIDX_M4A4, DEFIDX_M4A1S, DEFIDX_FAMAS, DEFIDX_GALIL};
+	TryPickupWeapon(iClient, "weapon_galilar", iSkipGalilFamas, sizeof(iSkipGalilFamas), CS_SLOT_PRIMARY, fClientEyes, g_fBotOrigin[iClient]);
+	TryPickupWeapon(iClient, "weapon_famas", iSkipGalilFamas, sizeof(iSkipGalilFamas), CS_SLOT_PRIMARY, fClientEyes, g_fBotOrigin[iClient]);
+
+	int iSkipSMG[] = {DEFIDX_AK47, DEFIDX_AWP, DEFIDX_M4A4, DEFIDX_M4A1S, DEFIDX_FAMAS, DEFIDX_GALIL, DEFIDX_MAC10, DEFIDX_MP9};
+	TryPickupWeapon(iClient, "weapon_mac10", iSkipSMG, sizeof(iSkipSMG), CS_SLOT_PRIMARY, fClientEyes, g_fBotOrigin[iClient]);
+	TryPickupWeapon(iClient, "weapon_mp9", iSkipSMG, sizeof(iSkipSMG), CS_SLOT_PRIMARY, fClientEyes, g_fBotOrigin[iClient]);
+
+	int iSkipDeagle[] = {DEFIDX_DEAGLE};
 	TryPickupWeapon(iClient, "weapon_deagle", iSkipDeagle, sizeof(iSkipDeagle), CS_SLOT_SECONDARY, fClientEyes, g_fBotOrigin[iClient]);
 
-	int iSkipTec9[5] = {DEFIDX_DEAGLE, DEFIDX_TEC9, DEFIDX_FIVESEVEN, DEFIDX_CZ75, DEFIDX_DUALIES};
+	int iSkipTec9[] = {DEFIDX_DEAGLE, DEFIDX_TEC9, DEFIDX_FIVESEVEN, DEFIDX_CZ75, DEFIDX_DUALIES};
 	TryPickupWeapon(iClient, "weapon_tec9", iSkipTec9, sizeof(iSkipTec9), CS_SLOT_SECONDARY, fClientEyes, g_fBotOrigin[iClient]);
 	TryPickupWeapon(iClient, "weapon_fiveseven", iSkipTec9, sizeof(iSkipTec9), CS_SLOT_SECONDARY, fClientEyes, g_fBotOrigin[iClient]);
 
-	int iSkipP250[6] = {DEFIDX_DEAGLE, DEFIDX_TEC9, DEFIDX_FIVESEVEN, DEFIDX_CZ75, DEFIDX_P250, DEFIDX_DUALIES};
+	int iSkipP250[] = {DEFIDX_DEAGLE, DEFIDX_TEC9, DEFIDX_FIVESEVEN, DEFIDX_CZ75, DEFIDX_P250, DEFIDX_DUALIES};
 	TryPickupWeapon(iClient, "weapon_p250", iSkipP250, sizeof(iSkipP250), CS_SLOT_SECONDARY, fClientEyes, g_fBotOrigin[iClient]);
 
-	int iSkipUSP[8] = {DEFIDX_DEAGLE, DEFIDX_TEC9, DEFIDX_FIVESEVEN, DEFIDX_CZ75, DEFIDX_P250, DEFIDX_P2000, DEFIDX_USPS, DEFIDX_DUALIES};
+	int iSkipUSP[] = {DEFIDX_DEAGLE, DEFIDX_TEC9, DEFIDX_FIVESEVEN, DEFIDX_CZ75, DEFIDX_P250, DEFIDX_P2000, DEFIDX_USPS, DEFIDX_DUALIES};
 	TryPickupWeapon(iClient, "weapon_hkp2000", iSkipUSP, sizeof(iSkipUSP), CS_SLOT_SECONDARY, fClientEyes, g_fBotOrigin[iClient]);
 }
 
@@ -1834,6 +1850,7 @@ public void OnClientDisconnect(int iClient)
 	g_fShootTimestamp[iClient] = 0.0;
 	g_fThrowNadeTimestamp[iClient] = 0.0;
 	g_fCrouchTimestamp[iClient] = 0.0;
+	g_fSniperRetreatCooldown[iClient] = 0.0;
 	g_fWeaponPickupCooldown[iClient] = 0.0;
 	g_fNadeLineupCooldown[iClient] = 0.0;
 	g_pCurrArea[iClient] = INVALID_NAV_AREA;
@@ -1847,13 +1864,13 @@ void ParseMapNades(const char[] szMap)
 
 	char szPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, szPath, sizeof(szPath), "configs/bot_nades.txt");
-	
+
 	if (!FileExists(szPath))
 	{
 		PrintToServer("Configuration file %s is not found.", szPath);
 		return;
 	}
-	
+
 	KeyValues hKv = new KeyValues("Nades");
 	if (!hKv.ImportFromFile(szPath))
 	{
@@ -1861,21 +1878,21 @@ void ParseMapNades(const char[] szMap)
 		PrintToServer("Unable to parse Key Values file %s.", szPath);
 		return;
 	}
-	
+
 	if (!hKv.JumpToKey(szMap))
 	{
 		delete hKv;
 		PrintToServer("No nades found for %s.", szMap);
 		return;
 	}
-	
+
 	if (!hKv.GotoFirstSubKey())
 	{
 		delete hKv;
 		PrintToServer("Nades are not configured right for %s.", szMap);
 		return;
 	}
-	
+
 	do
 	{
 		NadeLineup sNade;
@@ -1897,7 +1914,7 @@ void ParseMapNades(const char[] szMap)
 		g_aNades.PushArray(sNade);
 	}
 	while (hKv.GotoNextKey());
-	
+
 	delete hKv;
 }
 
@@ -2060,6 +2077,7 @@ public void LoadDetours()
 	SetupDetour(hConf, "BotSIN", Hook_Pre, BotCOSandSIN);
 	SetupDetour(hConf, "CCSBot::GetPartPosition", Hook_Pre, CCSBot_GetPartPosition);
 	SetupDetour(hConf, "CCSBot::OnAudibleEvent", Hook_Pre, CCSBot_OnAudibleEvent);
+	SetupDetour(hConf, "CCSBot::CanSeeLooseBomb", Hook_Post, CCSBot_CanSeeLooseBomb);
 
 	delete hConf;
 }
@@ -2208,41 +2226,36 @@ int FindNadeByDefIndex(int iClient, const int[] iDefIndices, int iCount)
 	return -1;
 }
 
-void TryPickupWeapon(int iClient, char[] szClassname, const int[] iSkipList, int iSkipSize, int iSlot, float fClientEyes[3], float fOrigin[3])
+void TryPickupWeapon(int iClient, const char[] szClassname, const int[] iSkipList, int iSkipSize, int iSlot, float fClientEyes[3], float fOrigin[3])
 {
-    int iWeaponEnt = GetNearestEntity(iClient, szClassname);
-    if (!IsValidEntity(iWeaponEnt))
-        return;
+	int iWeaponEnt = GetNearestEntity(iClient, szClassname);
+	if (!IsValidEntity(iWeaponEnt))
+		return;
 
-    int iCurrent = GetPlayerWeaponSlot(iClient, iSlot);
-    int iCurrentDef = IsValidEntity(iCurrent) ? GetEntProp(iCurrent, Prop_Send, "m_iItemDefinitionIndex") : 0;
+	int iCurrent = GetPlayerWeaponSlot(iClient, iSlot);
+	if (IsValidEntity(iCurrent))
+	{
+		int iCurrentDef = GetEntProp(iCurrent, Prop_Send, "m_iItemDefinitionIndex");
+		for (int i = 0; i < iSkipSize; i++)
+		{
+			if (iCurrentDef == iSkipList[i])
+				return;
+		}
+	}
 
-    bool bSkip = false;
-    if (iCurrent != -1)
-    {
-        for (int i = 0; i < iSkipSize; i++)
-        {
-            if (iCurrentDef == iSkipList[i])
-            {
-                bSkip = true;
-                break;
-            }
-        }
-    }
+	float fLoc[3];
+	GetEntPropVector(iWeaponEnt, Prop_Send, "m_vecOrigin", fLoc);
 
-    if (iCurrent == -1 || !bSkip)
-    {
-        float fLoc[3];
-        GetEntPropVector(iWeaponEnt, Prop_Send, "m_vecOrigin", fLoc);
+	if (GetVectorLength(fLoc) == 0.0 || !IsPointVisible(fClientEyes, fLoc))
+		return;
 
-        if (GetVectorLength(fLoc) != 0.0 && IsPointVisible(fClientEyes, fLoc))
-        {
-            BotMoveTo(iClient, fLoc, FASTEST_ROUTE);
+	if (NavMesh_GetNearestArea(fLoc, false, 50.0, false, true) == INVALID_NAV_AREA)
+		return;
 
-            if (GetVectorDistance(fOrigin, fLoc) < 50.0 && iCurrent != -1)
-                CS_DropWeapon(iClient, iCurrent, false);
-        }
-    }
+	BotMoveTo(iClient, fLoc, FASTEST_ROUTE);
+
+	if (GetVectorDistance(fOrigin, fLoc) < 50.0 && IsValidEntity(iCurrent))
+		CS_DropWeapon(iClient, iCurrent, false);
 }
 
 stock void SetupDetour(GameData hGameData, const char[] szConf, HookMode eMode, DHookCallback hCallback)
@@ -2342,25 +2355,25 @@ public int GetNearestGrenade(int iClient)
 	return iClosestNade;
 }
 
-stock int GetNearestEntity(int iClient, char[] szClassname)
+stock int GetNearestEntity(int iClient, const char[] szClassname)
 {
 	int iNearestEntity = -1, iEntity = -1;
 	float fClientOrigin[3], fEntityOrigin[3], fDistance, fNearestDistance = -1.0;
-	
+
 	GetClientAbsOrigin(iClient, fClientOrigin);
-	
+
 	while ((iEntity = FindEntityByClassname(iEntity, szClassname)) != -1)
 	{
 		GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", fEntityOrigin);
 		fDistance = GetVectorDistance(fClientOrigin, fEntityOrigin);
-		
+
 		if (fDistance < fNearestDistance || fNearestDistance == -1.0)
 		{
 			iNearestEntity = iEntity;
 			fNearestDistance = fDistance;
 		}
 	}
-	
+
 	return iNearestEntity;
 }
 
@@ -2380,21 +2393,21 @@ stock int ReplaceWeapon(int iClient, int iSlot, const char[] szClass, bool bHand
 	}
 
 	int iWeapon = GetPlayerWeaponSlot(iClient, iSlot);
-	
+
 	if (IsValidEntity(iWeapon))
 	{
 		if (GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") != iClient)
 			SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);
-		
+
 		CS_DropWeapon(iClient, iWeapon, false, true);
 		AcceptEntityInput(iWeapon, "Kill");
 	}
-	
+
 	iWeapon = GivePlayerItem(iClient, szClass);
-	
+
 	if (IsValidEntity(iWeapon))
 		EquipPlayerWeapon(iClient, iWeapon);
-	
+
 	return iWeapon;
 }
 
@@ -2413,19 +2426,6 @@ bool IsPlayerReloading(int iClient)
 		return true;
 
 	return false;
-}
-
-public void CheckSniperRetreat(int iUserId)
-{
-	int iClient = GetClientOfUserId(iUserId);
-	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
-		return;
-
-	bool bTargetAlive = IsValidClient(g_iTarget[iClient]) && IsPlayerAlive(g_iTarget[iClient]);
-	int iNearbyEnemies = GetEntData(iClient, g_iBotNearbyEnemiesOffset);
-
-	if (bTargetAlive || iNearbyEnemies > 1)
-		BotTryToRetreat(iClient, 400.0, 1.5);
 }
 
 public void TossCheapDrop(int iUserId)
@@ -2452,40 +2452,61 @@ public void BeginQuickSwitch(int iUserId)
 public void FinishQuickSwitch(int iUserId)
 {
 	int iClient = GetClientOfUserId(iUserId);
-	
+
 	if (!IsValidClient(iClient))
 		return;
-	
+
 	SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY));
+}
+
+public Action Timer_AvoidSelfFlash(Handle hTimer, any iUserId)
+{
+	int iClient = GetClientOfUserId(iUserId);
+	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient))
+		return Plugin_Stop;
+
+	float fEyePos[3], fEyeAngles[3], fForward[3], fAway[3];
+	GetClientEyePosition(iClient, fEyePos);
+	GetClientEyeAngles(iClient, fEyeAngles);
+
+	fEyeAngles[1] += (Math_GetRandomFloat(-1.0, 1.0) < 0.0) ? -120.0 : 120.0;
+	GetAngleVectors(fEyeAngles, fForward, NULL_VECTOR, NULL_VECTOR);
+
+	fAway[0] = fEyePos[0] + fForward[0] * 1000.0;
+	fAway[1] = fEyePos[1] + fForward[1] * 1000.0;
+	fAway[2] = fEyePos[2] + fForward[2] * 1000.0;
+
+	BotSetLookAt(iClient, "Avoid Flashbang", fAway, PRIORITY_UNINTERRUPTABLE, 1.5, false, 5.0, false);
+	return Plugin_Stop;
 }
 
 public Action Timer_EnableSwitch(Handle hTimer, any iUserId)
 {
 	int iClient = GetClientOfUserId(iUserId);
-	
+
 	if (IsValidClient(iClient))
 		g_bDontSwitch[iClient] = false;
-	
+
 	return Plugin_Stop;
 }
 
 public Action Timer_DontForceThrow(Handle hTimer, any iUserId)
 {
 	int iClient = GetClientOfUserId(iUserId);
-	
+
 	if (IsValidClient(iClient))
 	{
 		g_bThrowGrenade[iClient] = false;
 		BotEquipBestWeapon(iClient, true);
 	}
-	
+
 	return Plugin_Stop;
 }
 
 public void DelayThrow(int iUserId)
 {
     int iClient = GetClientOfUserId(iUserId);
-    
+
     if (IsValidClient(iClient))
     {
         g_bThrowGrenade[iClient] = true;
@@ -2517,7 +2538,7 @@ public void SelectBestTargetPos(int iClient, float fTargetPos[3])
 	{
 		if (bBodyVisible)
 		{
-			if (!IsValidEntity(g_iActiveWeapon[iClient])) 
+			if (!IsValidEntity(g_iActiveWeapon[iClient]))
 				return;
 
 			int iDefIndex = GetEntProp(g_iActiveWeapon[iClient], Prop_Send, "m_iItemDefinitionIndex");
@@ -2939,7 +2960,7 @@ float GetNadeDetonateTime(int iNadeDefIndex)
 }
 
 stock bool LineGoesThroughSmoke(const float fFrom[3], const float fTo[3])
-{	
+{
     return SDKCall(g_hIsLineBlockedBySmoke, g_pTheBots, fFrom, fTo);
 }
 
@@ -2987,14 +3008,6 @@ stock TaskType GetTask(int iClient)
     return IsFakeClient(iClient) ? view_as<TaskType>(GetEntData(iClient, g_iBotTaskOffset)) : view_as<TaskType>(-1);
 }
 
-stock void SetTask(int iClient, TaskType eTask)
-{
-	if (!IsFakeClient(iClient))
-		return;
-
-	SetEntData(iClient, g_iBotTaskOffset, eTask);
-}
-
 stock DispositionType GetDisposition(int iClient)
 {
     return IsFakeClient(iClient) ? view_as<DispositionType>(GetEntData(iClient, g_iBotDispositionOffset)) : view_as<DispositionType>(-1);
@@ -3004,7 +3017,7 @@ stock void SetDisposition(int iClient, DispositionType eDisposition)
 {
 	if(!IsFakeClient(iClient))
 		return;
-		
+
 	SetEntData(iClient, g_iBotDispositionOffset, eDisposition);
 }
 
@@ -3070,7 +3083,7 @@ stock int GetNumWinsToClinch()
 	int iMaxRounds = g_cvMaxRounds.IntValue;
 	bool bCanClinch = g_cvCanClinch.BoolValue;
 	int iOvertimeMaxRounds = g_cvOTMaxRounds.IntValue;
-	
+
 	return (iMaxRounds > 0 && bCanClinch) ? (iMaxRounds / 2) + 1 + iOvertimePlaying * (iOvertimeMaxRounds / 2) : -1;
 }
 

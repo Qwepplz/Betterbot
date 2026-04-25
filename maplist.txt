@@ -1,4 +1,4 @@
-// csgosl 2.19 config 1 at Sat Mar 14 12:00:43 GMT 2026 (DO NOT TOUCH THIS HEADER LINE!!!)
+// csgosl 2.19 config 1 at Sat Apr 18 22:54:47 BST 2026 (DO NOT TOUCH THIS HEADER LINE!!!)
 // DON'T EDIT, WILL BE OVERWRITTEN NEXT TIME YOU SAVE!!!
 workshop/3070212801/
 $10000$
@@ -214,7 +214,6 @@ carparkm1
 classic_dust2
 classic_dust2_winter
 classicaimmap
-crazyjump_classic
 cs_1337_assault_b2
 cs_16fighter
 cs_2high
@@ -259,7 +258,6 @@ cs_frozen_csgo
 cs_gasstation_go
 cs_ghosthouse
 cs_havana
-cs_havana_d
 cs_hijack
 cs_horror2
 cs_insertion2
@@ -421,7 +419,6 @@ de_cornerwork
 de_corruption_csgo
 de_cotroceni
 de_cpl_mill
-de_cpl_strike
 de_cpt
 de_crete
 de_crossfire
@@ -518,7 +515,6 @@ de_icehouse
 de_indust
 de_inferno
 de_inferno_cso2
-de_inferno_cz
 de_inferno_night
 de_inferno_old
 de_inferno_pondsite
@@ -563,7 +559,6 @@ de_meat_b26
 de_mediterrano_go
 de_meteora
 de_mikla
-de_mildew_v2
 de_mill_ce
 de_mill_promod
 de_mirage
