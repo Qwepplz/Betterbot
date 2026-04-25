@@ -1094,7 +1094,7 @@ public void SQL_RankCallback(Handle owner, Handle hndl, const char[] error, any 
 		SQL_FetchString(hndl,1,Auth_receive,64);
 		SQL_FetchString(hndl,3,Ip_receive,64);
 	//	PrintToServer("%d %s %s",i, Name_receive, Auth_receive);
-		if((g_RankBy == 1 && StrEqual(Name_receive,g_aClientName[client],false)) || (g_RankBy == 0 && StrEqual(Auth_receive,g_aClientSteam[client],false)) || (g_RankBy == 2 && StrEqual(Ip_receive,g_aClientIp[client],false))){
+		if(IsRankMeIdentityMatch(client, Auth_receive, Name_receive, Ip_receive)){
 
 			if(g_bShowRankAll)
 			{
@@ -1463,6 +1463,9 @@ public void SQL_StatsMe2Callback(Handle owner, Handle hndl, const char[] error, 
 	CloseHandle(hDatapack);
 	char Auth_receive[64];
 	char Name_receive[MAX_NAME_LENGTH];
+	int identityMode = g_RankBy;
+	if (type == 0 && target > 0 && target <= MaxClients)
+		identityMode = GetRankMeIdentityMode(target);
 	
 	if(type != 1){
 		
@@ -1473,7 +1476,7 @@ public void SQL_StatsMe2Callback(Handle owner, Handle hndl, const char[] error, 
 			
 			SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 			
-			if((g_RankBy == 1 && StrEqual(name,Name_receive)) || (g_RankBy == 0 && StrEqual(Auth_receive,auth,false)))
+			if((identityMode == 1 && StrEqual(name,Name_receive,false)) || (identityMode == 0 && StrEqual(Auth_receive,auth,false)))
 				break;
 		}
 
@@ -1627,7 +1630,7 @@ public void SQL_StatsMeCallback(Handle owner, Handle hndl, const char[] error, a
 			
 			SQL_FetchString(hndl,3,Ip_receive,64);
 			
-			if((g_RankBy == 1 && StrEqual(g_aClientName[client],Name_receive)) || (g_RankBy == 0 && StrEqual(Auth_receive,g_aClientSteam[client],false)) || (g_RankBy == 2 && StrEqual(Ip_receive,g_aClientIp[client],false)))
+			if(IsRankMeIdentityMatch(client, Auth_receive, Name_receive, Ip_receive))
 				break;
 		}
 	} else {
@@ -1795,7 +1798,7 @@ public void SQL_NextCallback(Handle owner, Handle hndl, const char[] error, any 
 		SQL_FetchString(hndl,2,Name_receive,MAX_NAME_LENGTH);
 		SQL_FetchString(hndl,3,Ip_receive,64);
 		
-		if((g_RankBy == 1 && StrEqual(g_aClientName[client],Name_receive)) || (g_RankBy == 0 && StrEqual(Auth_receive,g_aClientSteam[client],false)) || (g_RankBy == 2 && StrEqual(Ip_receive,g_aClientIp[client],false))){
+		if(IsRankMeIdentityMatch(client, Auth_receive, Name_receive, Ip_receive)){
 		
 			dobreak=true;
 		
@@ -1849,13 +1852,14 @@ public Action CMD_ResetOwnRank(int client, int args){
 	if(!g_bEnabled || !g_bResetOwnRank || client == 0 || !IsClientInGame(client))
 		return Plugin_Handled;
 	char query[2000];
-	if(g_RankBy == 1){
+	int identityMode = GetRankMeIdentityMode(client);
+	if(identityMode == 1){
 		char sEscape[MAX_NAME_LENGTH*2+1];
 		SQL_EscapeString(g_hStatsDb,g_aClientName[client],sEscape,sizeof(sEscape));
 		Format(query,sizeof(query),"DELETE FROM `%s` WHERE name='%s'",g_sSQLTable,sEscape);
-	} else if(g_RankBy == 0){
+	} else if(identityMode == 0){
 		Format(query,sizeof(query),"DELETE FROM `%s` WHERE steam='%s'",g_sSQLTable,g_aClientSteam[client]);
-	} else if(g_RankBy == 2){
+	} else if(identityMode == 2){
 		Format(query,sizeof(query),"DELETE FROM `%s` WHERE lastip='%s'",g_sSQLTable,g_aClientIp[client]);
 	}
 	SQL_TQuery(g_hStatsDb,SQL_NothingCallback,query);
@@ -2110,14 +2114,15 @@ public int MenuHandler_TargetResetRank(Menu menu, MenuAction action, int client,
 	
 		menu.GetItem(param2, temp, sizeof(temp));
 		int target = GetClientOfUserId(StringToInt(temp));
+		int identityMode = GetRankMeIdentityMode(target);
 		
-		if(g_RankBy == 1){
+		if(identityMode == 1){
 			
 			ClientCommand(client,"sm_resetrank \"%s\"",g_aClientName[target]);
-		} else if(g_RankBy == 0){
+		} else if(identityMode == 0){
 			
 			ClientCommand(client,"sm_resetrank \"%s\"",g_aClientSteam[target]);
-		} else if(g_RankBy == 2){
+		} else if(identityMode == 2){
 			
 			ClientCommand(client,"sm_resetrank \"%s\"",g_aClientIp[target]);
 		}
@@ -2140,13 +2145,7 @@ public int MenuHandler_TargetStatsMe2(Menu menu, MenuAction action, int client, 
 		menu.GetItem(param2, temp, sizeof(temp));
 		int target = GetClientOfUserId(StringToInt(temp));
 		
-		if(g_RankBy == 0 || g_RankBy == 2){
-			
-			ClientCommand(client,"sm_statsme2 \"%s\"",g_aClientName[target]);
-		} else {
-			
-			ClientCommand(client,"sm_statsme2 \"%s\"",g_aClientSteam[target]);
-		}
+		ClientCommand(client,"sm_statsme2 \"%s\"",g_aClientName[target]);
 	}
 	if (action == MenuAction_End)
 	{

@@ -103,11 +103,40 @@ int g_iRankMeLanguageChineseTraditional = -1;
 int g_iRankMeClientLanguage[MAXPLAYERS + 1];
 bool g_bRankMeLanguageReady[MAXPLAYERS + 1];
 bool g_bPendingRankConnectAnnounce[MAXPLAYERS + 1];
+bool g_bRankMeBotIdentity[MAXPLAYERS + 1];
 
 #include <kento_rankme/cvars>
 #include <kento_rankme/elo_optimization>
 #include <kento_rankme/natives>
 #include <kento_rankme/cmds>
+
+bool IsRankMeBotIdentity(int client)
+{
+	return client > 0 && client <= MaxClients && g_bRankMeBotIdentity[client];
+}
+
+int GetRankMeIdentityMode(int client)
+{
+	if (IsRankMeBotIdentity(client))
+		return 1;
+	return g_RankBy;
+}
+
+bool IsRankMeIdentityMatch(int client, const char[] steam, const char[] name, const char[] ip)
+{
+	int identityMode = GetRankMeIdentityMode(client);
+	if (identityMode == 1)
+		return StrEqual(name, g_aClientName[client], false);
+	if (identityMode == 2)
+		return StrEqual(ip, g_aClientIp[client], false);
+	return StrEqual(steam, g_aClientSteam[client], false);
+}
+
+void ClearRankMeIdentity(int client)
+{
+	if (client > 0 && client <= MaxClients)
+		g_bRankMeBotIdentity[client] = false;
+}
 
 public Plugin myinfo =  {
 	name = "RankMe", 
@@ -432,7 +461,7 @@ public void OnClientChangeName(Handle event, const char[] name, bool dontBroadca
 	if (!g_bEnabled)
 		return;
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (!g_bRankBots && (!IsValidClient(client) || IsFakeClient(client)))
+	if (!g_bRankBots && (!IsValidClient(client) || IsRankMeBotIdentity(client) || IsFakeClient(client)))
 		return;
 	if (IsClientConnected(client))
 	{
@@ -444,7 +473,8 @@ public void OnClientChangeName(Handle event, const char[] name, bool dontBroadca
 		SQL_EscapeString(g_hStatsDb, clientnewname, Eclientnewname, sizeof(Eclientnewname));
 
 		char query[10000];
-		if (g_RankBy == 1) {
+		int identityMode = GetRankMeIdentityMode(client);
+		if (identityMode == 1) {
 			OnDB[client] = false;
 			g_aSession[client].Reset();
 			g_aStats[client].Reset();
@@ -463,7 +493,7 @@ public void OnClientChangeName(Handle event, const char[] name, bool dontBroadca
 			
 		} else {
 			
-			if (g_RankBy == 0)
+			if (identityMode == 0)
 				Format(query, sizeof(query), "UPDATE `%s` SET name='%s' WHERE steam = '%s';", g_sSQLTable, Eclientnewname, g_aClientSteam[client]);
 			else
 				Format(query, sizeof(query), "UPDATE `%s` SET name='%s' WHERE lastip = '%s';", g_sSQLTable, Eclientnewname, g_aClientIp[client]);
@@ -501,12 +531,13 @@ void ApplyScoreLoss(int client, int loss)
 
 void GetClientWhereInfo(int client, char[] field, int fieldSize, char[] value, int valueSize)
 {
-	if (g_RankBy == 1) {
+	int identityMode = GetRankMeIdentityMode(client);
+	if (identityMode == 1) {
 		strcopy(field, fieldSize, "name");
 		char sEscapeName[MAX_NAME_LENGTH * 2 + 1];
 		SQL_EscapeString(g_hStatsDb, g_aClientName[client], sEscapeName, sizeof(sEscapeName));
 		strcopy(value, valueSize, sEscapeName);
-	} else if (g_RankBy == 2) {
+	} else if (identityMode == 2) {
 		strcopy(field, fieldSize, "lastip");
 		strcopy(value, valueSize, g_aClientIp[client]);
 	} else {
@@ -1725,6 +1756,8 @@ public void SQL_SaveCallback(Handle owner, Handle hndl, const char[] error, any 
 
 public void OnClientPutInServer(int client) {
 
+	g_bRankMeBotIdentity[client] = IsFakeClient(client);
+
 	if (!IsFakeClient(client))
 		RefreshRankMeClientLanguage(client);
 	
@@ -1773,11 +1806,12 @@ public void LoadPlayer(int client) {
 	GetClientIP(client, ip, sizeof(ip));
 	strcopy(g_aClientIp[client], sizeof(g_aClientIp[]), ip);
 	char query[10000];
-	if (g_RankBy == 1)
+	int identityMode = GetRankMeIdentityMode(client);
+	if (identityMode == 1)
 		FormatEx(query, sizeof(query), g_sSqlRetrieveClientName, g_sSQLTable, sEscapeName);
-	else if (g_RankBy == 0)
+	else if (identityMode == 0)
 		FormatEx(query, sizeof(query), g_sSqlRetrieveClient, g_sSQLTable, auth);
-	else if (g_RankBy == 2)
+	else if (identityMode == 2)
 		FormatEx(query, sizeof(query), g_sSqlRetrieveClientIp, g_sSQLTable, ip);
 	
 	if (DEBUGGING) {
@@ -1803,17 +1837,18 @@ public void SQL_LoadPlayerCallback(Handle owner, Handle hndl, const char[] error
 	if (!IsClientInGame(client))
 		return;
 	
-	if (g_RankBy == 1) {
+	int identityMode = GetRankMeIdentityMode(client);
+	if (identityMode == 1) {
 		char name[MAX_NAME_LENGTH];
 		GetClientName(client, name, sizeof(name));
 		if (!StrEqual(name, g_aClientName[client]))
 			return;
-	} else if (g_RankBy == 0) {
+	} else if (identityMode == 0) {
 		char auth[64];
 		GetClientAuthId(client, AuthId_Steam2, auth, sizeof(auth));
 		if (!StrEqual(auth, g_aClientSteam[client]))
 			return;
-	} else if (g_RankBy == 2) {
+	} else if (identityMode == 2) {
 		char ip[64];
 		GetClientIP(client, ip, sizeof(ip));
 		if (!StrEqual(ip, g_aClientIp[client]))
@@ -1969,16 +2004,22 @@ public void SQL_NothingCallback(Handle owner, Handle hndl, const char[] error, a
 }
 
 public void OnClientDisconnect(int client) {
-	if (!g_bEnabled)
+	bool wasRankMeBot = IsRankMeBotIdentity(client);
+	if (!g_bEnabled) {
+		ClearRankMeIdentity(client);
 		return;
-	if (!g_bRankBots && (!IsValidClient(client) || IsFakeClient(client)))
+	}
+	if (!g_bRankBots && (!IsValidClient(client) || wasRankMeBot || IsFakeClient(client))) {
+		ClearRankMeIdentity(client);
 		return;
+	}
 	SalvarPlayer(client);
 	OnDB[client] = false;
 	CleanupPlayerEloOptimization(client);
 	ResetPlayerRuntimeData(client);
 	if (g_bUseEloSystem)
 		g_iPlayerElo[client] = 0;
+	ClearRankMeIdentity(client);
 }
 
 public void DumpDB() {

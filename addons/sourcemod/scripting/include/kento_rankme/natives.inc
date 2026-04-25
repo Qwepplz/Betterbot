@@ -93,25 +93,20 @@ void GetClientRank(Handle pack)
 	CloseHandle(pack);
 	
 	int rank;
-	switch(g_RankBy)
+	int identityMode = GetRankMeIdentityMode(client);
+	switch(identityMode)
 	{
 		case 0:
 		{
-			char steamid[32];
-			GetClientAuthId(client, AuthId_Steam2, steamid, 32, true);
-			rank = FindStringInArray(g_arrayRankCache[0], steamid);
+			rank = FindStringInArray(g_arrayRankCache[0], g_aClientSteam[client]);
 		}
 		case 1:
 		{
-			char name[128];
-			GetClientName(client, name, 128);
-			rank = FindStringInArray(g_arrayRankCache[1], name);
+			rank = FindStringInArray(g_arrayRankCache[1], g_aClientName[client]);
 		}
 		case 2:
 		{
-			char ip[128];
-			GetClientIP(client, ip, 128);
-			rank = FindStringInArray(g_arrayRankCache[2], ip);
+			rank = FindStringInArray(g_arrayRankCache[2], g_aClientIp[client]);
 		}
 	}
 
@@ -141,26 +136,27 @@ public void SQL_GetRankCallback(Handle owner, Handle hndl, const char[] error, a
 	g_TotalPlayers = SQL_GetRowCount(hndl);
 	
 	char Receive[64];
+	int identityMode = GetRankMeIdentityMode(client);
 	
 	while (SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
 	{
 		i++;
 		
-		if (g_RankBy == 0) {
+		if (identityMode == 0) {
 			SQL_FetchString(hndl, 1, Receive, sizeof(Receive));
 			if (StrEqual(Receive, g_aClientSteam[client], false))
 			{
 				CallRankCallback(client, i, callback, args, plugin);
 				break;
 			}
-		} else if (g_RankBy == 1) {
+		} else if (identityMode == 1) {
 			SQL_FetchString(hndl, 2, Receive, sizeof(Receive));
 			if (StrEqual(Receive, g_aClientName[client], false))
 			{
 				CallRankCallback(client, i, callback, args, plugin);
 				break;
 			}
-		} else if (g_RankBy == 2) {
+		} else if (identityMode == 2) {
 			SQL_FetchString(hndl, 3, Receive, sizeof(Receive));
 			if (StrEqual(Receive, g_aClientIp[client], false))
 			{
