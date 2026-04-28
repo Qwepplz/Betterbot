@@ -5,16 +5,9 @@
 #include <sdktools>
 #include <cstrike>
 
-enum
-{
-    WEAPON_CLASSNAME_LENGTH = 64
-};
-
-static const float WEAPON_REPLACE_DELAY = 0.2;
-
 static const char CT_DEFAULT_SECONDARY[] = "mp_ct_default_secondary";
 static const char CT_DEFAULT_PISTOL[] = "weapon_usp_silencer";
-static const char PURCHASED_M4A4[] = "weapon_m4a1";
+static const char PURCHASED_M4A4_ALIAS[] = "m4a1";
 static const char REPLACEMENT_M4A1S[] = "weapon_m4a1_silencer";
 static const char REPLACEMENT_NOTIFICATION[] = " \x04[武器替换]\x01 已自动将M4A4替换为M4A1";
 
@@ -33,8 +26,6 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-    HookEvent("item_purchase", Event_ItemPurchase, EventHookMode_Post);
-
     g_Cvar_ShowNotifications = CreateConVar("sm_ct_weapon_replacement_notifications", "1", "是否显示武器替换通知 (0=不显示, 1=显示)", _, true, 0.0, true, 1.0);
     g_Cvar_ReplaceP2000 = CreateConVar("sm_ct_weapon_replacement_p2000", "1", "是否将P2000替换为USP (0=不替换, 1=替换)", _, true, 0.0, true, 1.0);
     g_Cvar_ReplaceM4A4 = CreateConVar("sm_ct_weapon_replacement_m4a4", "1", "是否将M4A4替换为M4A1 (0=不替换, 1=替换)", _, true, 0.0, true, 1.0);
@@ -56,42 +47,44 @@ public void OnConfigsExecuted()
     }
 }
 
-public Action Event_ItemPurchase(Event event, const char[] name, bool dontBroadcast)
+public Action CS_OnBuyCommand(int client, const char[] weapon)
 {
-    int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!IsValidBotClient(client) || GetClientTeam(client) != CS_TEAM_CT || !g_Cvar_ReplaceM4A4.BoolValue)
+    if (!g_Cvar_ReplaceM4A4.BoolValue || !IsValidBotClient(client) || !IsPlayerAlive(client) || GetClientTeam(client) != CS_TEAM_CT)
     {
         return Plugin_Continue;
     }
 
-    char weapon[WEAPON_CLASSNAME_LENGTH];
-    event.GetString("weapon", weapon, sizeof(weapon));
-    if (!StrEqual(weapon, PURCHASED_M4A4, true))
+    if (!StrEqual(weapon, PURCHASED_M4A4_ALIAS, false))
     {
         return Plugin_Continue;
     }
 
-    CreateTimer(WEAPON_REPLACE_DELAY, Timer_ReplaceWeapon, GetClientUserId(client));
-
-    return Plugin_Continue;
-}
-
-public Action Timer_ReplaceWeapon(Handle timer, int userId)
-{
-    int client = GetClientOfUserId(userId);
-    if (!IsValidBotClient(client) || !IsPlayerAlive(client) || !g_Cvar_ReplaceM4A4.BoolValue)
+    if (!GetEntProp(client, Prop_Send, "m_bInBuyZone"))
     {
         return Plugin_Stop;
     }
 
-    int weaponEntity = GetPlayerWeaponByClassname(client, PURCHASED_M4A4);
-    if (weaponEntity != -1)
+    int primary = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
+    if (primary != -1 && IsValidEntity(primary))
     {
-        RemovePlayerItem(client, weaponEntity);
-        AcceptEntityInput(weaponEntity, "Kill");
+        return Plugin_Stop;
     }
 
-    GivePlayerItem(client, REPLACEMENT_M4A1S);
+    int replacementPrice = CS_GetWeaponPrice(client, CSWeapon_M4A1_SILENCER);
+    int account = GetEntProp(client, Prop_Send, "m_iAccount");
+    if (account < replacementPrice)
+    {
+        return Plugin_Stop;
+    }
+
+    int replacementWeapon = GivePlayerItem(client, REPLACEMENT_M4A1S);
+    if (replacementWeapon == -1 || !IsValidEntity(replacementWeapon))
+    {
+        return Plugin_Stop;
+    }
+
+    SetEntProp(client, Prop_Send, "m_iAccount", account - replacementPrice);
+    EquipPlayerWeapon(client, replacementWeapon);
 
     if (g_Cvar_ShowNotifications.BoolValue)
     {
@@ -99,28 +92,6 @@ public Action Timer_ReplaceWeapon(Handle timer, int userId)
     }
 
     return Plugin_Stop;
-}
-
-int GetPlayerWeaponByClassname(int client, const char[] targetClassname)
-{
-    for (int slot; slot < 5; slot++)
-    {
-        int weaponEntity = GetPlayerWeaponSlot(client, slot);
-        if (weaponEntity == -1)
-        {
-            continue;
-        }
-
-        char classname[WEAPON_CLASSNAME_LENGTH];
-        GetEntityClassname(weaponEntity, classname, sizeof(classname));
-
-        if (StrEqual(classname, targetClassname, true))
-        {
-            return weaponEntity;
-        }
-    }
-
-    return -1;
 }
 
 bool IsValidBotClient(int client)
