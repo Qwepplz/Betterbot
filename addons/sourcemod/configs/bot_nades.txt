@@ -680,6 +680,15 @@
 			"timestamp"			"0.0"
 			"team"				"CT"
 		}
+		"Corner HE"
+		{
+			"position"			"204.329971 1447.713500 107.023437"
+			"lookat"			"436.736022 1779.314941 221.225418"
+			"nadedefindex"		"44"
+			"replay"			"addons/sourcemod/data/botmimic/default/de_inferno/Corner HE.rec"
+			"timestamp"			"0.0"
+			"team"				"T"
+		}
 	}
     "de_cache"
 	{
@@ -1108,7 +1117,7 @@
 			"replay"			"addons/sourcemod/data/botmimic/default/de_ancient/B Short Smoke Lane.rec"
 			"timestamp"			"0.0"
 			"team"				"T"
-		}	
+		}
 		"B Long Smoke Lane"
 		{
 			"position"			"608.031250 -676.272949 103.204795"
@@ -1300,7 +1309,7 @@
 		}
 		"B Lane Molotov"
 		{
-			"position"			"743.999511 713.222839 129.116088 6.993777"
+			"position"			"743.999511 713.222839 129.116088"
 			"lookat"			"701.401062 260.073852 129.654968"
 			"nadedefindex"		"48"
 			"replay"			"addons/sourcemod/data/botmimic/default/de_ancient/B Lane Molotov.rec"
