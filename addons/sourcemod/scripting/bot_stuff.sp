@@ -89,6 +89,8 @@ float g_fScriptActionStart[MAXPLAYERS+1];
 float g_fScriptActionLastPos[MAXPLAYERS+1][3];
 float g_fScriptActionLastMoveTime[MAXPLAYERS+1];
 bool g_bPeekAssigned[MAXPLAYERS+1];
+bool g_bPeekRollResolved[MAXPLAYERS+1];
+bool g_bPeekRollPassed[MAXPLAYERS+1];
 bool g_bAngleAssigned[MAXPLAYERS+1];
 ConVar g_cvGameMode;
 ConVar g_cvGameType;
@@ -130,8 +132,8 @@ float g_fLastNavUpdate[MAXPLAYERS+1][3];
 float g_fWeaponPickupCooldown[MAXPLAYERS+1];
 float g_fNadeLineupCooldown[MAXPLAYERS+1];
 #define SCRIPT_LINEUP_FAILURE_COOLDOWN 5.0
-#define SCRIPT_PEEK_OPENING_WINDOW 15.0
-#define SCRIPT_PEEK_TEAM_ACTIVE_CAP 2
+#define SCRIPT_PEEK_OPENING_WINDOW 35.0
+#define SCRIPT_PEEK_CHANCE 60.0
 #define SCRIPT_ANGLE_LIVE_START 15.0
 #define SCRIPT_ANGLE_LIVE_END 45.0
 #define SCRIPT_ANGLE_LIVE_CANCEL 60.0
@@ -886,6 +888,8 @@ public void OnClientPutInServer(int iClient)
 
 	ClearClientScriptAction(iClient);
 	g_bPeekAssigned[iClient] = false;
+	g_bPeekRollResolved[iClient] = false;
+	g_bPeekRollPassed[iClient] = false;
 	g_bAngleAssigned[iClient] = false;
 	InitializeClientProfileData(iClient);
 	CreateTimer(0.2, Timer_RefreshPlayerResourceData, GetClientUserId(iClient), TIMER_FLAG_NO_MAPCHANGE);
@@ -999,6 +1003,8 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 
 		ClearClientScriptAction(i);
 		g_bPeekAssigned[i] = false;
+		g_bPeekRollResolved[i] = false;
+		g_bPeekRollPassed[i] = false;
 		g_bAngleAssigned[i] = false;
 
 		if (!IsPlayerAlive(i))
@@ -1973,6 +1979,8 @@ public void OnClientDisconnect(int iClient)
 	g_iDoingSmokeNum[iClient] = -1;
 	ClearClientScriptAction(iClient);
 	g_bPeekAssigned[iClient] = false;
+	g_bPeekRollResolved[iClient] = false;
+	g_bPeekRollPassed[iClient] = false;
 	g_bAngleAssigned[iClient] = false;
 	g_iActiveWeapon[iClient] = -1;
 	g_fLookAngleMaxAccel[iClient] = 0.0;
@@ -2927,22 +2935,6 @@ bool IsCriticalScriptObjectiveTask(TaskType iTask)
 	return (iTask == PLANT_BOMB || iTask == FIND_TICKING_BOMB || iTask == DEFUSE_BOMB || iTask == GUARD_TICKING_BOMB || iTask == GUARD_BOMB_DEFUSER || iTask == GUARD_LOOSE_BOMB || iTask == COLLECT_HOSTAGES || iTask == RESCUE_HOSTAGES || iTask == ESCAPE_FROM_BOMB || iTask == ESCAPE_FROM_FLAMES);
 }
 
-int CountActiveTeamPeeks(int iTeam)
-{
-	int iCount = 0;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (g_iScriptAction[i] != ScriptAction_Peek)
-			continue;
-
-		if (!IsValidClient(i) || !IsPlayerAlive(i) || GetClientTeam(i) != iTeam)
-			continue;
-
-		iCount++;
-	}
-	return iCount;
-}
-
 int CountActiveTeamAngles(int iTeam)
 {
 	int iCount = 0;
@@ -3002,7 +2994,13 @@ bool IsPeekScriptLineupAllowed(int iClient, float fNow)
 	if (IsCriticalScriptObjectiveTask(GetTask(iClient)))
 		return false;
 
-	return CountActiveTeamPeeks(GetClientTeam(iClient)) < SCRIPT_PEEK_TEAM_ACTIVE_CAP;
+	if (!g_bPeekRollResolved[iClient])
+	{
+		g_bPeekRollResolved[iClient] = true;
+		g_bPeekRollPassed[iClient] = IsItMyChance(SCRIPT_PEEK_CHANCE);
+	}
+
+	return g_bPeekRollPassed[iClient];
 }
 
 bool IsAngleScriptLineupAllowed(int iClient, float fNow)

@@ -5,6 +5,22 @@
 #include <sdktools>
 #include <cstrike>
 
+enum Get5State
+{
+    Get5State_None,
+    Get5State_PreVeto,
+    Get5State_Veto,
+    Get5State_Warmup,
+    Get5State_KnifeRound,
+    Get5State_WaitingForKnifeRoundDecision,
+    Get5State_GoingLive,
+    Get5State_Live,
+    Get5State_PendingRestore,
+    Get5State_PostGame,
+};
+
+native Get5State Get5_GetGameState();
+
 public Plugin myinfo =
 {
     name = "Weapon Replacer",
@@ -14,15 +30,33 @@ public Plugin myinfo =
     url = "https://steamcommunity.com/id/rxpev/"
 };
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    MarkNativeAsOptional("Get5_GetGameState");
+    return APLRes_Success;
+}
+
 public void OnPluginStart()
 {
     HookEvent("player_spawn", Event_PlayerSpawn);
+}
+
+bool IsGet5WeaponReplacementBlockedPhase()
+{
+    if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available)
+        return false;
+
+    Get5State state = Get5_GetGameState();
+    return state == Get5State_KnifeRound || state == Get5State_WaitingForKnifeRoundDecision;
 }
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
     if (!IsValidClient(client) || IsFakeClient(client) || !IsPlayerAlive(client) || GetClientTeam(client) != CS_TEAM_CT)
+        return;
+
+    if (IsGet5WeaponReplacementBlockedPhase())
         return;
 
     int weapon = GetPlayerWeaponSlot(client, CS_SLOT_SECONDARY);
