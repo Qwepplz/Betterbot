@@ -134,6 +134,9 @@ float g_fNadeLineupCooldown[MAXPLAYERS+1];
 #define SCRIPT_LINEUP_FAILURE_COOLDOWN 5.0
 #define SCRIPT_PEEK_OPENING_WINDOW 35.0
 #define SCRIPT_PEEK_CHANCE 60.0
+#define SCRIPT_PEEK_ACTION_TIMEOUT 12.0
+#define SCRIPT_PEEK_START_DISTANCE 40.0
+#define SCRIPT_PEEK_START_SPEED 25.0
 #define SCRIPT_ANGLE_LIVE_START 15.0
 #define SCRIPT_ANGLE_LIVE_END 45.0
 #define SCRIPT_ANGLE_LIVE_CANCEL 60.0
@@ -2863,7 +2866,12 @@ bool ProcessScriptLineupAction(int iClient, ScriptAction iAction, ArrayList aLin
 	}
 
 	ScriptLineup sLineup;
-	float fActionTimeout = (iAction == ScriptAction_Angle) ? SCRIPT_ANGLE_ACTION_TIMEOUT : 8.0;
+	float fActionTimeout = 8.0;
+	if (iAction == ScriptAction_Peek)
+		fActionTimeout = SCRIPT_PEEK_ACTION_TIMEOUT;
+	else if (iAction == ScriptAction_Angle)
+		fActionTimeout = SCRIPT_ANGLE_ACTION_TIMEOUT;
+
 	if ((fNow - g_fScriptActionStart[iClient]) > fActionTimeout)
 	{
 		FailScriptLineup(iClient, aLineups, iLineup, "timed out", fNow);
@@ -2902,11 +2910,14 @@ bool ProcessScriptLineupAction(int iClient, ScriptAction iAction, ArrayList aLin
 		return true;
 	}
 
+	float fStartDistance = (iAction == ScriptAction_Peek) ? SCRIPT_PEEK_START_DISTANCE : 25.0;
+	float fStartSpeed = (iAction == ScriptAction_Peek) ? SCRIPT_PEEK_START_SPEED : 5.0;
+
 	BotMoveTo(iClient, sLineup.fPos, FASTEST_ROUTE);
-	if (fDisToLineup < 25.0)
+	if (fDisToLineup < fStartDistance)
 	{
 		BotSetLookAt(iClient, "Use entity", sLineup.fLook, PRIORITY_HIGH, 2.0, false, 3.0, false);
-		if (view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT && fSpeed < 5.0 && (GetEntityFlags(iClient) & FL_ONGROUND))
+		if (view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT && fSpeed < fStartSpeed && (GetEntityFlags(iClient) & FL_ONGROUND))
 		{
 			BMError iError = BotMimic_PlayRecordFromFile(iClient, sLineup.szReplay);
 			if (iError != BM_NoError)
