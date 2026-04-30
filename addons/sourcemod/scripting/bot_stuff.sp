@@ -89,8 +89,9 @@ float g_fScriptActionStart[MAXPLAYERS+1];
 float g_fScriptActionLastPos[MAXPLAYERS+1][3];
 float g_fScriptActionLastMoveTime[MAXPLAYERS+1];
 bool g_bPeekAssigned[MAXPLAYERS+1];
-bool g_bPeekRollResolved[MAXPLAYERS+1];
-bool g_bPeekRollPassed[MAXPLAYERS+1];
+bool g_bTeamPeekUsedRound[4];
+bool g_bTeamPeekRollResolved[4];
+bool g_bTeamPeekRollPassed[4];
 bool g_bAngleAssigned[MAXPLAYERS+1];
 ConVar g_cvGameMode;
 ConVar g_cvGameType;
@@ -133,10 +134,11 @@ float g_fWeaponPickupCooldown[MAXPLAYERS+1];
 float g_fNadeLineupCooldown[MAXPLAYERS+1];
 #define SCRIPT_LINEUP_FAILURE_COOLDOWN 5.0
 #define SCRIPT_PEEK_OPENING_WINDOW 35.0
-#define SCRIPT_PEEK_CHANCE 60.0
+#define SCRIPT_PEEK_CHANCE 35.0
 #define SCRIPT_PEEK_ACTION_TIMEOUT 12.0
 #define SCRIPT_PEEK_START_DISTANCE 40.0
 #define SCRIPT_PEEK_START_SPEED 25.0
+#define SCRIPT_PEEK_FREEZE_ROUNDS 2
 #define SCRIPT_ANGLE_LIVE_START 15.0
 #define SCRIPT_ANGLE_LIVE_END 45.0
 #define SCRIPT_ANGLE_LIVE_CANCEL 60.0
@@ -163,6 +165,7 @@ enum struct ScriptLineup
 	float fClaimTime;
 	float fFailureUntil;
 	int iClaimClient;
+	int iFreezeUntilRound;
 	int iTeam;
 }
 
@@ -891,8 +894,6 @@ public void OnClientPutInServer(int iClient)
 
 	ClearClientScriptAction(iClient);
 	g_bPeekAssigned[iClient] = false;
-	g_bPeekRollResolved[iClient] = false;
-	g_bPeekRollPassed[iClient] = false;
 	g_bAngleAssigned[iClient] = false;
 	InitializeClientProfileData(iClient);
 	CreateTimer(0.2, Timer_RefreshPlayerResourceData, GetClientUserId(iClient), TIMER_FLAG_NO_MAPCHANGE);
@@ -994,6 +995,12 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 	g_bRoundDecided = false;
 	g_fRoundStart = GetGameTime();
 	g_bHalftimeSwitch = false;
+	g_bTeamPeekUsedRound[CS_TEAM_T] = false;
+	g_bTeamPeekUsedRound[CS_TEAM_CT] = false;
+	g_bTeamPeekRollResolved[CS_TEAM_T] = false;
+	g_bTeamPeekRollResolved[CS_TEAM_CT] = false;
+	g_bTeamPeekRollPassed[CS_TEAM_T] = false;
+	g_bTeamPeekRollPassed[CS_TEAM_CT] = false;
 
 	bool bIsScenario = g_bIsBombScenario || g_bIsHostageScenario;
 	int iTeam = g_bIsBombScenario ? CS_TEAM_CT : CS_TEAM_T;
@@ -1006,8 +1013,6 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 
 		ClearClientScriptAction(i);
 		g_bPeekAssigned[i] = false;
-		g_bPeekRollResolved[i] = false;
-		g_bPeekRollPassed[i] = false;
 		g_bAngleAssigned[i] = false;
 
 		if (!IsPlayerAlive(i))
@@ -1679,8 +1684,8 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fV
 				if (IsRegulationPistolRound())
 					bAssignedScriptLineup = TryAssignScriptLineup(iClient, g_aPistolNades, ScriptAction_Nade, true);
 
-				if (!bAssignedScriptLineup && IsPeekScriptLineupAllowed(iClient, fNow))
-					bAssignedScriptLineup = TryAssignScriptLineup(iClient, g_aPeeks, ScriptAction_Peek, false);
+				if (!bAssignedScriptLineup)
+					bAssignedScriptLineup = TryAssignTeamPeekScriptLineup(GetClientTeam(iClient), fNow);
 
 				if (!bAssignedScriptLineup && IsAngleScriptLineupAllowed(iClient, fNow))
 					bAssignedScriptLineup = TryAssignScriptLineup(iClient, g_aAngles, ScriptAction_Angle, false);
@@ -1982,8 +1987,6 @@ public void OnClientDisconnect(int iClient)
 	g_iDoingSmokeNum[iClient] = -1;
 	ClearClientScriptAction(iClient);
 	g_bPeekAssigned[iClient] = false;
-	g_bPeekRollResolved[iClient] = false;
-	g_bPeekRollPassed[iClient] = false;
 	g_bAngleAssigned[iClient] = false;
 	g_iActiveWeapon[iClient] = -1;
 	g_fLookAngleMaxAccel[iClient] = 0.0;
@@ -2151,6 +2154,7 @@ void ParseScriptLineups(const char[] szConfig, const char[] szRoot, const char[]
 		sLineup.fClaimTime = 0.0;
 		sLineup.fFailureUntil = 0.0;
 		sLineup.iClaimClient = 0;
+		sLineup.iFreezeUntilRound = 0;
 		sLineup.iTeam = CS_TEAM_NONE;
 
 		hKv.GetString("team", szTeam, sizeof(szTeam));
@@ -2823,6 +2827,137 @@ int GetNearestScriptLineup(int iClient, ArrayList aLineups, bool bRequireWeapon,
 	return iClosestLineup;
 }
 
+bool IsScriptLineupCandidateForClient(int iClient, ArrayList aLineups, int iLineup, bool bRequireWeapon, bool bRequireClearLookLine, bool bRespectPeekFreeze, float fNow)
+{
+	if (aLineups == null || iLineup < 0 || iLineup >= aLineups.Length)
+		return false;
+
+	ScriptLineup sLineup;
+	aLineups.GetArray(iLineup, sLineup);
+
+	if (sLineup.fTimestamp > 0.0 && (fNow - sLineup.fTimestamp) < 25.0)
+		return false;
+
+	if (sLineup.fFailureUntil > fNow)
+		return false;
+
+	if (bRespectPeekFreeze && sLineup.iFreezeUntilRound > 0 && g_iCurrentRound <= sLineup.iFreezeUntilRound)
+		return false;
+
+	if (sLineup.iClaimClient != iClient && (fNow - sLineup.fClaimTime) < 10.0 && IsValidClient(sLineup.iClaimClient) && IsPlayerAlive(sLineup.iClaimClient))
+		return false;
+
+	if (GetClientTeam(iClient) != sLineup.iTeam)
+		return false;
+
+	if (bRequireClearLookLine)
+	{
+		float fEyes[3];
+		GetClientEyePosition(iClient, fEyes);
+		if (LineGoesThroughSmoke(fEyes, sLineup.fLook))
+			return false;
+	}
+
+	if (bRequireWeapon)
+	{
+		int iEntity = eItems_FindWeaponByDefIndex(iClient, sLineup.iDefIndex);
+		if (!IsValidEntity(iEntity))
+			return false;
+	}
+
+	float fOrigin[3];
+	GetClientAbsOrigin(iClient, fOrigin);
+	return GetVectorDistance(fOrigin, sLineup.fPos) <= 250.0;
+}
+
+bool HasAvailablePeekLineup(int iClient, float fNow)
+{
+	for (int i = 0; i < g_aPeeks.Length; i++)
+	{
+		if (IsScriptLineupCandidateForClient(iClient, g_aPeeks, i, false, false, true, fNow))
+			return true;
+	}
+
+	return false;
+}
+
+int GetRandomPeekLineup(int iClient, float fNow)
+{
+	int iSelectedLineup = -1;
+	int iCandidateCount = 0;
+
+	for (int i = 0; i < g_aPeeks.Length; i++)
+	{
+		if (!IsScriptLineupCandidateForClient(iClient, g_aPeeks, i, false, false, true, fNow))
+			continue;
+
+		iCandidateCount++;
+		if (Math_GetRandomInt(1, iCandidateCount) == 1)
+			iSelectedLineup = i;
+	}
+
+	if (iSelectedLineup != -1)
+	{
+		ScriptLineup sLineup;
+		g_aPeeks.GetArray(iSelectedLineup, sLineup);
+		sLineup.fClaimTime = fNow;
+		sLineup.iClaimClient = iClient;
+		g_aPeeks.SetArray(iSelectedLineup, sLineup);
+	}
+
+	return iSelectedLineup;
+}
+
+void AssignClientScriptLineupAction(int iClient, int iLineup, ScriptAction iAction, float fNow)
+{
+	g_iScriptAction[iClient] = iAction;
+	g_iScriptActionIndex[iClient] = iLineup;
+	g_fScriptActionStart[iClient] = fNow;
+	g_fScriptActionLastMoveTime[iClient] = fNow;
+	GetClientAbsOrigin(iClient, g_fScriptActionLastPos[iClient]);
+}
+
+bool TryAssignTeamPeekScriptLineup(int iTeam, float fNow)
+{
+	if (iTeam != CS_TEAM_T && iTeam != CS_TEAM_CT)
+		return false;
+
+	if (g_bRoundDecided || g_bTeamPeekUsedRound[iTeam] || g_aPeeks == null || g_aPeeks.Length == 0)
+		return false;
+
+	int iCandidates[MAXPLAYERS+1];
+	int iCandidateCount = 0;
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (!IsPeekScriptLineupAllowed(i, fNow) || GetClientTeam(i) != iTeam || !HasAvailablePeekLineup(i, fNow))
+			continue;
+
+		iCandidates[iCandidateCount++] = i;
+	}
+
+	if (iCandidateCount == 0)
+		return false;
+
+	if (!g_bTeamPeekRollResolved[iTeam])
+	{
+		g_bTeamPeekRollResolved[iTeam] = true;
+		g_bTeamPeekRollPassed[iTeam] = IsItMyChance(SCRIPT_PEEK_CHANCE);
+	}
+
+	if (!g_bTeamPeekRollPassed[iTeam])
+		return false;
+
+	int iClient = iCandidates[Math_GetRandomInt(1, iCandidateCount) - 1];
+	int iLineup = GetRandomPeekLineup(iClient, fNow);
+	if (iLineup == -1)
+		return false;
+
+	AssignClientScriptLineupAction(iClient, iLineup, ScriptAction_Peek, fNow);
+	g_bTeamPeekUsedRound[iTeam] = true;
+	return true;
+}
+
 bool TryAssignScriptLineup(int iClient, ArrayList aLineups, ScriptAction iAction, bool bRequireWeapon)
 {
 	if (g_bRoundDecided)
@@ -2838,11 +2973,7 @@ bool TryAssignScriptLineup(int iClient, ArrayList aLineups, ScriptAction iAction
 	if (iLineup == -1)
 		return false;
 
-	g_iScriptAction[iClient] = iAction;
-	g_iScriptActionIndex[iClient] = iLineup;
-	g_fScriptActionStart[iClient] = GetGameTime();
-	g_fScriptActionLastMoveTime[iClient] = g_fScriptActionStart[iClient];
-	GetClientAbsOrigin(iClient, g_fScriptActionLastPos[iClient]);
+	AssignClientScriptLineupAction(iClient, iLineup, iAction, GetGameTime());
 
 	return true;
 }
@@ -2927,9 +3058,15 @@ bool ProcessScriptLineupAction(int iClient, ScriptAction iAction, ArrayList aLin
 			}
 
 			if (iAction == ScriptAction_Peek)
+			{
 				g_bPeekAssigned[iClient] = true;
+				g_bTeamPeekUsedRound[GetClientTeam(iClient)] = true;
+				sLineup.iFreezeUntilRound = g_iCurrentRound + SCRIPT_PEEK_FREEZE_ROUNDS;
+			}
 			else if (iAction == ScriptAction_Angle)
+			{
 				g_bAngleAssigned[iClient] = true;
+			}
 
 			sLineup.fTimestamp = fNow;
 			sLineup.fFailureUntil = 0.0;
@@ -2990,7 +3127,11 @@ bool IsPeekScriptLineupAllowed(int iClient, float fNow)
 	if (!g_bFreezetimeEnd || g_bRoundDecided || !IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient) || !IsClientScriptIdle(iClient))
 		return false;
 
-	if (g_bPeekAssigned[iClient] || g_bBombPlanted || g_iAliveCountT == 0 || g_iAliveCountCT == 0)
+	int iTeam = GetClientTeam(iClient);
+	if (iTeam != CS_TEAM_T && iTeam != CS_TEAM_CT)
+		return false;
+
+	if (g_bTeamPeekUsedRound[iTeam] || g_bPeekAssigned[iClient] || g_bBombPlanted || g_iAliveCountT == 0 || g_iAliveCountCT == 0)
 		return false;
 
 	float fOpeningStart = g_fFreezeTimeEnd;
@@ -3005,13 +3146,7 @@ bool IsPeekScriptLineupAllowed(int iClient, float fNow)
 	if (IsCriticalScriptObjectiveTask(GetTask(iClient)))
 		return false;
 
-	if (!g_bPeekRollResolved[iClient])
-	{
-		g_bPeekRollResolved[iClient] = true;
-		g_bPeekRollPassed[iClient] = IsItMyChance(SCRIPT_PEEK_CHANCE);
-	}
-
-	return g_bPeekRollPassed[iClient];
+	return true;
 }
 
 bool IsAngleScriptLineupAllowed(int iClient, float fNow)
