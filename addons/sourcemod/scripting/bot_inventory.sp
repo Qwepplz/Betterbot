@@ -2,10 +2,12 @@
 
 #include <sourcemod>
 #include <sdkhooks>
+#include <sdktools>
 #include <cstrike>
 #include <eItems>
 #include <PTaH>
 #include <bot_steamids>
+#include <sl_bots>
 #include <kento_rankme/rankme>
 #include <smlib>
 #include <modelch>
@@ -134,6 +136,7 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle hMyself, bool bLate, char[] chError, int iErrMax)
 {
+	MarkNativeAsOptional("SLBots_IsManaged");
 	g_bLateLoaded = bLate;
 	
 	return APLRes_Success;
@@ -620,7 +623,7 @@ public void OnClientPostAdminCheck(int client)
 
 Action GiveNamedItemPre(int client, char szClassname[64], CEconItemView &pItem, bool &bIgnoredCEconItemView, bool &bOriginIsNULL, float fOrigin[3])
 {
-	if (!IsValidClient(client))
+	if (!IsValidClient(client) || IsSLBotsManaged(client))
 		return Plugin_Continue;
 	
 	int iClientTeam = GetClientTeam(client);
@@ -647,12 +650,15 @@ Action GiveNamedItemPre(int client, char szClassname[64], CEconItemView &pItem, 
 
 void GiveNamedItemPost(int client, const char[] szClassname, const CEconItemView pItem, int iEntity, bool bOriginIsNULL, const float fOrigin[3])
 {
+	if (!IsValidClient(client) || IsSLBotsManaged(client))
+		return;
+
 	int iDefIndex = eItems_GetWeaponDefIndexByClassName(szClassname);
 	
 	if (iDefIndex <= -1)
 		return;
 	
-	if (IsValidClient(client) && eItems_IsValidWeapon(iEntity))
+	if (eItems_IsValidWeapon(iEntity))
 	{
 		int iPrevOwner = GetEntPropEnt(iEntity, Prop_Send, "m_hPrevOwner");
 		if (iPrevOwner == -1)
@@ -706,6 +712,9 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &iInflictor, floa
 
 Action WeaponCanUsePre(int client, int iWeapon, bool &bPickup)
 {
+	if (IsSLBotsManaged(client))
+		return Plugin_Continue;
+
 	int iDefIndex = eItems_GetWeaponDefIndexByWeapon(iWeapon);
 	if (eItems_IsDefIndexKnife(iDefIndex))
 	{
@@ -717,7 +726,7 @@ Action WeaponCanUsePre(int client, int iWeapon, bool &bPickup)
 
 public Action SDK_OnWeaponEquip(int client, int iWeapon)
 {
-    if(!IsValidClient(client))
+    if(!IsValidClient(client) || IsSLBotsManaged(client))
         return Plugin_Continue;
 
     if(!eItems_IsValidWeapon(iWeapon))
@@ -747,6 +756,8 @@ public Action Timer_MapWeaponEquipped(Handle hTimer, DataPack hPack)
 
 	if(client == 0 || !IsValidClient(client))
 		return Plugin_Continue;
+	if(IsSLBotsManaged(client))
+		return Plugin_Stop;
 	if(iWeapon == INVALID_ENT_REFERENCE || !eItems_IsValidWeapon(iWeapon))
 		return Plugin_Continue;
 

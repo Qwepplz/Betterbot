@@ -291,9 +291,8 @@ public Action ReserveAmmoTimer(Handle timer, DataPack pack) {
   int offset = pack.ReadCell();
   int ammo = pack.ReadCell();
 
-  if (clientIndex > 0 && IsClientInGame(clientIndex)) {
+  if (clientIndex > 0 && IsClientInGame(clientIndex) && !IsFakeClient(clientIndex)) {
     SetEntData(clientIndex, offset, ammo, 4, true);
   }
   return Plugin_Stop;
 }
-

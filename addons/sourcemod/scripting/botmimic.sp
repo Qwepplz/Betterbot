@@ -16,6 +16,7 @@
 #include <sdkhooks>
 #include <smlib>
 #include <botmimic>
+#include <sl_bots>
 #include <eItems>
 
 #undef REQUIRE_EXTENSIONS
@@ -162,6 +163,7 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	MarkNativeAsOptional("SLBots_IsManaged");
 	RegPluginLibrary("botmimic");
 	CreateNative("BotMimic_StartRecording", StartRecording);
 	CreateNative("BotMimic_PauseRecording", PauseRecording);
@@ -235,7 +237,7 @@ public void OnPluginStart()
 	
 	GameData hGameConfig = new GameData("botmimic.games");
 	if (hGameConfig == null)
-		SetFailState("Failed to find botstuff.games game config.");
+		SetFailState("Failed to find botmimic.games game config.");
 	
 	StartPrepSDKCall(SDKCall_Entity);
 	PrepSDKCall_SetFromConf(hGameConfig, SDKConf_Signature, "CBaseEntity::SetLocalOrigin");
@@ -497,6 +499,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	if(g_hBotMimicsRecord[client] == null)
 		return Plugin_Continue;
 
+	if(IsSLBotsManaged(client))
+	{
+		BotMimic_StopPlayerMimic(client);
+		return Plugin_Continue;
+	}
+
 	// Is this a valid living bot?
 	if(!IsPlayerAlive(client) || GetClientTeam(client) < CS_TEAM_T)
 		return Plugin_Continue;
@@ -703,6 +711,9 @@ public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadca
 // Don't allow mimicing players any other weapon than the one recorded!!
 public Action Hook_WeaponCanSwitchTo(int client, int weapon)
 {
+	if(IsSLBotsManaged(client))
+		return Plugin_Continue;
+
 	if(g_hBotMimicsRecord[client] == null)
 		return Plugin_Continue;
 	
@@ -717,6 +728,9 @@ public Action Hook_WeaponCanSwitchTo(int client, int weapon)
  */
 public MRESReturn DHooks_OnTeleport(int client, Handle hParams)
 {
+	if(IsSLBotsManaged(client))
+		return MRES_Ignored;
+
 	// This one is currently mimicing something.
 	if(g_hBotMimicsRecord[client] != null)
 	{
@@ -1367,6 +1381,13 @@ public int PlayRecordFromFile(Handle plugin, int numParams)
 	{
 		return view_as<int>(BM_BadClient);
 	}
+
+	if(IsSLBotsManaged(client))
+	{
+		if(g_hBotMimicsRecord[client] != null)
+			BotMimic_StopPlayerMimic(client);
+		return view_as<int>(BM_BadClient);
+	}
 	
 	int iLen;
 	GetNativeStringLength(2, iLen);
@@ -1384,6 +1405,13 @@ public int PlayRecordByName(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if(client < 1 || client > MaxClients || !IsClientInGame(client))
 	{
+		return view_as<int>(BM_BadClient);
+	}
+
+	if(IsSLBotsManaged(client))
+	{
+		if(g_hBotMimicsRecord[client] != null)
+			BotMimic_StopPlayerMimic(client);
 		return view_as<int>(BM_BadClient);
 	}
 	
@@ -1878,6 +1906,13 @@ public int SortFuncADT_ByEndTime(int index1, int index2, Handle arrayHndl, Handl
 
 BMError PlayRecord(int client, const char[] path)
 {
+	if(IsSLBotsManaged(client))
+	{
+		if(g_hBotMimicsRecord[client] != null)
+			BotMimic_StopPlayerMimic(client);
+		return BM_BadClient;
+	}
+
 	// He's currently recording. Don't start to play some record on him at the same time.
 	if(g_hRecording[client] != null)
 	{

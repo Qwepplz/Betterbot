@@ -260,4 +260,3 @@ stock int GetWeaponDataTeam(int client, int index) {
 stock void GetWeaponTeamPrefix(int team, char[] prefix, int maxlen) {
   strcopy(prefix, maxlen, team == CS_TEAM_T ? "" : "ct_");
 }
-
