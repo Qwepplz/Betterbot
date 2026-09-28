@@ -145,8 +145,8 @@ public void OnPluginStart()
 	cv_instant			= CreateConVar("sm_csgoagents_instantly",			"1",	"Agent Chooser - Enable/Disable apply agents skins instantly", _, true, 0.0, true, 1.0);
 	cv_timer			= CreateConVar("sm_csgoagents_timer",				"0.2",	"Agent Chooser - Time on Spawn for apply agent skins", _, true, 0.0);
 	cv_noOverwritte		= CreateConVar("sm_csgoagents_nooverwrittecustom",	"1",	"Agent Chooser - No apply agent model if the user already have a custom model. \n1 = No apply when custom model \n0 = Disable this feature", _, true, 0.0, true, 1.0);
-	cv_PreviewDuration	= CreateConVar("sm_csgoagents_previewduration",		"3.0",	"Agent Chooser - Preview duration when choosing an agent. Disable: 0", _, true, 0.0);
-	cv_HidePlayers		= CreateConVar("sm_csgoagents_hideplayers",			"0",	"Agent Chooser - Hide players when thirdperson view active.\nDisable: 0\nEnemies: 1\nAll: 2", _, true, 0.0, true, 2.0);
+	cv_PreviewDuration	= CreateConVar("sm_csgoagents_previewduration",		"1.0",	"Agent Chooser - Preview duration when choosing an agent. Disable: 0", _, true, 0.0);
+	cv_HidePlayers		= CreateConVar("sm_csgoagents_hideplayers",			"2",	"Agent Chooser - Hide players when thirdperson view active.\nDisable: 0\nEnemies: 1\nAll: 2", _, true, 0.0, true, 2.0);
 
 	cv_version.AddChangeHook(VersionCallback);
 	cv_HidePlayers.AddChangeHook(OnCvarChange);

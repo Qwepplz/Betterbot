@@ -61,11 +61,11 @@ public void OnPluginStart()
         return;
     }
 
-    g_hCvarPrefix = CreateConVar("sm_c4msg_prefix", "C4MSG", "聊天前缀文本");
-    g_hCvarShowPlanted = CreateConVar("sm_c4msg_show_planted", "1", "是否在炸弹安放时显示消息", _, true, 0.0, true, 1.0);
+    g_hCvarPrefix = CreateConVar("sm_c4msg_prefix", "C4", "聊天前缀文本");
+    g_hCvarShowPlanted = CreateConVar("sm_c4msg_show_planted", "0", "是否在炸弹安放时显示消息", _, true, 0.0, true, 1.0);
     g_hCvarShowDefused = CreateConVar("sm_c4msg_show_defused", "1", "是否在炸弹被拆除时显示剩余时间消息", _, true, 0.0, true, 1.0);
-    g_hCvarShowDefuseStart = CreateConVar("sm_c4msg_show_defuse_start", "1", "是否在开始拆弹时显示消息", _, true, 0.0, true, 1.0);
-    g_hCvarShowDefuseAbort = CreateConVar("sm_c4msg_show_defuse_abort", "1", "是否在停止拆弹时显示消息", _, true, 0.0, true, 1.0);
+    g_hCvarShowDefuseStart = CreateConVar("sm_c4msg_show_defuse_start", "0", "是否在开始拆弹时显示消息", _, true, 0.0, true, 1.0);
+    g_hCvarShowDefuseAbort = CreateConVar("sm_c4msg_show_defuse_abort", "0", "是否在停止拆弹时显示消息", _, true, 0.0, true, 1.0);
     g_hCvarShowCountdown = CreateConVar("sm_c4msg_show_countdown", "1", "是否显示倒计时提示", _, true, 0.0, true, 1.0);
     g_hCvarCountdownMax = CreateConVar("sm_c4msg_countdown_max", "40", "倒计时显示的最大时间（秒）", _, true, 1.0);
     g_hCvarShowDefuserDied = CreateConVar("sm_c4msg_show_defuser_died", "1", "是否在拆弹者死亡时显示时间差信息", _, true, 0.0, true, 1.0);

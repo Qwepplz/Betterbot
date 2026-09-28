@@ -143,7 +143,7 @@ public void OnPluginStart()
 	HookEvent("round_start", Event_RoundStart);
 	
 	g_CVAR_RankPoints_Type = CreateConVar("ranks_matchmaking_typeofrank", "0", "Type of Rank that you want to use for this plugin (0 for Kento Rankme, 1 for GameMe, 2 for ZR Rank, 3 for HLStatsX)", _, true, 0.0, true, 3.0);
-	g_CVAR_RankPoints_Prefix = CreateConVar("ranks_matchmaking_prefix", "[{purple}Fake Ranks{default}]", "Chat Prefix");
+	g_CVAR_RankPoints_Prefix = CreateConVar("ranks_matchmaking_prefix", "[{purple}段位系统{default}]", "Chat Prefix");
 	g_CVAR_RankPoints_Flag = CreateConVar("ranks_matchmaking_flag", "", "Flag to restrict the ranks to certain players (leave it empty to enable for everyone)");
 	CreateRankPointConVars();
 	
