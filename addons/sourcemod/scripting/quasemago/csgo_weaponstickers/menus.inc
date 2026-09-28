@@ -88,7 +88,7 @@ public int MenuHandler_Menu_WeaponStickers(Menu menu, MenuAction action, int cli
 		if (g_tempIndex[client] < 0)
 		{
 			ShowWeaponStickersMenu(client);
-			return;
+			return 0;
 		}
 		
 		char buffer[16];
@@ -113,6 +113,7 @@ public int MenuHandler_Menu_WeaponStickers(Menu menu, MenuAction action, int cli
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 static void ShowWeaponStickerSlotMenu(int client, int slot)
@@ -215,7 +216,7 @@ public int MenuHandler_Menu_StickerSlot(Menu menu, MenuAction action, int client
 		if (g_tempIndex[client] < 0)
 		{
 			ShowWeaponStickersMenu(client);
-			return;
+			return 0;
 		}
 
 		char buffer[32];
@@ -276,6 +277,7 @@ public int MenuHandler_Menu_StickerSlot(Menu menu, MenuAction action, int client
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 static char[] packageID(int stickerID,int tag)
@@ -433,7 +435,7 @@ public int MenuHandler_Menu_StickerSet(Menu menu, MenuAction action, int client,
 		if (g_tempIndex[client] < 0)
 		{
 			ShowWeaponStickersMenu(client);
-			return;
+			return 0;
 		}
 		
 		char buffer[32];
@@ -443,14 +445,14 @@ public int MenuHandler_Menu_StickerSet(Menu menu, MenuAction action, int client,
 		if (stickerIndex < 0)
 		{
 			ShowWeaponStickersMenu(client);
-			return;
+			return 0;
 		}
 
 		int stickerSet = eItems_GetStickerSetNumByStickerSetId(g_Sticker[stickerIndex].m_setId);
 		if (stickerSet < 0)
 		{
 			ShowWeaponStickersMenu(client);
-			return;
+			return 0;
 		}
 
 		int time = GetTime();
@@ -461,7 +463,7 @@ public int MenuHandler_Menu_StickerSet(Menu menu, MenuAction action, int client,
 			// Reopen menu.
 			g_menuSite[client] = GetMenuSelectionPosition();
 			ShowWeaponStickersSetMenu(client, g_tempSlot[client], stickerSet, g_tempSearch[client]);
-			return;
+			return 0;
 		}
 		if (g_tempSlot[client] == ROTATION) {
 			int stickerID = (stickerIndex / 1000) - 1;
@@ -577,6 +579,7 @@ public int MenuHandler_Menu_StickerSet(Menu menu, MenuAction action, int client,
 	{
 		delete menu;
 	}
+	return 0;
 }
 
 static void ResetClientTempVars(int client)
