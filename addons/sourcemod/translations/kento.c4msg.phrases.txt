@@ -242,12 +242,10 @@
 	}
 	"With Kit"
 	{
-		"#format"	""
 		"en"	"With Defuse Kit"
 	}
 	"Without Kit"
 	{
-		"#format"	""
 		"en"	"Without Defuse Kit"
 	}
 	"DefaultChatPrefix"
