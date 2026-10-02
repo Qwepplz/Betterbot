@@ -20,67 +20,31 @@ public void ReadConfig() {
   g_smWeaponIndex = new StringMap();
   delete g_smWeaponDefIndex;
   g_smWeaponDefIndex = new StringMap();
-  delete g_smLanguageIndex;
-  g_smLanguageIndex = new StringMap();
 
   for (int i = 0; i < sizeof(g_WeaponClasses); i++) {
     g_smWeaponIndex.SetValue(g_WeaponClasses[i], i);
     g_smWeaponDefIndex.SetValue(g_WeaponClasses[i], g_iWeaponDefIndex[i]);
   }
 
-  int langCount = GetLanguageCount();
-  int langCounter = 0;
-  g_iDefaultLanguage = 0;
-
-  for (int i = 0; i < langCount; i++) {
-    char code[4];
-    char language[32];
-    GetLanguageInfo(i, code, sizeof(code), language, sizeof(language));
-
-    BuildPath(Path_SM, configPath, sizeof(configPath), "configs/weapons/weapons_%s.cfg", language);
-
-    if (!FileExists(configPath))
-      continue;
-
-    char languageKey[32];
-    strcopy(languageKey, sizeof(languageKey), language);
-    StringToLowerCase(languageKey);
-    g_smLanguageIndex.SetValue(languageKey, langCounter);
-
-    char codeKey[4];
-    strcopy(codeKey, sizeof(codeKey), code);
-    StringToLowerCase(codeKey);
-    if (codeKey[0] != '\0') {
-      g_smLanguageIndex.SetValue(codeKey, langCounter);
-    }
-
-    if (StrEqual(languageKey, "english")) {
-      g_iDefaultLanguage = langCounter;
-    }
-
-    FirstCharUpper(language);
-    strcopy(g_Language[langCounter], 32, language);
-
+  char languages[][] = {"english", "schinese"};
+  for (int langCounter = 0; langCounter < MAX_LANG; langCounter++) {
+    BuildPath(Path_SM, configPath, sizeof(configPath), "configs/weapons/weapons_%s.cfg", languages[langCounter]);
     KeyValues kv = CreateKeyValues("Skins");
-    FileToKeyValues(kv, configPath);
-
-    if (!KvGotoFirstSubKey(kv)) {
-      SetFailState("CFG File not found: %s", configPath);
+    if (!FileToKeyValues(kv, configPath) || !KvGotoFirstSubKey(kv)) {
       CloseHandle(kv);
+      SetFailState("CFG File not found: %s", configPath);
     }
 
     for (int k = 0; k < sizeof(g_WeaponClasses); k++) {
       if (menuWeapons[langCounter][k] != null) {
         delete menuWeapons[langCounter][k];
       }
-      menuWeapons[langCounter][k] = new Menu(WeaponsMenuHandler, MENU_ACTIONS_DEFAULT | MenuAction_DisplayItem);
-      menuWeapons[langCounter][k].SetTitle("%T", g_WeaponClasses[k], LANG_SERVER);
-      menuWeapons[langCounter][k].AddItem("0", "Default");
-      menuWeapons[langCounter][k].AddItem("-1", "Random");
+      menuWeapons[langCounter][k] = new Menu(WeaponsMenuHandler, MENU_ACTIONS_DEFAULT | MenuAction_Display | MenuAction_DisplayItem);
+      menuWeapons[langCounter][k].AddItem("0", "");
+      menuWeapons[langCounter][k].AddItem("-1", "");
       menuWeapons[langCounter][k].ExitBackButton = true;
     }
 
-    int counter = 0;
     char weaponTemp[20];
     do {
       char name[64];
@@ -97,32 +61,23 @@ public void ReadConfig() {
           menuWeapons[langCounter][k].AddItem(index, name);
         }
       }
-      counter++;
     } while (KvGotoNextKey(kv));
 
     CloseHandle(kv);
 
-    langCounter++;
   }
 
   if (menuKnife != null) {
     delete menuKnife;
   }
   menuKnife = new Menu(KnifeMenuHandler, MENU_ACTIONS_DEFAULT | MenuAction_DrawItem);
-  menuKnife.SetTitle("%T", "KnifeMenuTitle", LANG_SERVER);
 
-  char buffer[60];
   for (int i = 0; i < sizeof(g_KnifeMenuIndex); i++) {
-    Format(buffer, sizeof(buffer), "%T", g_KnifeMenuPhrase[i], LANG_SERVER);
-    menuKnife.AddItem(g_KnifeMenuIndex[i], buffer);
+    menuKnife.AddItem(g_KnifeMenuIndex[i], "");
   }
 
   if (LibraryExists("diy")) {
     menuKnife.ExitBackButton = true;
   }
 
-  if (langCounter == 0) {
-    SetFailState("Could not find a config file for any languages.");
-  }
 }
-

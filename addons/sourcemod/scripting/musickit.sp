@@ -6,6 +6,7 @@
 #include <sdktools>
 #include <cstrike>
 #include <clientprefs>
+#include <bb_client_translations>
 
 public Plugin myinfo =
 {
@@ -22,7 +23,7 @@ Cookie g_cookieMusic;
 
 public void OnPluginStart()
 {
-    LoadTranslations("musickit.phrases");
+    BB_LoadClientTranslations("musickit.phrases");
     g_cookieMusic = new Cookie("music_kit", "Music Kits Changer", CookieAccess_Private);
     ReadConfig();
     HookEvent("player_spawn", Event_Player_Spawn, EventHookMode_Pre);
@@ -98,8 +99,15 @@ public Action CommandMusic(int client, int args)
 
 public int MusicMenuHandler(Menu menu, MenuAction action, int client, int selection)
 {
+
     switch (action)
     {
+        case MenuAction_Display:
+        {
+            char title[256];
+            BB_FormatClient(client, title, sizeof(title), "%T", "MusicMenuTitle", client);
+            view_as<Panel>(selection).SetTitle(title);
+        }
         case MenuAction_Select:
         {
             char musicKitIdStr[20];
@@ -128,22 +136,27 @@ public int MusicMenuHandler(Menu menu, MenuAction action, int client, int select
             if (IsClientInGame(client))
             {
                 char info[32];
-                char display[64];
+                char display[256];
                 menu.GetItem(selection, info, sizeof(info));
                 if (StrEqual(info, "1", true))
                 {
-                    Format(display, sizeof(display), "%T", "Default", client);
+                    BB_FormatClient(client, display, sizeof(display), "%T", "Default", client);
                     return RedrawMenuItem(display);
                 }
                 if (StrEqual(info, "-1", true))
                 {
-                    Format(display, sizeof(display), "%T", "Random", client);
+                    BB_FormatClient(client, display, sizeof(display), "%T", "Random", client);
                     return RedrawMenuItem(display);
                 }
+                char phraseKey[32];
+                Format(phraseKey, sizeof(phraseKey), "MusicKitName_%s", info);
+                BB_FormatClient(client, display, sizeof(display), "%T", phraseKey, client);
+                return RedrawMenuItem(display);
             }
         }
     }
     return 0;
+
 }
 
 public Action MusicMenuTimer(Handle timer, any data)
@@ -184,49 +197,36 @@ void UpdatePlayerData(int client, int index)
 
 void ReadConfig()
 {
+
     char configPath[256];
-    char code[4];
-    char language[32];
-    GetLanguageInfo(GetServerLanguage(), code, sizeof(code), language, sizeof(language));
-    BuildPath(Path_SM, configPath, sizeof(configPath), "configs/musickit/musickit_%s.cfg", language);
-    if (!FileExists(configPath, false, "GAME"))
-    {
-        BuildPath(Path_SM, configPath, sizeof(configPath), "configs/musickit/musickit_english.cfg");
-    }
-    if (!FileExists(configPath, false, "GAME"))
-    {
-        SetFailState("Could not find a config file for any languages.");
-    }
+    BuildPath(Path_SM, configPath, sizeof(configPath), "configs/musickit/musickit_english.cfg");
     KeyValues kv = CreateKeyValues("Musickit", "", "");
-    FileToKeyValues(kv, configPath);
-    if (!KvGotoFirstSubKey(kv, false))
+    if (!FileToKeyValues(kv, configPath) || !KvGotoFirstSubKey(kv, false))
     {
-        SetFailState("CFG File not found: %s", configPath);
         CloseHandle(kv);
+        SetFailState("CFG File not found: %s", configPath);
     }
     if (menuMusic)
     {
         CloseHandle(menuMusic);
         menuMusic = null;
     }
-    menuMusic = new Menu(MusicMenuHandler, MENU_ACTIONS_DEFAULT | MenuAction_DisplayItem);
-    menuMusic.SetTitle("%T", "MusicMenuTitle", 0);
-    menuMusic.AddItem("1", "Default");
-    menuMusic.AddItem("-1", "Random");
+    menuMusic = new Menu(MusicMenuHandler, MENU_ACTIONS_DEFAULT | MenuAction_Display | MenuAction_DisplayItem);
+    menuMusic.AddItem("1", "");
+    menuMusic.AddItem("-1", "");
     if (LibraryExists("diy"))
     {
         menuMusic.ExitBackButton = true;
     }
     do
     {
-        char name[256];
         char index[4];
         KvGetSectionName(kv, index, sizeof(index));
-        KvGetString(kv, NULL_STRING, name, 255);
-        menuMusic.AddItem(index, name);
+        menuMusic.AddItem(index, "");
     }
     while (KvGotoNextKey(kv, false));
     CloseHandle(kv);
+
 }
 
 int GetRandomMusic(int client)

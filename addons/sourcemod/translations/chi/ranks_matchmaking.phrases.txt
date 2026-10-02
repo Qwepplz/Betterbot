@@ -1,0 +1,275 @@
+"Phrases"
+{
+	"Unranked"
+	{
+		"chi"	"无段位"
+	}
+	"Silver I"
+	{
+		"chi"	"白银 I"
+	}
+	"Silver II"
+	{
+		"chi"	"白银 II"
+	}
+	"Silver III"
+	{
+		"chi"	"白银 III"
+	}
+	"Silver IV"
+	{
+		"chi"	"白银 IV"
+	}
+	"Silver Elite"
+	{
+		"chi"	"白银精英"
+	}
+	"Silver Elite Master"
+	{
+		"chi"	"白银精英大师"
+	}
+	"Gold Nova I"
+	{
+		"chi"	"黄金新星 I"
+	}
+	"Gold Nova II"
+	{
+		"chi"	"黄金新星 II"
+	}
+	"Gold Nova III"
+	{
+		"chi"	"黄金新星 III"
+	}
+	"Gold Nova Master"
+	{
+		"chi"	"黄金新星大师"
+	}
+	"Master Guardian I"
+	{
+		"chi"	"大师级守护者 I"
+	}
+	"Master Guardian II"
+	{
+		"chi"	"大师级守护者 II"
+	}
+	"Master Guardian Elite"
+	{
+		"chi"	"大师级守护精英"
+	}
+	"Distinguished Master Guardian"
+	{
+		"chi"	"卓越大师级守护者"
+	}
+	"Legendary Eagle"
+	{
+		"chi"	"传奇之鹰"
+	}
+	"Legendary Eagle Master"
+	{
+		"chi"	"传奇之鹰大师"
+	}
+	"Supreme First Master Class"
+	{
+		"chi"	"至高无上第一大师"
+	}
+	"Global Elite"
+	{
+		"chi"	"全球精英"
+	}
+	"Wingman Silver I"
+	{
+		"chi"	"双排白银 I"
+	}
+	"Wingman Silver II"
+	{
+		"chi"	"双排白银 II"
+	}
+	"Wingman Silver III"
+	{
+		"chi"	"双排白银 III"
+	}
+	"Wingman Silver IV"
+	{
+		"chi"	"双排白银 IV"
+	}
+	"Wingman Silver Elite"
+	{
+		"chi"	"双排白银精英"
+	}
+	"Wingman Silver Elite Master"
+	{
+		"chi"	"双排白银精英大师"
+	}
+	"Wingman Gold Nova I"
+	{
+		"chi"	"双排黄金新星 I"
+	}
+	"Wingman Gold Nova II"
+	{
+		"chi"	"双排黄金新星 II"
+	}
+	"Wingman Gold Nova III"
+	{
+		"chi"	"双排黄金新星 III"
+	}
+	"Wingman Gold Nova Master"
+	{
+		"chi"	"双排黄金新星大师"
+	}
+	"Wingman Master Guardian I"
+	{
+		"chi"	"双排大师级守护者 I"
+	}
+	"Wingman Master Guardian II"
+	{
+		"chi"	"双排大师级守护者 II"
+	}
+	"Wingman Master Guardian Elite"
+	{
+		"chi"	"双排大师级守护精英"
+	}
+	"Wingman Distinguished Master Guardian"
+	{
+		"chi"	"双排卓越大师级守护者"
+	}
+	"Wingman Legendary Eagle"
+	{
+		"chi"	"双排传奇之鹰"
+	}
+	"Wingman Legendary Eagle Master"
+	{
+		"chi"	"双排传奇之鹰大师"
+	}
+	"Wingman Supreme First Master Class"
+	{
+		"chi"	"双排至高无上第一大师"
+	}
+	"Wingman Global Elite"
+	{
+		"chi"	"双排全球精英"
+	}
+	"Lab Rat I"
+	{
+		"chi"	"实验鼠 I"
+	}
+	"Lab Rat II"
+	{
+		"chi"	"实验鼠 II"
+	}
+	"Sprinting Hare I"
+	{
+		"chi"	"疾行之兔 I"
+	}
+	"Sprinting Hare II"
+	{
+		"chi"	"疾行之兔 II"
+	}
+	"Wild Scout I"
+	{
+		"chi"	"狂野侦察兵 I"
+	}
+	"Wild Scout II"
+	{
+		"chi"	"狂野侦察兵 II"
+	}
+	"Wild Scout Elite"
+	{
+		"chi"	"狂野侦察精英"
+	}
+	"Hunter Fox I"
+	{
+		"chi"	"猎狐者 I"
+	}
+	"Hunter Fox II"
+	{
+		"chi"	"猎狐者 II"
+	}
+	"Hunter Fox III"
+	{
+		"chi"	"猎狐者 III"
+	}
+	"Hunter Fox Elite"
+	{
+		"chi"	"猎狐精英"
+	}
+	"Timber Wolf"
+	{
+		"chi"	"森林之狼"
+	}
+	"Ember Wolf"
+	{
+		"chi"	"余烬之狼"
+	}
+	"Wildfire Wolf"
+	{
+		"chi"	"野火之狼"
+	}
+	"The Howling Alpha"
+	{
+		"chi"	"嗥叫的阿尔法"
+	}
+	"FaceIT Level 1"
+	{
+		"chi"	"FaceIT 等级 1"
+	}
+	"FaceIT Level 2"
+	{
+		"chi"	"FaceIT 等级 2"
+	}
+	"FaceIT Level 3"
+	{
+		"chi"	"FaceIT 等级 3"
+	}
+	"FaceIT Level 4"
+	{
+		"chi"	"FaceIT 等级 4"
+	}
+	"FaceIT Level 5"
+	{
+		"chi"	"FaceIT 等级 5"
+	}
+	"FaceIT Level 6"
+	{
+		"chi"	"FaceIT 等级 6"
+	}
+	"FaceIT Level 7"
+	{
+		"chi"	"FaceIT 等级 7"
+	}
+	"FaceIT Level 8"
+	{
+		"chi"	"FaceIT 等级 8"
+	}
+	"FaceIT Level 9"
+	{
+		"chi"	"FaceIT 等级 9"
+	}
+	"FaceIT Level 10"
+	{
+		"chi"	"FaceIT 等级 10"
+	}
+	"Rank Up"
+	{
+		"chi"	"恭喜，你已升到： {1}！"
+	}
+	"Rank Down"
+	{
+		"chi"	"很遗憾，你已降到： {1}"
+	}
+	"Rank Menu Title"
+	{
+		"chi"	"段位菜单"
+	}
+	"Less Than X Points"
+	{
+		"chi"	"{1} - 小于 {2} 分"
+	}
+	"More Than X Points"
+	{
+		"chi"	"{1} - 大于 {2} 分"
+	}
+	"Between X and Y"
+	{
+		"chi"	"{1} - 介于 {2} 和 {3} 分之间"
+	}
+}

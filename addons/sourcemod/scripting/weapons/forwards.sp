@@ -73,9 +73,6 @@ public void OnClientPostAdminCheck(int client) {
     return;
   }
 
-  g_iClientLanguage[client] = g_iDefaultLanguage;
-  QueryClientConVar(client, "cl_language", ConVarCallBack);
-
   if (g_iDatabaseState > 1) {
     char steam32[20];
     char temp[20];
@@ -91,29 +88,6 @@ public void OnClientPostAdminCheck(int client) {
   }
 }
 
-public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName,
-                    const char[] cvarValue) {
-  if (!IsValidClient(client)) {
-    return;
-  }
-
-  char languageKey[32];
-  strcopy(languageKey, sizeof(languageKey), cvarValue);
-  StringToLowerCase(languageKey);
-
-  int sourceModLanguage = GetLanguageByName(languageKey);
-  if (sourceModLanguage == -1) {
-    sourceModLanguage = GetLanguageByCode(languageKey);
-  }
-  if (sourceModLanguage != -1) {
-    SetClientLanguage(client, sourceModLanguage);
-  }
-
-  if (result != ConVarQuery_Okay || g_smLanguageIndex == null ||
-      !g_smLanguageIndex.GetValue(languageKey, g_iClientLanguage[client])) {
-    g_iClientLanguage[client] = g_iDefaultLanguage;
-  }
-}
 
 public void OnClientDisconnect(int client) {
   if (IsFakeClient(client)) {
@@ -132,4 +106,3 @@ public void OnPluginEnd() {
     }
   }
 }
-

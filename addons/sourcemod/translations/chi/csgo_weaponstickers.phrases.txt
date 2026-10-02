@@ -1,0 +1,239 @@
+"Phrases"
+{
+	"Menu Stickers Title"
+	{
+		"chi"	"[武器贴纸插件]\n- 使用 !sticker <贴纸名称> 以搜索贴纸。\n \n选择贴纸位置："
+	}
+	"Prefiks"
+	{
+		"chi"	"{GREEN}[武器贴纸插件]{DEFAULT}"
+	}
+	"Menu Stickers Slot Already Title"
+	{
+		"chi"	"正在为 {1} [位置 {2}]选择贴纸\n当前贴纸： {3}\n \n请选择："
+	}
+	"Menu Stickers Slot Title"
+	{
+		"chi"	"正在为 {1} [slot {2}]选择贴纸\n \n请选择："
+	}
+	"Menu Stickers Slot Title AllSlots"
+	{
+		"chi"	"正在为 {1} 选择贴纸中\n \n请选择："
+	}
+	"Menu Stickers Slot Remove"
+	{
+		"chi"	"移除贴纸"
+	}
+	"Menu Stickers Set Already Title"
+	{
+		"chi"	"正在为 {1} [位置 {2}]选择贴纸中\n当前贴纸： {3}\n \n正在浏览的贴纸类别 '{4}':"
+	}
+	"Menu Stickers Set Title"
+	{
+		"chi"	"正在为 {1} [位置 {2}]选择贴纸中\n \n正在浏览的贴纸 '{3}':"
+	}
+	"Menu Stickers Set Title AllSlots"
+	{
+		"chi"	"正在为 {1} 选择贴纸中\n \n正在浏览的贴纸 '{3}':"
+	}
+	"Menu Stickers Set Search Already Title"
+	{
+		"chi"	"正在为 {1} [位置 {2}]选择贴纸中\n当前贴纸： {3}\n \n正在搜索 '{4}':"
+	}
+	"Menu Stickers Set Search Title"
+	{
+		"chi"	"正在为 {1} [位置 {2}]选择贴纸中\n \n正在搜索 '{3}':"
+	}
+	"Menu Stickers Set Search Title AllSlots"
+	{
+		"chi"	"正在为 {1} 选择贴纸中\n \n正在搜索 '{3}':"
+	}
+	"Menu Stickers Slot Search None"
+	{
+		"chi"	"贴纸未找到！"
+	}
+	"Disabled Feature"
+	{
+		"chi"	"此功能已关闭！"
+	}
+	"Min Length Search"
+	{
+		"chi"	"您至少该输入2个字符。"
+	}
+	"Need Alive"
+	{
+		"chi"	"您只能在存活时使用该指令。"
+	}
+	"Need Access"
+	{
+		"chi"	"您没有权限使用该指令。"
+	}
+	"Delay Sticker"
+	{
+		"chi"	"你需要再等待 {lightgreen}{1} {default}秒才能更换你的贴纸。"
+	}
+	"Change Sticker"
+	{
+		"chi"	"你已把 贴纸 {orchid}{1}{default} 添加到 {green}{2}{default} 的 位置{lightgreen}{3}{default} 上。"
+	}
+	"Change Sticker AllSlots"
+	{
+		"chi"	"你已把 贴纸 {orchid}{1}{default} 一键四连到 {green}{2}{default}。"
+	}
+	"Remove Sticker"
+	{
+		"chi"	"你已把贴纸从 {lightgreen}{2}{default} 的 位置{green}{1}{default} 上 移除。"
+	}
+	"Remove Sticker AllSlots"
+	{
+		"chi"	"你已把贴纸从 所有{green}{1}{default} 位置 上移除。"
+	}
+	"Invalid Stickers Weapon"
+	{
+		"chi"	"您手上所持的武器，不能更改贴纸。"
+	}
+	"Unknown Error"
+	{
+		"chi"	"在更新您的的贴纸时出现了错误，请重试！"
+	}
+	"Validate Error"
+	{
+		"chi"	"在检测您的武器时出现了错误，请重试！"
+	}
+	"None Sticker"
+	{
+		"chi"	"无"
+	}
+	"All Slots"
+	{
+		"chi"	"一键四连"
+	}
+	"Set Wear"
+	{
+		"chi"	"设置印花磨损"
+	}
+	"Stickers Wear"
+	{
+		"chi"	"印花磨损设置菜单"
+	}
+	"Set Wear Title"
+	{
+		"chi"	"设置 #{1} 位置印花的磨损 \n 当前磨损 : {2}"
+	}
+	"Reset Wear"
+	{
+		"chi"	"重置印花磨损"
+	}
+	"Add Wear"
+	{
+		"chi"	"增加印花磨损"
+	}
+	"Del Wear"
+	{
+		"chi"	"减少印花磨损"
+	}
+	"Wear Updated"
+	{
+		"chi"	"武器印花的磨损已更新"
+	}
+	"Set Rotation"
+	{
+		"chi"	"更改贴纸的旋转"
+	}
+	"Stickers Rotation"
+	{
+		"chi"	"旋转贴纸"
+	}
+	"Set Rotation Title"
+	{
+		"chi"	"设置 #{1} 旋转贴纸 \n 当前转: {2}"
+	}
+	"Reset Rotation"
+	{
+		"chi"	"返回原始位置"
+	}
+	"Right Rotation15"
+	{
+		"chi"	"向右走15"
+	}
+	"Left Rotation15"
+	{
+		"chi"	"向左走15°"
+	}
+	"Right Rotation30"
+	{
+		"chi"	"向右走30°"
+	}
+	"Left Rotation30"
+	{
+		"chi"	"向左走30°"
+	}
+	"Right Rotation45"
+	{
+		"chi"	"向右走45°"
+	}
+	"Left Rotation45"
+	{
+		"chi"	"向左走45°"
+	}
+	"Right Rotation60"
+	{
+		"chi"	"向右走60°"
+	}
+	"Left Rotation60"
+	{
+		"chi"	"向左走60°"
+	}
+	"Rotation Updated"
+	{
+		"chi"	"旋转更新"
+	}
+	"Team CT"
+	{
+		"chi"	"CT"
+	}
+	"Team T"
+	{
+		"chi"	"T"
+	}
+	"Team Universal"
+	{
+		"chi"	"通用"
+	}
+	"Team Info"
+	{
+		"chi"	"通用武器的阵营专属贴纸"
+	}
+	"Loading data, please wait..."
+	{
+		"chi"	"正在加载您的贴纸数据，请稍候..."
+	}
+	"Bot Control Not Allowed"
+	{
+		"chi"	"武器贴纸菜单仅对真实玩家可用，控制机器人时不可用。"
+	}
+	"ChatMessage"
+	{
+		"chi"	"{1}{2}{3}"
+	}
+	"MenuSlotSticker"
+	{
+		"chi"	"位置 {1}\n  -> {2}。"
+	}
+	"MenuSlotEmpty"
+	{
+		"chi"	"位置 {1}\n  -> {2}。"
+	}
+	"MenuOptionSuffix"
+	{
+		"chi"	"{1}。"
+	}
+	"MenuSlotRotation"
+	{
+		"chi"	"位置 {1} 贴纸( {2} ) \n -> 当前旋转：{3}°"
+	}
+	"MenuSlotWear"
+	{
+		"chi"	"位置 {1} 贴纸( {2} ) \n -> 当前磨损：{3}"
+	}
+}

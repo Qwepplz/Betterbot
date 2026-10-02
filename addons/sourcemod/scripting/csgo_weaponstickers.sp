@@ -28,6 +28,8 @@
 #include <multicolors>
 #include <PTaH>
 #include <eItems>
+#include <ripext>
+#include <bb_client_translations>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -75,7 +77,7 @@ public void OnPluginStart()
 	}
 	// Translations.
 	LoadTranslations("common.phrases");
-	LoadTranslations("csgo_weaponstickers.phrases");
+	BB_LoadClientTranslations("csgo_weaponstickers.phrases");
 
 	// ConVars.
 	CreateConVar("sm_weaponstickers_version", PLUGIN_VERSION, "Plugin Version", FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
@@ -87,7 +89,7 @@ public void OnPluginStart()
 	g_cvarInactive_days = CreateConVar("sm_weaponstickers_inactive_days", "0", "Number of days before a player (SteamID) is marked as inactive and his data is deleted. (0 or any negative value to disable deleting)", FCVAR_NOTIFY);
 	
 	AutoExecConfig(true, "csgo_weaponstickers");
-	CSetPrefix("%t", "Prefiks");
+	CClearPrefix();
 
 	// Forward event to modules.
 	LoadCommands();
@@ -143,6 +145,7 @@ public void eItems_OnItemsSynced()
 
 public void Frame_ItemsSync(any data)
 {
+	LoadLocalizedStickerNames();
 	// Load stickers.
 	for (int i = 0; i < g_stickerSetsCount; i++)
 	{
@@ -331,4 +334,14 @@ void RefreshClientWeapon(int client, int index)
 			}
 		}
 	}
+}
+public void OnPluginEnd()
+{
+	for (int language = 0; language < 2; language++)
+	{
+		delete g_smLocalizedStickerNames[language];
+		delete g_smLocalizedStickerSetNames[language];
+		delete g_smLocalizedStickerWeaponNames[language];
+	}
+	delete g_smMissingStickerNames;
 }

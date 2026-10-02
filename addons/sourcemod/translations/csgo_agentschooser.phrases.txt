@@ -1,0 +1,311 @@
+"Phrases"
+{
+	"AgentName_ctm_st6_variantn"
+	{
+		"en"	"Primeiro Tenente | Brazilian 1st Battalion"
+	}
+	"AgentName_ctm_sas_variantg"
+	{
+		"en"	"D Squadron Officer | NZSAS"
+	}
+	"AgentName_ctm_gendarmerie_variantd"
+	{
+		"en"	"Aspirant | Gendarmerie Nationale"
+	}
+	"AgentName_ctm_st6_variante"
+	{
+		"en"	"Seal Team 6 Soldier | NSWC SEAL"
+	}
+	"AgentName_ctm_st6_variantk"
+	{
+		"en"	"3rd Commando Company | KSK"
+	}
+	"AgentName_ctm_fbi_variantf"
+	{
+		"en"	"Operator | FBI SWAT"
+	}
+	"AgentName_ctm_sas_variantf"
+	{
+		"en"	"B Squadron Officer | SAS"
+	}
+	"AgentName_ctm_swat_variantj"
+	{
+		"en"	"Chem-Haz Specialist | SWAT"
+	}
+	"AgentName_ctm_swat_varianth"
+	{
+		"en"	"Bio-Haz Specialist | SWAT"
+	}
+	"AgentName_tm_jungle_raider_variantf"
+	{
+		"en"	"Trapper Aggressor | Guerrilla Warfare"
+	}
+	"AgentName_tm_leet_variantj"
+	{
+		"en"	"Mr. Muhlik | Elite Crew"
+	}
+	"AgentName_tm_phoenix_variantf"
+	{
+		"en"	"Enforcer | Phoenix"
+	}
+	"AgentName_tm_phoenix_varianth"
+	{
+		"en"	"Soldier | Phoenix"
+	}
+	"AgentName_tm_leet_variantg"
+	{
+		"en"	"Ground Rebel  | Elite Crew"
+	}
+	"AgentName_tm_phoenix_varianti"
+	{
+		"en"	"Street Soldier | Phoenix"
+	}
+	"AgentName_tm_balkan_variantl"
+	{
+		"en"	"Dragomir | Sabre Footsoldier"
+	}
+	"AgentName_ctm_gendarmerie_variante"
+	{
+		"en"	"Officer Jacques Beltram | Gendarmerie Nationale"
+	}
+	"AgentName_ctm_swat_variantk"
+	{
+		"en"	"Lieutenant 'Tree Hugger' Farlow | SWAT"
+	}
+	"AgentName_ctm_gendarmerie_varianta"
+	{
+		"en"	"Sous-Lieutenant Medic | Gendarmerie Nationale"
+	}
+	"AgentName_ctm_fbi_variantg"
+	{
+		"en"	"Markus Delrow | FBI"
+	}
+	"AgentName_ctm_st6_variantg"
+	{
+		"en"	"Buckshot | NSWC SEAL"
+	}
+	"AgentName_ctm_swat_variantg"
+	{
+		"en"	"John 'Van Healen' Kask | SWAT"
+	}
+	"AgentName_ctm_swat_varianti"
+	{
+		"en"	"Sergeant Bombson | SWAT"
+	}
+	"AgentName_ctm_st6_variantj"
+	{
+		"en"	"'Blueberries' Buckshot | NSWC SEAL"
+	}
+	"AgentName_tm_jungle_raider_variantd"
+	{
+		"en"	"Col. Mangos Dabisi | Guerrilla Warfare"
+	}
+	"AgentName_tm_jungle_raider_variantf2"
+	{
+		"en"	"Trapper | Guerrilla Warfare"
+	}
+	"AgentName_tm_balkan_varianti"
+	{
+		"en"	"Maximus | Sabre"
+	}
+	"AgentName_tm_leet_varianth"
+	{
+		"en"	"Osiris | Elite Crew"
+	}
+	"AgentName_tm_phoenix_variantg"
+	{
+		"en"	"Slingshot | Phoenix"
+	}
+	"AgentName_tm_balkan_variantf"
+	{
+		"en"	"Dragomir | Sabre"
+	}
+	"AgentName_tm_professional_varj"
+	{
+		"en"	"Getaway Sally | The Professionals"
+	}
+	"AgentName_tm_professional_varh"
+	{
+		"en"	"Little Kev | The Professionals"
+	}
+	"AgentName_ctm_gendarmerie_variantb"
+	{
+		"en"	"Chem-Haz Capitaine | Gendarmerie Nationale"
+	}
+	"AgentName_ctm_diver_variantc"
+	{
+		"en"	"Lieutenant Rex Krikey | SEAL Frogman"
+	}
+	"AgentName_ctm_fbi_varianth"
+	{
+		"en"	"Michael Syfers | FBI Sniper"
+	}
+	"AgentName_ctm_st6_variantm"
+	{
+		"en"	"'Two Times' McCoy | USAF TACP"
+	}
+	"AgentName_ctm_swat_variantf"
+	{
+		"en"	"1st Lieutenant Farlow | SWAT"
+	}
+	"AgentName_ctm_st6_variantl"
+	{
+		"en"	"'Two Times' McCoy | TACP Cavalry"
+	}
+	"AgentName_tm_professional_varf5"
+	{
+		"en"	"Bloody Darryl The Strapped | The Professionals"
+	}
+	"AgentName_tm_jungle_raider_varianta"
+	{
+		"en"	"Elite Trapper Solman | Guerrilla Warfare"
+	}
+	"AgentName_tm_jungle_raider_variantc"
+	{
+		"en"	"Arno The Overgrown | Guerrilla Warfare"
+	}
+	"AgentName_tm_balkan_variantj"
+	{
+		"en"	"Blackwolf | Sabre"
+	}
+	"AgentName_tm_leet_varianti"
+	{
+		"en"	"Prof. Shahmat | Elite Crew"
+	}
+	"AgentName_tm_balkan_variantg"
+	{
+		"en"	"Rezan The Ready | Sabre"
+	}
+	"AgentName_tm_professional_vari"
+	{
+		"en"	"Number K | The Professionals"
+	}
+	"AgentName_tm_professional_varg"
+	{
+		"en"	"Safecracker Voltzmann | The Professionals"
+	}
+	"AgentName_tm_balkan_variantk"
+	{
+		"en"	"Rezan the Redshirt | Sabre"
+	}
+	"AgentName_ctm_gendarmerie_variantc"
+	{
+		"en"	"Chef d'Escadron Rouchard | Gendarmerie Nationale"
+	}
+	"AgentName_ctm_diver_variantb"
+	{
+		"en"	"Cmdr. Frank 'Wet Sox' Baroud | SEAL Frogman"
+	}
+	"AgentName_ctm_diver_varianta"
+	{
+		"en"	"Cmdr. Davida 'Goggles' Fernandez | SEAL Frogman"
+	}
+	"AgentName_ctm_st6_varianti"
+	{
+		"en"	"Lt. Commander Ricksaw | NSWC SEAL"
+	}
+	"AgentName_ctm_fbi_variantb"
+	{
+		"en"	"Special Agent Ava | FBI"
+	}
+	"AgentName_ctm_swat_variante"
+	{
+		"en"	"Cmdr. Mae 'Dead Cold' Jamison | SWAT"
+	}
+	"AgentName_tm_jungle_raider_variante"
+	{
+		"en"	"Vypa Sista of the Revolution | Guerrilla Warfare"
+	}
+	"AgentName_tm_jungle_raider_variantb2"
+	{
+		"en"	"'Medium Rare' Crasswater | Guerrilla Warfare"
+	}
+	"AgentName_tm_jungle_raider_variantb"
+	{
+		"en"	"Crasswater The Forgotten | Guerrilla Warfare"
+	}
+	"AgentName_tm_balkan_varianth"
+	{
+		"en"	"'The Doctor' Romanov | Sabre"
+	}
+	"AgentName_tm_leet_variantf"
+	{
+		"en"	"The Elite Mr. Muhlik | Elite Crew"
+	}
+	"AgentName_tm_professional_varf"
+	{
+		"en"	"Sir Bloody Miami Darryl | The Professionals"
+	}
+	"AgentName_tm_professional_varf1"
+	{
+		"en"	"Sir Bloody Silent Darryl | The Professionals"
+	}
+	"AgentName_tm_professional_varf2"
+	{
+		"en"	"Sir Bloody Skullhead Darryl | The Professionals"
+	}
+	"AgentName_tm_professional_varf3"
+	{
+		"en"	"Sir Bloody Darryl Royale | The Professionals"
+	}
+	"AgentName_tm_professional_varf4"
+	{
+		"en"	"Sir Bloody Loudmouth Darryl | The Professionals"
+	}
+	"MsgModelsGenerated"
+	{
+		"en"	"CFG file generated for models."
+	}
+	"MenuTeam"
+	{
+		"en"	"Choose Agents Team:"
+	}
+	"MenuCT"
+	{
+		"en"	"Counter-Terrorist Team"
+	}
+	"MenuT"
+	{
+		"en"	"Terrorist Team"
+	}
+	"MenuType"
+	{
+		"en"	"Choose Agents type:"
+	}
+	"MenuDefault"
+	{
+		"en"	"Use Default Skins"
+	}
+	"MenuDistinguished"
+	{
+		"en"	"Distinguished Agents"
+	}
+	"MenuExceptional"
+	{
+		"en"	"Exceptional Agents"
+	}
+	"MenuSuperior"
+	{
+		"en"	"Superior Agents"
+	}
+	"MenuMaster"
+	{
+		"en"	"Master Agents"
+	}
+	"MsgDefaultSelected"
+	{
+		"en"	"You dont use a agent model now."
+	}
+	"MsgAgentSelected"
+	{
+		"en"	"Agent model choosed!"
+	}
+	"MsgAgentNextSpawn"
+	{
+		"en"	"Agent model choosed! you will have it in the next spawn."
+	}
+	"MsgCustomSkin"
+	{
+		"en"	"You already have a custom player skin, remove your custom player skin for use a agent."
+	}
+}

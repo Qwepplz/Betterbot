@@ -3,6 +3,7 @@
 #include <sdktools>
 #include <cstrike>
 #include <clientprefs>
+#include <bb_client_translations>
 
 #undef REQUIRE_PLUGIN
 #include <kento_rankme/rankme>
@@ -123,7 +124,6 @@ bool g_zrank;
 bool g_kentorankme;
 bool g_hlstatsx;
 
-char RankStrings[RANK_NAME_COUNT][RANK_STRING_LENGTH];
 
 public Plugin myinfo = 
 {
@@ -147,7 +147,7 @@ public void OnPluginStart()
 	g_CVAR_RankPoints_Flag = CreateConVar("ranks_matchmaking_flag", "", "Flag to restrict the ranks to certain players (leave it empty to enable for everyone)");
 	CreateRankPointConVars();
 	
-	LoadTranslations("ranks_matchmaking.phrases");
+	BB_LoadClientTranslations("ranks_matchmaking.phrases");
 	AutoExecConfig(true, "ranks_matchmaking");
 }
 
@@ -280,16 +280,9 @@ public void OnMapStart()
 	LoadRankPointValues();
 	LoadRankSettings();
 	SDKHook(GetPlayerManagerEntity(), SDKHook_ThinkPost, Hook_OnThinkPost);
-	GetRanksNames();
 }
 
-public void GetRanksNames()
-{
-	for (int i = 0; i < RANK_NAME_COUNT; i++)
-	{
-		FormatEx(RankStrings[i], sizeof(RankStrings[]), "%t", g_RankPhraseKeys[i]);
-	}
-}
+
 
 public Action RankMe_OnPlayerLoaded(int client)
 {
@@ -436,27 +429,33 @@ public void Hook_OnThinkPost(int iEnt)
 
 public Action Menu_Points(int client, int args)
 {
+
 	Menu menu = new Menu(Panel_Handler);
 	char buffer[RANK_STRING_LENGTH];
 	char indexText[4];
+	char rankName[RANK_STRING_LENGTH];
 	
-	Format(buffer, sizeof(buffer), "%t", "Rank Menu Title");
-	menu.SetTitle(buffer);
-	Format(buffer, sizeof(buffer), "%t", "Less Than X Points", RankStrings[0], RankPoints[0] - 1);
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "Rank Menu Title", client);
+	menu.SetTitle("%s", buffer);
+	BB_FormatClient(client, rankName, sizeof(rankName), "%T", g_RankPhraseKeys[0], client);
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "Less Than X Points", client, rankName, RankPoints[0] - 1);
 	menu.AddItem("0", buffer);
 	
 	for (int i = 1; i < RANK_COUNT; i++)
 	{
 		IntToString(i, indexText, sizeof(indexText));
-		Format(buffer, sizeof(buffer), "%t", "Between X and Y", RankStrings[i], RankPoints[i - 1], RankPoints[i] - 1);
+		BB_FormatClient(client, rankName, sizeof(rankName), "%T", g_RankPhraseKeys[i], client);
+		BB_FormatClient(client, buffer, sizeof(buffer), "%T", "Between X and Y", client, rankName, RankPoints[i - 1], RankPoints[i] - 1);
 		menu.AddItem(indexText, buffer);
 	}
 	
-	Format(buffer, sizeof(buffer), "%t", "More Than X Points", RankStrings[RANK_COUNT], RankPoints[RANK_COUNT - 1] - 1);
+	BB_FormatClient(client, rankName, sizeof(rankName), "%T", g_RankPhraseKeys[RANK_COUNT], client);
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "More Than X Points", client, rankName, RankPoints[RANK_COUNT - 1] - 1);
 	menu.AddItem("18", buffer);
 	menu.ExitButton = true;
 	menu.Display(client, 20);
 	return Plugin_Handled;
+
 }
 
 public int Panel_Handler(Menu menu, MenuAction action, int client, int choice)

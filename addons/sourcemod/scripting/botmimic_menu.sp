@@ -11,6 +11,7 @@
 
 #pragma semicolon 1
 #include <sourcemod>
+#include <bb_client_translations>
 #include <cstrike>
 #include <botmimic>
 
@@ -53,6 +54,7 @@ public OnPluginStart()
 	AddCommandListener(CmdLstnr_Say, "say_team");
 	
 	LoadTranslations("common.phrases");
+	BB_LoadClientTranslations("botmimic_menu.phrases");
 	
 	if(LibraryExists("adminmenu"))
 	{
@@ -107,12 +109,17 @@ public OnClientDisconnect(client)
  */
 public Action:Cmd_Record(client, args)
 {
+
 	if(!client)
 		return Plugin_Handled;
 	
 	if(BotMimic_IsPlayerRecording(client))
 	{
-		PrintToChat(client, "[BotMimic] You're currently recording! Stop the current take first.");
+		{
+			char bbText[1024];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgAlreadyRecording", client);
+			PrintToChat(client, "%s", bbText);
+		}
 		DisplayRecordInProgressMenu(client);
 		return Plugin_Handled;
 	}
@@ -123,12 +130,17 @@ public Action:Cmd_Record(client, args)
 
 public Action:Cmd_StopRecord(client, args)
 {
+
 	if(!client)
 		return Plugin_Handled;
 	
 	if(!BotMimic_IsPlayerRecording(client))
 	{
-		PrintToChat(client, "[BotMimic] You aren't recording.");
+		{
+			char bbText[1024];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgNotRecording", client);
+			PrintToChat(client, "%s", bbText);
+		}
 		DisplayCategoryMenu(client);
 		return Plugin_Handled;
 	}
@@ -140,21 +152,74 @@ public Action:Cmd_StopRecord(client, args)
 
 public Action:Cmd_SaveBookmark(client, args)
 {
+
 	if(args < 2)
 	{
-		ReplyToCommand(client, "[BotMimic] Saves a bookmark with the given name in the record the target records. sm_savebookmark <name|steamid|#userid> <bookmark name>");
+		{
+		if (client == 0)
+		{
+			ReplyToCommand(client, "[BotMimic] Saves a bookmark with the given name in the record the target records. sm_savebookmark <name|steamid|#userid> <bookmark name>");
+		}
+		else
+		{
+			char bbText[1024];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgBookmarkUsage", client);
+			ReplyToCommand(client, "%s", bbText);
+		}
+	}
 		return Plugin_Handled;
 	}
 	
 	decl String:sTarget[64];
 	GetCmdArg(1, sTarget, sizeof(sTarget));
-	new iTarget = FindTarget(client, sTarget, false, false);
+	int targetList[1];
+	char targetName[MAX_TARGET_LENGTH];
+	bool targetIsPhrase;
+	int targetCount = ProcessTargetString(sTarget, client, targetList, 1, COMMAND_FILTER_NO_MULTI | COMMAND_FILTER_NO_IMMUNITY, targetName, sizeof(targetName), targetIsPhrase);
+	int iTarget = targetCount > 0 ? targetList[0] : -1;
+	if (targetCount <= 0)
+	{
+		if (client == 0) ReplyToTargetError(client, targetCount);
+		else
+		{
+			char targetPhrase[64], targetMessage[256];
+			switch (targetCount)
+			{
+				case COMMAND_TARGET_NONE: strcopy(targetPhrase, sizeof(targetPhrase), "No matching client");
+				case COMMAND_TARGET_NOT_ALIVE: strcopy(targetPhrase, sizeof(targetPhrase), "Target must be alive");
+				case COMMAND_TARGET_NOT_DEAD: strcopy(targetPhrase, sizeof(targetPhrase), "Target must be dead");
+				case COMMAND_TARGET_NOT_IN_GAME: strcopy(targetPhrase, sizeof(targetPhrase), "Target is not in game");
+				case COMMAND_TARGET_IMMUNE: strcopy(targetPhrase, sizeof(targetPhrase), "Unable to target");
+				case COMMAND_TARGET_EMPTY_FILTER: strcopy(targetPhrase, sizeof(targetPhrase), "No matching clients");
+				case COMMAND_TARGET_NOT_HUMAN: strcopy(targetPhrase, sizeof(targetPhrase), "Cannot target bot");
+				case COMMAND_TARGET_AMBIGUOUS: strcopy(targetPhrase, sizeof(targetPhrase), "More than one client matched");
+			}
+			if (targetPhrase[0] != '\0')
+			{
+				BB_FormatClient(client, targetMessage, sizeof(targetMessage), "%T", "MsgTargetError", client, targetPhrase);
+				ReplyToCommand(client, "%s", targetMessage);
+			}
+		}
+	}
 	if(iTarget == -1)
 		return Plugin_Handled;
 	
 	if(!BotMimic_IsPlayerRecording(iTarget))
 	{
-		ReplyToCommand(client, "[BotMimic] Target %N is not recording.", iTarget);
+		{
+		if (client == 0)
+		{
+			ReplyToCommand(client, "[BotMimic] Target %N is not recording.", iTarget);
+		}
+		else
+		{
+			char bbText[1024];
+			char bbPlayerName0[MAX_NAME_LENGTH];
+			GetClientName(iTarget, bbPlayerName0, sizeof(bbPlayerName0));
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgTargetNotRecording", client, bbPlayerName0);
+			ReplyToCommand(client, "%s", bbText);
+		}
+	}
 		return Plugin_Handled;
 	}
 	
@@ -165,19 +230,44 @@ public Action:Cmd_SaveBookmark(client, args)
 	
 	if(strlen(sBookmarkName) == 0)
 	{
-		ReplyToCommand(client, "[BotMimic] You have to give a name for the bookmark.");
+		{
+		if (client == 0)
+		{
+			ReplyToCommand(client, "[BotMimic] You have to give a name for the bookmark.");
+		}
+		else
+		{
+			char bbText[1024];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgBookmarkNameRequired", client);
+			ReplyToCommand(client, "%s", bbText);
+		}
+	}
 		return Plugin_Handled;
 	}
 	
 	BotMimic_SaveBookmark(iTarget, sBookmarkName);
 	
-	ReplyToCommand(client, "[BotMimic] Saved bookmark \"%s\" in %N's record.", sBookmarkName, iTarget);
+	{
+		if (client == 0)
+		{
+			ReplyToCommand(client, "[BotMimic] Saved bookmark \"%s\" in %N's record.", sBookmarkName, iTarget);
+		}
+		else
+		{
+			char bbText[1024];
+			char bbPlayerName1[MAX_NAME_LENGTH];
+			GetClientName(iTarget, bbPlayerName1, sizeof(bbPlayerName1));
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgBookmarkSaved", client, sBookmarkName, bbPlayerName1);
+			ReplyToCommand(client, "%s", bbText);
+		}
+	}
 	
 	return Plugin_Handled;
 }
 
 public Action:CmdLstnr_Say(client, const String:command[], argc)
 {
+
 	decl String:sText[256];
 	GetCmdArgString(sText, sizeof(sText));
 	StripQuotes(sText);
@@ -188,7 +278,11 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 		
 		if(StrEqual(sText, "!stop", false))
 		{
-			PrintToChat(client, "[BotMimic] Renaming aborted.");
+			{
+				char bbText[1024];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgRenameAborted", client);
+				PrintToChat(client, "%s", bbText);
+			}
 			DisplayRecordDetailMenu(client);
 			return Plugin_Handled;
 		}
@@ -199,7 +293,11 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 				DisplayCategoryMenu(client);
 			else
 				DisplayRecordMenu(client);
-			PrintToChat(client, "[BotMimic] You didn't target a record to rename.");
+			{
+				char bbText[1024];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgNoRecordToRename", client);
+				PrintToChat(client, "%s", bbText);
+			}
 			return Plugin_Handled;
 		}
 		
@@ -208,13 +306,21 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 		{
 			decl String:sError[64];
 			BotMimic_GetErrorString(error, sError, sizeof(sError));
-			PrintToChat(client, "[BotMimic] There was an error changing the name: %s", sError);
+			{
+				char bbText[1024];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgRenameError", client, sError);
+				PrintToChat(client, "%s", bbText);
+			}
 			return Plugin_Handled;
 		}
 		
 		DisplayRecordDetailMenu(client);
 		
-		PrintToChat(client, "[BotMimic] Record was renamed to \"%s\".", sText);
+		{
+			char bbText[1024];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgRecordRenamed", client, sText);
+			PrintToChat(client, "%s", bbText);
+		}
 		return Plugin_Handled;
 	}
 	else if(g_bEnterCategoryName[client])
@@ -223,7 +329,11 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 		
 		if(StrEqual(sText, "!stop", false))
 		{
-			PrintToChat(client, "[BotMimic] Creation of category aborted.");
+			{
+				char bbText[1024];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgCategoryAborted", client);
+				PrintToChat(client, "%s", bbText);
+			}
 			DisplayCategoryMenu(client);
 			return Plugin_Handled;
 		}
@@ -234,7 +344,11 @@ public Action:CmdLstnr_Say(client, const String:command[], argc)
 		//TODO: SortRecordList();
 		strcopy(g_sPlayerSelectedCategory[client], sizeof(g_sPlayerSelectedCategory[]), sText);
 		DisplayRecordMenu(client);
-		PrintToChat(client, "[BotMimic] A new category was created named \"%s\".", sText);
+		{
+			char bbText[1024];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgCategoryCreated", client, sText);
+			PrintToChat(client, "%s", bbText);
+		}
 		return Plugin_Handled;
 	}
 	
@@ -272,12 +386,17 @@ public BotMimic_OnRecordDeleted(String:name[], String:category[], String:path[])
 
 public Action:BotMimic_OnStopRecording(client, String:name[], String:category[], String:subdir[], String:path[], &bool:save)
 {
+
 	// That's nothing we started.
 	if(!g_bPlayerRecordingFromMenu[client])
 		return Plugin_Continue;
 	
 	g_bPlayerRecordingFromMenu[client] = false;
-	PrintHintText(client, "Stopped recording");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuStoppedRecording", client);
+		PrintHintText(client, "%s", bbText);
+	}
 	return Plugin_Continue;
 }
 
@@ -287,20 +406,33 @@ public Action:BotMimic_OnStopRecording(client, String:name[], String:category[],
 
 DisplayCategoryMenu(client)
 {
+
 	g_bRenameRecord[client] = false;
 	g_bEnterCategoryName[client] = false;
 	g_sPlayerSelectedCategory[client][0] = '\0';
 	g_sPlayerSelectedRecord[client][0] = '\0';
 	
 	new Handle:hMenu = CreateMenu(Menu_SelectCategory);
-	SetMenuTitle(hMenu, "Manage Movement Recording Categories");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuCategories", client);
+		SetMenuTitle(hMenu, "%s", bbText);
+	}
 	if(g_hAdminMenu)
 		SetMenuExitBackButton(hMenu, true);
 	else
 		SetMenuExitButton(hMenu, true);
 	
-	AddMenuItem(hMenu, "record", "Record new movement");
-	AddMenuItem(hMenu, "createcategory", "Create new category");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuNewMovement", client);
+		AddMenuItem(hMenu, "record", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuNewCategory", client);
+		AddMenuItem(hMenu, "createcategory", bbText);
+	}
 	AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
 	
 	new Handle:hCategoryList = BotMimic_GetLoadedRecordCategoryList();
@@ -318,6 +450,7 @@ DisplayCategoryMenu(client)
 
 public Menu_SelectCategory(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		new String:info[PLATFORM_MAX_PATH];
@@ -328,21 +461,33 @@ public Menu_SelectCategory(Handle:menu, MenuAction:action, param1, param2)
 		{
 			if(BotMimic_IsPlayerRecording(param1))
 			{
-				PrintToChat(param1, "[BotMimic] You're currently recording! Stop the current take first.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgAlreadyRecording", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 				DisplayRecordInProgressMenu(param1);
 				return;
 			}
 			
 			if(!IsPlayerAlive(param1) || GetClientTeam(param1) < CS_TEAM_T)
 			{
-				PrintToChat(param1, "[BotMimic] You have to be alive to record your movements.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgMustBeAlive", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 				DisplayCategoryMenu(param1);
 				return;
 			}
 			
 			if(BotMimic_IsPlayerMimicing(param1))
 			{
-				PrintToChat(param1, "[BotMimic] You're currently mimicing another record. Stop that first before recording.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgStopMimicFirst", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 				RedisplayAdminMenu(g_hAdminMenu, param1);
 				return;
 			}
@@ -356,7 +501,11 @@ public Menu_SelectCategory(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(info, "createcategory"))
 		{
 			g_bEnterCategoryName[param1] = true;
-			PrintToChat(param1, "[BotMimic] Type the name of the category in chat or \"!stop\" to abort. Remember that this is used as a folder name too!");
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgCategoryInstruction", param1);
+				PrintToChat(param1, "%s", bbText);
+			}
 		}
 		else
 		{
@@ -377,6 +526,7 @@ public Menu_SelectCategory(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayRecordMenu(client)
 {
+
 	g_sPlayerSelectedRecord[client][0] = '\0';
 	
 	// We don't have a category selected? Show the correct menu!
@@ -389,11 +539,15 @@ DisplayRecordMenu(client)
 	
 	new Handle:hMenu = CreateMenu(Menu_SelectRecord);
 	decl String:sTitle[64];
-	Format(sTitle, sizeof(sTitle), "Manage Recordings in %s", g_sPlayerSelectedCategory[client]);
-	SetMenuTitle(hMenu, sTitle);
+	BB_FormatClient(client, sTitle, sizeof(sTitle), "%T", "MenuRecordsInCategory", client, g_sPlayerSelectedCategory[client]);
+	SetMenuTitle(hMenu, "%s", sTitle);
 	SetMenuExitBackButton(hMenu, true);
 	
-	AddMenuItem(hMenu, "record", "Record new movement");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuNewMovement", client);
+		AddMenuItem(hMenu, "record", bbText);
+	}
 	AddMenuItem(hMenu, "", "", ITEMDRAW_SPACER);
 	
 	new Handle:hRecordList = BotMimic_GetLoadedRecordList();
@@ -427,7 +581,7 @@ DisplayRecordMenu(client)
 		}
 		
 		if(iPlaying > 0)
-			Format(sBuffer, sizeof(sBuffer), "%s (Playing %dx)", iFileHeader.BMFH_recordName, iPlaying);
+			BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "MenuRecordPlaying", client, iFileHeader.BMFH_recordName, iPlaying);
 		else
 			Format(sBuffer, sizeof(sBuffer), "%s", iFileHeader.BMFH_recordName);
 		
@@ -439,6 +593,7 @@ DisplayRecordMenu(client)
 
 public Menu_SelectRecord(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		new String:info[PLATFORM_MAX_PATH];
@@ -449,21 +604,33 @@ public Menu_SelectRecord(Handle:menu, MenuAction:action, param1, param2)
 		{
 			if(BotMimic_IsPlayerRecording(param1))
 			{
-				PrintToChat(param1, "[BotMimic] You're currently recording! Stop the current take first.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgAlreadyRecording", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 				DisplayRecordInProgressMenu(param1);
 				return;
 			}
 			
 			if(!IsPlayerAlive(param1) || GetClientTeam(param1) < CS_TEAM_T)
 			{
-				PrintToChat(param1, "[BotMimic] You have to be alive to record your movements.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgMustBeAlive", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 				DisplayRecordMenu(param1);
 				return;
 			}
 			
 			if(BotMimic_IsPlayerMimicing(param1))
 			{
-				PrintToChat(param1, "[BotMimic] You're currently mimicing another record. Stop that first before recording.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgStopMimicFirst", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 				RedisplayAdminMenu(g_hAdminMenu, param1);
 				return;
 			}
@@ -494,6 +661,7 @@ public Menu_SelectRecord(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayRecordDetailMenu(client)
 {
+
 	if(g_sPlayerSelectedRecord[client][0] == '\0' || !FileExists(g_sPlayerSelectedRecord[client]))
 	{
 		g_sPlayerSelectedRecord[client][0] = '\0';
@@ -510,20 +678,50 @@ DisplayRecordDetailMenu(client)
 	}
 	
 	new Handle:hMenu = CreateMenu(Menu_HandleRecordDetails);
-	SetMenuTitle(hMenu, "Record \"%s\": Details", iFileHeader.BMFH_recordName);
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuRecordDetails", client, iFileHeader.BMFH_recordName);
+		SetMenuTitle(hMenu, "%s", bbText);
+	}
 	SetMenuExitBackButton(hMenu, true);
 	
-	AddMenuItem(hMenu, "playselect", "Select a bot to mimic");
-	AddMenuItem(hMenu, "playadd", "Add a bot to mimic");
-	AddMenuItem(hMenu, "stop", "Stop any bots mimicing this record");
-	AddMenuItem(hMenu, "bookmarks", "Display bookmarks", iFileHeader.BMFH_bookmarkCount>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
-	AddMenuItem(hMenu, "rename", "Rename this record");
-	AddMenuItem(hMenu, "delete", "Delete");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuSelectMimicBot", client);
+		AddMenuItem(hMenu, "playselect", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuAddMimicBot", client);
+		AddMenuItem(hMenu, "playadd", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuStopAllBots", client);
+		AddMenuItem(hMenu, "stop", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuBookmarks", client);
+		AddMenuItem(hMenu, "bookmarks", bbText, iFileHeader.BMFH_bookmarkCount>0?ITEMDRAW_DEFAULT:ITEMDRAW_DISABLED);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuRenameRecord", client);
+		AddMenuItem(hMenu, "rename", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuDeleteRecord", client);
+		AddMenuItem(hMenu, "delete", bbText);
+	}
 	
 	decl String:sBuffer[64];
-	Format(sBuffer, sizeof(sBuffer), "Length: %d ticks", iFileHeader.BMFH_tickCount);
+	BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "MenuRecordLength", client, iFileHeader.BMFH_tickCount);
 	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
-	FormatTime(sBuffer, sizeof(sBuffer), "Recorded: %c", iFileHeader.BMFH_recordEndTime);
+	char recordedTime[64];
+	FormatTime(recordedTime, sizeof(recordedTime), "%c", iFileHeader.BMFH_recordEndTime);
+	BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "MenuRecordedAt", client, recordedTime);
 	AddMenuItem(hMenu, "", sBuffer, ITEMDRAW_DISABLED);
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
@@ -531,6 +729,7 @@ DisplayRecordDetailMenu(client)
 
 public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		if(g_sPlayerSelectedRecord[param1][0] == '\0' || !FileExists(g_sPlayerSelectedRecord[param1]))
@@ -556,7 +755,11 @@ public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 		{
 			// Build up a menu with bots
 			new Handle:hMenu = CreateMenu(Menu_SelectBotToMimic);
-			SetMenuTitle(hMenu, "Which bot should mimic this record?");
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MenuChooseBot", param1);
+				SetMenuTitle(hMenu, "%s", bbText);
+			}
 			SetMenuExitBackButton(hMenu, true);
 			
 			decl String:sUserId[6], String:sBuffer[MAX_NAME_LENGTH*2];
@@ -569,15 +772,15 @@ public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 					Format(sBuffer, sizeof(sBuffer), "%N", i);
 					
 					if(GetClientTeam(i) == CS_TEAM_T)
-						Format(sBuffer, sizeof(sBuffer), "%s [T]", sBuffer);
+						BB_FormatClient(param1, sBuffer, sizeof(sBuffer), "%T", "MenuBotTeamT", param1, sBuffer);
 					else
-						Format(sBuffer, sizeof(sBuffer), "%s [CT]", sBuffer);
+						BB_FormatClient(param1, sBuffer, sizeof(sBuffer), "%T", "MenuBotTeamCT", param1, sBuffer);
 					
 					if(BotMimic_IsPlayerMimicing(i))
 					{
 						BotMimic_GetRecordPlayerMimics(i, sPath, sizeof(sPath));
 						BotMimic_GetFileHeaders(sPath, iFileHeader, sizeof(iFileHeader));
-						Format(sBuffer, sizeof(sBuffer), "%s (Plays %s)", sBuffer, iFileHeader.BMFH_recordName);
+						BB_FormatClient(param1, sBuffer, sizeof(sBuffer), "%T", "MenuBotPlays", param1, sBuffer, iFileHeader.BMFH_recordName);
 					}
 					AddMenuItem(hMenu, sUserId, sBuffer);
 				}
@@ -593,11 +796,23 @@ public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(info, "playadd"))
 		{
 			new Handle:hMenu = CreateMenu(Menu_SelectBotTeam);
-			SetMenuTitle(hMenu, "Select the team for the new bot");
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MenuChooseTeam", param1);
+				SetMenuTitle(hMenu, "%s", bbText);
+			}
 			SetMenuExitBackButton(hMenu, true);
 			
-			AddMenuItem(hMenu, "t", "Terrorist");
-			AddMenuItem(hMenu, "ct", "Counter-Terrorist");
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MenuTerrorist", param1);
+				AddMenuItem(hMenu, "t", bbText);
+			}
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MenuCounterTerrorist", param1);
+				AddMenuItem(hMenu, "ct", bbText);
+			}
 			
 			DisplayMenu(hMenu, param1, MENU_TIME_FOREVER);
 		}
@@ -618,7 +833,11 @@ public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 				}
 			}
 			
-			PrintToChat(param1, "[BotMimic] Stopped %d bots from mimicing record \"%s\".", iCount, iFileHeader.BMFH_recordName);
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgStoppedBots", param1, iCount, iFileHeader.BMFH_recordName);
+				PrintToChat(param1, "%s", bbText);
+			}
 			DisplayRecordDetailMenu(param1);
 		}
 		else if(StrEqual(info, "bookmarks"))
@@ -628,13 +847,21 @@ public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 		else if(StrEqual(info, "rename"))
 		{
 			g_bRenameRecord[param1] = true;
-			PrintToChat(param1, "[BotMimic] Type the new name for record \"%s\" or type \"!stop\" to cancel.", iFileHeader.BMFH_recordName);
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgRenameInstruction", param1, iFileHeader.BMFH_recordName);
+				PrintToChat(param1, "%s", bbText);
+			}
 		}
 		else if(StrEqual(info, "delete"))
 		{
 			new iCount = BotMimic_DeleteRecord(g_sPlayerSelectedRecord[param1]);
 			
-			PrintToChat(param1, "[BotMimic] Stopped %d bots and deleted record \"%s\".", iCount, iFileHeader.BMFH_recordName);
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgRecordDeleted", param1, iCount, iFileHeader.BMFH_recordName);
+				PrintToChat(param1, "%s", bbText);
+			}
 			
 			g_sPlayerSelectedRecord[param1][0] = '\0';
 			DisplayRecordMenu(param1);
@@ -654,6 +881,7 @@ public Menu_HandleRecordDetails(Handle:menu, MenuAction:action, param1, param2)
 
 public Menu_SelectBotToMimic(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		if(g_sPlayerSelectedRecord[param1][0] == '\0' || !FileExists(g_sPlayerSelectedRecord[param1]))
@@ -679,7 +907,11 @@ public Menu_SelectBotToMimic(Handle:menu, MenuAction:action, param1, param2)
 		
 		if(!iBot || !IsClientInGame(iBot) || GetClientTeam(iBot) < CS_TEAM_T)
 		{
-			PrintToChat(param1, "[BotMimic] The bot you selected can't be found anymore.");
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotMissing", param1);
+				PrintToChat(param1, "%s", bbText);
+			}
 			DisplayRecordDetailMenu(param1);
 			return;
 		}
@@ -692,20 +924,38 @@ public Menu_SelectBotToMimic(Handle:menu, MenuAction:action, param1, param2)
 			if(StrEqual(sPath, g_sPlayerSelectedRecord[param1]))
 			{
 				BotMimic_StopPlayerMimic(iBot);
-				PrintToChat(param1, "[BotMimic] %N stopped mimicing record \"%s\".", iBot, iFileHeader.BMFH_recordName);
+				{
+					char bbText[1024];
+					char bbPlayerName0[MAX_NAME_LENGTH];
+					GetClientName(iBot, bbPlayerName0, sizeof(bbPlayerName0));
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotStopped", param1, bbPlayerName0, iFileHeader.BMFH_recordName);
+					PrintToChat(param1, "%s", bbText);
+				}
 			}
 			// He's been playing a different record, switch to the selected.
 			else
 			{
 				BotMimic_StopPlayerMimic(iBot);
 				BotMimic_PlayRecordFromFile(iBot, g_sPlayerSelectedRecord[param1]);
-				PrintToChat(param1, "[BotMimic] %N started mimicing record \"%s\".", iBot, iFileHeader.BMFH_recordName);
+				{
+					char bbText[1024];
+					char bbPlayerName0[MAX_NAME_LENGTH];
+					GetClientName(iBot, bbPlayerName0, sizeof(bbPlayerName0));
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotStarted", param1, bbPlayerName0, iFileHeader.BMFH_recordName);
+					PrintToChat(param1, "%s", bbText);
+				}
 			}
 		}
 		else
 		{
 			BotMimic_PlayRecordFromFile(iBot, g_sPlayerSelectedRecord[param1]);
-			PrintToChat(param1, "[BotMimic] %N started mimicing record \"%s\".", iBot, iFileHeader.BMFH_recordName);
+			{
+				char bbText[1024];
+				char bbPlayerName0[MAX_NAME_LENGTH];
+				GetClientName(iBot, bbPlayerName0, sizeof(bbPlayerName0));
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotStarted", param1, bbPlayerName0, iFileHeader.BMFH_recordName);
+				PrintToChat(param1, "%s", bbText);
+			}
 		}
 		
 		DisplayRecordDetailMenu(param1);
@@ -725,6 +975,7 @@ public Menu_SelectBotToMimic(Handle:menu, MenuAction:action, param1, param2)
 
 public Menu_SelectBotTeam(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		if(g_sPlayerSelectedRecord[param1][0] == '\0' || !FileExists(g_sPlayerSelectedRecord[param1]))
@@ -756,7 +1007,11 @@ public Menu_SelectBotTeam(Handle:menu, MenuAction:action, param1, param2)
 			ServerCommand("bot_add_ct");
 		}
 		
-		PrintToChat(param1, "[BotMimic] Added new bot who mimics record \"%s\".", iFileHeader.BMFH_recordName);
+		{
+			char bbText[1024];
+			BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotAdded", param1, iFileHeader.BMFH_recordName);
+			PrintToChat(param1, "%s", bbText);
+		}
 		
 		DisplayRecordDetailMenu(param1);
 	}
@@ -775,6 +1030,7 @@ public Menu_SelectBotTeam(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayBookmarkListMenu(client)
 {
+
 	g_sPlayerSelectedBookmark[client][0]= '\0';
 	
 	BMFileHeader iFileHeader;
@@ -786,7 +1042,11 @@ DisplayBookmarkListMenu(client)
 	}
 	
 	new Handle:hMenu = CreateMenu(Menu_HandleBookmarkList);
-	SetMenuTitle(hMenu, "Bookmarks for record \"%s\"", iFileHeader.BMFH_recordName);
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuRecordBookmarks", client, iFileHeader.BMFH_recordName);
+		SetMenuTitle(hMenu, "%s", bbText);
+	}
 	SetMenuExitBackButton(hMenu, true);
 	
 	ArrayList hBookmarks;
@@ -849,8 +1109,13 @@ public Menu_HandleBookmarkList(Handle:menu, MenuAction:action, param1, param2)
 
 DisplayBookmarkMimicingPlayers(client)
 {
+
 	new Handle:hMenu = CreateMenu(Menu_HandleBookmarkMimicingPlayer);
-	SetMenuTitle(hMenu, "Select which player who currently plays the record should jump to bookmark \"%s\":", g_sPlayerSelectedBookmark[client]);
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuBookmarkPlayers", client, g_sPlayerSelectedBookmark[client]);
+		SetMenuTitle(hMenu, "%s", bbText);
+	}
 	SetMenuExitBackButton(hMenu, true);
 	
 	new String:sBuffer[PLATFORM_MAX_PATH], String:sUserId[16];
@@ -869,13 +1134,18 @@ DisplayBookmarkMimicingPlayers(client)
 	}
 	
 	if(GetMenuItemCount(hMenu) == 0)
-		AddMenuItem(hMenu, "", "No players currently mimicing this record.", ITEMDRAW_DISABLED);
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuNoMimicingPlayers", client);
+		AddMenuItem(hMenu, "", bbText, ITEMDRAW_DISABLED);
+	}
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 public Menu_HandleBookmarkMimicingPlayer(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		if(g_sPlayerSelectedRecord[param1][0] == '\0' || !FileExists(g_sPlayerSelectedRecord[param1]))
@@ -909,14 +1179,24 @@ public Menu_HandleBookmarkMimicingPlayer(Handle:menu, MenuAction:action, param1,
 		
 		if(!iTarget || !IsClientInGame(iTarget) || GetClientTeam(iTarget) < CS_TEAM_T)
 		{
-			PrintToChat(param1, "[BotMimic] The bot you selected can't be found anymore.");
+			{
+				char bbText[1024];
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotMissing", param1);
+				PrintToChat(param1, "%s", bbText);
+			}
 			DisplayBookmarkMimicingPlayers(param1);
 			return;
 		}
 		
 		if(!BotMimic_IsPlayerMimicing(iTarget))
 		{
-			PrintToChat(param1, "[BotMimic] %N isn't mimicing anything anymore.", iTarget);
+			{
+				char bbText[1024];
+				char bbPlayerName0[MAX_NAME_LENGTH];
+				GetClientName(iTarget, bbPlayerName0, sizeof(bbPlayerName0));
+				BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotNotMimicing", param1, bbPlayerName0);
+				PrintToChat(param1, "%s", bbText);
+			}
 			DisplayBookmarkMimicingPlayers(param1);
 			return;
 		}
@@ -926,7 +1206,13 @@ public Menu_HandleBookmarkMimicingPlayer(Handle:menu, MenuAction:action, param1,
 			BotMimic_GetRecordPlayerMimics(iTarget, sRecordPath, sizeof(sRecordPath));
 			if(!StrEqual(sRecordPath, g_sPlayerSelectedRecord[param1], false))
 			{
-				PrintToChat(param1, "[BotMimic] %N isn't mimicing the selected record anymore.", iTarget);
+				{
+					char bbText[1024];
+					char bbPlayerName0[MAX_NAME_LENGTH];
+					GetClientName(iTarget, bbPlayerName0, sizeof(bbPlayerName0));
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgBotChangedRecord", param1, bbPlayerName0);
+					PrintToChat(param1, "%s", bbText);
+				}
 				DisplayBookmarkMimicingPlayers(param1);
 				return;
 			}
@@ -953,6 +1239,7 @@ public Menu_HandleBookmarkMimicingPlayer(Handle:menu, MenuAction:action, param1,
 
 DisplayRecordInProgressMenu(client)
 {
+
 	if(!BotMimic_IsPlayerRecording(client))
 	{
 		DisplayRecordMenu(client);
@@ -960,21 +1247,42 @@ DisplayRecordInProgressMenu(client)
 	}
 	
 	new Handle:hMenu = CreateMenu(Menu_HandleRecordProgress);
-	SetMenuTitle(hMenu, "Recording...");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuRecording", client);
+		SetMenuTitle(hMenu, "%s", bbText);
+	}
 	SetMenuExitButton(hMenu, false);
 	
 	if(BotMimic_IsRecordingPaused(client))
-		AddMenuItem(hMenu, "resume", "Resume recording");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuResume", client);
+		AddMenuItem(hMenu, "resume", bbText);
+	}
 	else
-		AddMenuItem(hMenu, "pause", "Pause recording");
-	AddMenuItem(hMenu, "save", "Save recording");
-	AddMenuItem(hMenu, "discard", "Discard recording");
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuPause", client);
+		AddMenuItem(hMenu, "pause", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuSave", client);
+		AddMenuItem(hMenu, "save", bbText);
+	}
+	{
+		char bbText[1024];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuDiscard", client);
+		AddMenuItem(hMenu, "discard", bbText);
+	}
 	
 	DisplayMenu(hMenu, client, MENU_TIME_FOREVER);
 }
 
 public Menu_HandleRecordProgress(Handle:menu, MenuAction:action, param1, param2)
 {
+
 	if (action == MenuAction_Select)
 	{
 		// He isn't recording anymore
@@ -993,7 +1301,11 @@ public Menu_HandleRecordProgress(Handle:menu, MenuAction:action, param1, param2)
 			if(!BotMimic_IsRecordingPaused(param1))
 			{
 				BotMimic_PauseRecording(param1);
-				PrintToChat(param1, "[BotMimic] Paused recording.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgPaused", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 			}
 			
 			DisplayRecordInProgressMenu(param1);
@@ -1003,7 +1315,11 @@ public Menu_HandleRecordProgress(Handle:menu, MenuAction:action, param1, param2)
 			if(BotMimic_IsRecordingPaused(param1))
 			{
 				BotMimic_ResumeRecording(param1);
-				PrintToChat(param1, "[BotMimic] Resumed recording.");
+				{
+					char bbText[1024];
+					BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgResumed", param1);
+					PrintToChat(param1, "%s", bbText);
+				}
 			}
 			
 			DisplayRecordInProgressMenu(param1);
@@ -1021,8 +1337,16 @@ public Menu_HandleRecordProgress(Handle:menu, MenuAction:action, param1, param2)
 	}
 	else if (action == MenuAction_Cancel)
 	{
-		PrintHintText(param1, "Recording...");
-		PrintToChat(param1, "[BotMimic] Type !stoprecord to stop recording.");
+		{
+			char bbText[1024];
+			BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MenuRecording", param1);
+			PrintHintText(param1, "%s", bbText);
+		}
+		{
+			char bbText[1024];
+			BB_FormatClient(param1, bbText, sizeof(bbText), "%T", "MsgStopInstruction", param1);
+			PrintToChat(param1, "%s", bbText);
+		}
 	}
 	else if (action == MenuAction_End)
 	{
@@ -1054,41 +1378,55 @@ public OnAdminMenuReady(Handle:topmenu)
 
 public TopMenu_SelectCategory(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
+
 	if(action == TopMenuAction_DisplayTitle)
 	{
-		Format(buffer, maxlength, "Bot Mimic");
+		BB_FormatClient(param, buffer, maxlength, "%T", "MenuAdminCategory", param);
 	}
 	else if(action == TopMenuAction_DisplayOption)
 	{
-		Format(buffer, maxlength, "Bot Mimic");
+		BB_FormatClient(param, buffer, maxlength, "%T", "MenuAdminCategory", param);
 	}
 }
 
 public TopMenu_NewRecord(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
+
 	if(action == TopMenuAction_DisplayOption)
 	{
-		Format(buffer, maxlength, "Record new movement");
+		BB_FormatClient(param, buffer, maxlength, "%T", "MenuNewMovement", param);
 	}
 	else if(action == TopMenuAction_SelectOption)
 	{
 		if(!IsPlayerAlive(param) || GetClientTeam(param) < CS_TEAM_T)
 		{
-			PrintToChat(param, "[BotMimic] You have to be alive to record your movements.");
+			{
+				char bbText[1024];
+				BB_FormatClient(param, bbText, sizeof(bbText), "%T", "MsgMustBeAlive", param);
+				PrintToChat(param, "%s", bbText);
+			}
 			RedisplayAdminMenu(topmenu, param);
 			return;
 		}
 		
 		if(BotMimic_IsPlayerRecording(param))
 		{
-			PrintToChat(param, "[BotMimic] You're already recording!");
+			{
+				char bbText[1024];
+				BB_FormatClient(param, bbText, sizeof(bbText), "%T", "MsgAlreadyRecordingShort", param);
+				PrintToChat(param, "%s", bbText);
+			}
 			RedisplayAdminMenu(topmenu, param);
 			return;
 		}
 		
 		if(BotMimic_IsPlayerMimicing(param))
 		{
-			PrintToChat(param, "[BotMimic] You're currently mimicing another record. Stop that first before recording.");
+			{
+				char bbText[1024];
+				BB_FormatClient(param, bbText, sizeof(bbText), "%T", "MsgStopMimicFirst", param);
+				PrintToChat(param, "%s", bbText);
+			}
 			RedisplayAdminMenu(topmenu, param);
 			return;
 		}
@@ -1103,9 +1441,10 @@ public TopMenu_NewRecord(Handle:topmenu, TopMenuAction:action, TopMenuObject:obj
 
 public TopMenu_ListCategories(Handle:topmenu, TopMenuAction:action, TopMenuObject:object_id, param, String:buffer[], maxlength)
 {
+
 	if(action == TopMenuAction_DisplayOption)
 	{
-		Format(buffer, maxlength, "List categories");
+		BB_FormatClient(param, buffer, maxlength, "%T", "MenuListCategories", param);
 	}
 	else if(action == TopMenuAction_SelectOption)
 	{

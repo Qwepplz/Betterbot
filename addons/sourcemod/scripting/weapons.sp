@@ -20,6 +20,7 @@
 #include <sdkhooks>
 #include <sdktools>
 #include <sourcemod>
+#include <bb_client_translations>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -62,12 +63,21 @@ public void OnPluginStart() {
         sBuf);
   }
 
-  LoadTranslations("weapons.phrases");
+  BB_LoadClientTranslations("weapons.phrases");
+  char prefixPath[PLATFORM_MAX_PATH];
+  BuildPath(Path_SM, prefixPath, sizeof(prefixPath), "translations/weapons.phrases.txt");
+  KeyValues prefixPhrases = new KeyValues("Phrases");
+  if (!prefixPhrases.ImportFromFile(prefixPath) || !prefixPhrases.JumpToKey("DefaultChatPrefix")) {
+    delete prefixPhrases;
+    SetFailState("Missing default chat prefix resource");
+  }
+  prefixPhrases.GetString("en", g_DefaultChatPrefix, sizeof(g_DefaultChatPrefix));
+  delete prefixPhrases;
 
   g_Cvar_DBConnection =
       CreateConVar("sm_weapons_db_connection", "weapons", "Database connection name in databases.cfg to use");
   g_Cvar_TablePrefix = CreateConVar("sm_weapons_table_prefix", "", "Prefix for database table (example: 'xyz_')");
-  g_Cvar_ChatPrefix = CreateConVar("sm_weapons_chat_prefix", "[Matt]", "Prefix for chat messages");
+  g_Cvar_ChatPrefix = CreateConVar("sm_weapons_chat_prefix", g_DefaultChatPrefix, "Prefix for chat messages");
   g_Cvar_KnifeStatTrakMode = CreateConVar(
       "sm_weapons_knife_stattrak_mode", "1",
       "0: All knives show the same StatTrak counter (total knife kills) 1: Each type of knife shows its own separate StatTrak counter");
@@ -96,7 +106,6 @@ public void OnPluginStart() {
   RegConsoleCmd("sm_knife", CommandKnife);
   RegConsoleCmd("sm_dao", CommandKnife);
   RegConsoleCmd("sm_nametag", CommandNameTag);
-  RegConsoleCmd("sm_wslang", CommandWSLang);
   RegConsoleCmd("sm_seed", CommandSeedMenu);
 
   if (!LibraryExists("diy")) {
@@ -118,7 +127,13 @@ public Action CommandWeaponSkins(int client, int args) {
     if ((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0) {
       CreateMainMenu(client).Display(client, menuTime);
     } else {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "GracePeriod", g_iGracePeriod);
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_1", client, bbPrefix, "GracePeriod", g_iGracePeriod);
+        PrintToChat(client, "%s", bbText);
+      }
     }
   }
   return Plugin_Handled;
@@ -126,10 +141,26 @@ public Action CommandWeaponSkins(int client, int args) {
 
 public Action CommandSeedMenu(int client, int args) {
   if (!g_bEnableSeed) {
-    ReplyToCommand(client, " %s \x02%T", g_ChatPrefix, "SeedDisabled", client);
+    if (client == 0) {
+      ReplyToCommand(client, " %s \x02%T", g_ChatPrefix, "SeedDisabled", client);
+    } else {
+      char bbPrefix[32];
+      GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+      char bbText[512];
+      BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_2", client, bbPrefix, "SeedDisabled");
+      ReplyToCommand(client, "%s", bbText);
+    }
     return Plugin_Handled;
   }
-  ReplyToCommand(client, " %s \x04%T", g_ChatPrefix, "SeedExplanation", client);
+  if (client == 0) {
+    ReplyToCommand(client, " %s \x04%T", g_ChatPrefix, "SeedExplanation", client);
+  } else {
+    char bbPrefix[32];
+    GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+    char bbText[512];
+    BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_3", client, bbPrefix, "SeedExplanation");
+    ReplyToCommand(client, "%s", bbText);
+  }
   return Plugin_Handled;
 }
 
@@ -139,30 +170,41 @@ public Action CommandKnife(int client, int args) {
     if ((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0) {
       CreateKnifeMenu(client).Display(client, menuTime);
     } else {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "GracePeriod", g_iGracePeriod);
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_4", client, bbPrefix, "GracePeriod", g_iGracePeriod);
+        PrintToChat(client, "%s", bbText);
+      }
     }
   }
   return Plugin_Handled;
 }
 
-public Action CommandWSLang(int client, int args) {
-  if (IsValidClient(client)) {
-    int menuTime;
-    if ((menuTime = GetRemainingGracePeriodSeconds(client)) >= 0) {
-      CreateLanguageMenu(client).Display(client, menuTime);
-    } else {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "GracePeriod", g_iGracePeriod);
-    }
-  }
-  return Plugin_Handled;
-}
 
 public Action CommandNameTag(int client, int args) {
   if (!g_bEnableNameTag) {
-    ReplyToCommand(client, " %s \x02%T", g_ChatPrefix, "NameTagDisabled", client);
+    if (client == 0) {
+      ReplyToCommand(client, " %s \x02%T", g_ChatPrefix, "NameTagDisabled", client);
+    } else {
+      char bbPrefix[32];
+      GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+      char bbText[512];
+      BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_5", client, bbPrefix, "NameTagDisabled");
+      ReplyToCommand(client, "%s", bbText);
+    }
     return Plugin_Handled;
   }
-  ReplyToCommand(client, " %s \x04%T", g_ChatPrefix, "NameTagNew", client);
+  if (client == 0) {
+    ReplyToCommand(client, " %s \x04%T", g_ChatPrefix, "NameTagNew", client);
+  } else {
+    char bbPrefix[32];
+    GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+    char bbText[512];
+    BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_6", client, bbPrefix, "NameTagNew");
+    ReplyToCommand(client, "%s", bbText);
+  }
   return Plugin_Handled;
 }
 
@@ -296,4 +338,3 @@ public Action ReserveAmmoTimer(Handle timer, DataPack pack) {
   }
   return Plugin_Stop;
 }
-

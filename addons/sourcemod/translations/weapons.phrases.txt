@@ -26,11 +26,13 @@
 	}
 	"Increase"
 	{
-		"en"	"Increase by %d%%"
+		"#format"	"{1:d}"
+		"en"	"Increase by {1}%%"
 	}
 	"Decrease"
 	{
-		"en"	"Decrease by %d%%"
+		"#format"	"{1:d}"
+		"en"	"Decrease by {1}%%"
 	}
 	"CustomFloat"
 	{
@@ -55,7 +57,7 @@
 	"NameTagInfo"
 	{
 		"en"	"Use !nametag <tag> to choose a name tag for your current weapon!"
-	}	  
+	}
 	"NameTagColor"
 	{
 		"en"	"Set Name Tag Color"
@@ -99,7 +101,7 @@
 	"Grey"
 	{
 		"en"	"Grey"
-	} 
+	}
 	"Red"
 	{
 		"en"	"Red"
@@ -390,7 +392,8 @@
 	}
 	"GracePeriod"
 	{
-		"en"	"You can only use this command if you're dead or in the first %d seconds after every round start."
+		"#format"	"{1:d}"
+		"en"	"You can only use this command if you're dead or in the first {1} seconds after every round start."
 	}
 	"ChangeLang"
 	{
@@ -418,7 +421,8 @@
 	}
 	"SeedTitle"
 	{
-		"en"	"Seed: %i"
+		"#format"	"{1:i}"
+		"en"	"Seed: {1}"
 	}
 	"SeedTitleNoSeed"
 	{
@@ -479,5 +483,129 @@
 	"AppliedToOppositeTeam"
 	{
 		"en"	"Settings applied to opposite team successfully"
+	}
+	"DefaultChatPrefix"
+	{
+		"en"	"[Matt]"
+	}
+	"ClientDisplay_1"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_2"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_3"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_4"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_5"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_6"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_7"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_8"
+	{
+		"#format"	"{1:s},{2:t},{3:s}"
+		"en"	" {1} {2}: \"{3}\""
+	}
+	"ClientDisplay_9"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_10"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_11"
+	{
+		"#format"	"{1:s},{2:t},{3:i}"
+		"en"	" {1} {2}: {3}"
+	}
+	"ClientDisplay_12"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_13"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_14"
+	{
+		"#format"	"{1:s},{2:t},{3:f}"
+		"en"	" {1} {2}: {3}"
+	}
+	"ClientDisplay_15"
+	{
+		"#format"	"{1:t},{2:d},{3:f}"
+		"en"	"{1}{2}%%({3})"
+	}
+	"ClientDisplay_16"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_17"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_18"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_19"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_20"
+	{
+		"#format"	"{1:t},{2:s}"
+		"en"	"{1}: {2}"
+	}
+	"ClientDisplay_21"
+	{
+		"#format"	"{1:s},{2:t}"
+		"en"	" {1} {2}"
+	}
+	"ClientDisplay_22"
+	{
+		"#format"	"{1:t},{2:d}"
+		"en"	"{1}{2}%%"
+	}
+	"ClientDisplay_23"
+	{
+		"#format"	"{1:t},{2:t}"
+		"en"	"{1}{2}"
+	}
+	"ClientDisplay_24"
+	{
+		"#format"	"{1:t},{2:t}"
+		"en"	"{1}{2}"
 	}
 }

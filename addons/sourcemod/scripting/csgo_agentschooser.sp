@@ -2,6 +2,7 @@
 #include	<sdkhooks>
 #include	<cstrike>
 #include	<clientprefs>
+#include <bb_client_translations>
 
 #pragma		semicolon	1
 #pragma		newdecls	required
@@ -13,97 +14,97 @@ Handle	g_hTimer[MAXPLAYERS+1];
 
 char CTDistinguished[][][] =
 {
-	{"Primeiro Tenente | Brazilian 1st Battalion",			"models/player/custom_player/legacy/ctm_st6_variantn.mdl"},
-	{"D Squadron Officer | NZSAS",							"models/player/custom_player/legacy/ctm_sas_variantg.mdl"},
-	{"Aspirant | Gendarmerie Nationale",					"models/player/custom_player/legacy/ctm_gendarmerie_variantd.mdl"},
-	{"Seal Team 6 Soldier | NSWC SEAL",						"models/player/custom_player/legacy/ctm_st6_variante.mdl"},
-	{"3rd Commando Company | KSK",							"models/player/custom_player/legacy/ctm_st6_variantk.mdl"},
-	{"Operator | FBI SWAT",									"models/player/custom_player/legacy/ctm_fbi_variantf.mdl"},
-	{"B Squadron Officer | SAS",							"models/player/custom_player/legacy/ctm_sas_variantf.mdl"},
-	{"Chem-Haz Specialist | SWAT",							"models/player/custom_player/legacy/ctm_swat_variantj.mdl"},
-	{"Bio-Haz Specialist | SWAT",							"models/player/custom_player/legacy/ctm_swat_varianth.mdl"},
+	{"AgentName_ctm_st6_variantn",			"models/player/custom_player/legacy/ctm_st6_variantn.mdl"},
+	{"AgentName_ctm_sas_variantg",							"models/player/custom_player/legacy/ctm_sas_variantg.mdl"},
+	{"AgentName_ctm_gendarmerie_variantd",					"models/player/custom_player/legacy/ctm_gendarmerie_variantd.mdl"},
+	{"AgentName_ctm_st6_variante",						"models/player/custom_player/legacy/ctm_st6_variante.mdl"},
+	{"AgentName_ctm_st6_variantk",							"models/player/custom_player/legacy/ctm_st6_variantk.mdl"},
+	{"AgentName_ctm_fbi_variantf",									"models/player/custom_player/legacy/ctm_fbi_variantf.mdl"},
+	{"AgentName_ctm_sas_variantf",							"models/player/custom_player/legacy/ctm_sas_variantf.mdl"},
+	{"AgentName_ctm_swat_variantj",							"models/player/custom_player/legacy/ctm_swat_variantj.mdl"},
+	{"AgentName_ctm_swat_varianth",							"models/player/custom_player/legacy/ctm_swat_varianth.mdl"},
 };
 
 char TDistinguished[][][] =
 {
-	{"Trapper Aggressor | Guerrilla Warfare",				"models/player/custom_player/legacy/tm_jungle_raider_variantf.mdl"},
-	{"Mr. Muhlik | Elite Crew",								"models/player/custom_player/legacy/tm_leet_variantj.mdl"},
-	{"Enforcer | Phoenix",									"models/player/custom_player/legacy/tm_phoenix_variantf.mdl"},
-	{"Soldier | Phoenix",									"models/player/custom_player/legacy/tm_phoenix_varianth.mdl"},
-	{"Ground Rebel  | Elite Crew",							"models/player/custom_player/legacy/tm_leet_variantg.mdl"},
-	{"Street Soldier | Phoenix",							"models/player/custom_player/legacy/tm_phoenix_varianti.mdl"},
-	{"Dragomir | Sabre Footsoldier",						"models/player/custom_player/legacy/tm_balkan_variantl.mdl"},
+	{"AgentName_tm_jungle_raider_variantf",				"models/player/custom_player/legacy/tm_jungle_raider_variantf.mdl"},
+	{"AgentName_tm_leet_variantj",								"models/player/custom_player/legacy/tm_leet_variantj.mdl"},
+	{"AgentName_tm_phoenix_variantf",									"models/player/custom_player/legacy/tm_phoenix_variantf.mdl"},
+	{"AgentName_tm_phoenix_varianth",									"models/player/custom_player/legacy/tm_phoenix_varianth.mdl"},
+	{"AgentName_tm_leet_variantg",							"models/player/custom_player/legacy/tm_leet_variantg.mdl"},
+	{"AgentName_tm_phoenix_varianti",							"models/player/custom_player/legacy/tm_phoenix_varianti.mdl"},
+	{"AgentName_tm_balkan_variantl",						"models/player/custom_player/legacy/tm_balkan_variantl.mdl"},
 };
 
 char CTExceptional[][][] =
 {
-	{"Officer Jacques Beltram | Gendarmerie Nationale",		"models/player/custom_player/legacy/ctm_gendarmerie_variante.mdl"},
-	{"Lieutenant 'Tree Hugger' Farlow | SWAT",				"models/player/custom_player/legacy/ctm_swat_variantk.mdl"},
-	{"Sous-Lieutenant Medic | Gendarmerie Nationale",		"models/player/custom_player/legacy/ctm_gendarmerie_varianta.mdl"},
-	{"Markus Delrow | FBI",									"models/player/custom_player/legacy/ctm_fbi_variantg.mdl"},
-	{"Buckshot | NSWC SEAL",								"models/player/custom_player/legacy/ctm_st6_variantg.mdl"},
-	{"John 'Van Healen' Kask | SWAT",						"models/player/custom_player/legacy/ctm_swat_variantg.mdl"},
-	{"Sergeant Bombson | SWAT",								"models/player/custom_player/legacy/ctm_swat_varianti.mdl"},
-	{"'Blueberries' Buckshot | NSWC SEAL",					"models/player/custom_player/legacy/ctm_st6_variantj.mdl"},
+	{"AgentName_ctm_gendarmerie_variante",		"models/player/custom_player/legacy/ctm_gendarmerie_variante.mdl"},
+	{"AgentName_ctm_swat_variantk",				"models/player/custom_player/legacy/ctm_swat_variantk.mdl"},
+	{"AgentName_ctm_gendarmerie_varianta",		"models/player/custom_player/legacy/ctm_gendarmerie_varianta.mdl"},
+	{"AgentName_ctm_fbi_variantg",									"models/player/custom_player/legacy/ctm_fbi_variantg.mdl"},
+	{"AgentName_ctm_st6_variantg",								"models/player/custom_player/legacy/ctm_st6_variantg.mdl"},
+	{"AgentName_ctm_swat_variantg",						"models/player/custom_player/legacy/ctm_swat_variantg.mdl"},
+	{"AgentName_ctm_swat_varianti",								"models/player/custom_player/legacy/ctm_swat_varianti.mdl"},
+	{"AgentName_ctm_st6_variantj",					"models/player/custom_player/legacy/ctm_st6_variantj.mdl"},
 };
 
 char TExceptional[][][] =
 {
-	{"Col. Mangos Dabisi | Guerrilla Warfare",				"models/player/custom_player/legacy/tm_jungle_raider_variantd.mdl"},
-	{"Trapper | Guerrilla Warfare",							"models/player/custom_player/legacy/tm_jungle_raider_variantf2.mdl"},
-	{"Maximus | Sabre",										"models/player/custom_player/legacy/tm_balkan_varianti.mdl"},
-	{"Osiris | Elite Crew",									"models/player/custom_player/legacy/tm_leet_varianth.mdl"},
-	{"Slingshot | Phoenix",									"models/player/custom_player/legacy/tm_phoenix_variantg.mdl"},
-	{"Dragomir | Sabre",									"models/player/custom_player/legacy/tm_balkan_variantf.mdl"},
-	{"Getaway Sally | The Professionals",					"models/player/custom_player/legacy/tm_professional_varj.mdl"},
-	{"Little Kev | The Professionals",						"models/player/custom_player/legacy/tm_professional_varh.mdl"},
+	{"AgentName_tm_jungle_raider_variantd",				"models/player/custom_player/legacy/tm_jungle_raider_variantd.mdl"},
+	{"AgentName_tm_jungle_raider_variantf2",							"models/player/custom_player/legacy/tm_jungle_raider_variantf2.mdl"},
+	{"AgentName_tm_balkan_varianti",										"models/player/custom_player/legacy/tm_balkan_varianti.mdl"},
+	{"AgentName_tm_leet_varianth",									"models/player/custom_player/legacy/tm_leet_varianth.mdl"},
+	{"AgentName_tm_phoenix_variantg",									"models/player/custom_player/legacy/tm_phoenix_variantg.mdl"},
+	{"AgentName_tm_balkan_variantf",									"models/player/custom_player/legacy/tm_balkan_variantf.mdl"},
+	{"AgentName_tm_professional_varj",					"models/player/custom_player/legacy/tm_professional_varj.mdl"},
+	{"AgentName_tm_professional_varh",						"models/player/custom_player/legacy/tm_professional_varh.mdl"},
 };
 
 char CTSuperior[][][] =
 {
-	{"Chem-Haz Capitaine | Gendarmerie Nationale",			"models/player/custom_player/legacy/ctm_gendarmerie_variantb.mdl"},
-	{"Lieutenant Rex Krikey | SEAL Frogman",				"models/player/custom_player/legacy/ctm_diver_variantc.mdl"},
-	{"Michael Syfers | FBI Sniper",							"models/player/custom_player/legacy/ctm_fbi_varianth.mdl"},
-	{"'Two Times' McCoy | USAF TACP",						"models/player/custom_player/legacy/ctm_st6_variantm.mdl"},
-	{"1st Lieutenant Farlow | SWAT",						"models/player/custom_player/legacy/ctm_swat_variantf.mdl"},
-	{"'Two Times' McCoy | TACP Cavalry",					"models/player/custom_player/legacy/ctm_st6_variantl.mdl"},
+	{"AgentName_ctm_gendarmerie_variantb",			"models/player/custom_player/legacy/ctm_gendarmerie_variantb.mdl"},
+	{"AgentName_ctm_diver_variantc",				"models/player/custom_player/legacy/ctm_diver_variantc.mdl"},
+	{"AgentName_ctm_fbi_varianth",							"models/player/custom_player/legacy/ctm_fbi_varianth.mdl"},
+	{"AgentName_ctm_st6_variantm",						"models/player/custom_player/legacy/ctm_st6_variantm.mdl"},
+	{"AgentName_ctm_swat_variantf",						"models/player/custom_player/legacy/ctm_swat_variantf.mdl"},
+	{"AgentName_ctm_st6_variantl",					"models/player/custom_player/legacy/ctm_st6_variantl.mdl"},
 };
 
 char TSuperior[][][] =
 {
-	{"Bloody Darryl The Strapped | The Professionals",		"models/player/custom_player/legacy/tm_professional_varf5.mdl"},
-	{"Elite Trapper Solman | Guerrilla Warfare",			"models/player/custom_player/legacy/tm_jungle_raider_varianta.mdl"},
-	{"Arno The Overgrown | Guerrilla Warfare",				"models/player/custom_player/legacy/tm_jungle_raider_variantc.mdl"},
-	{"Blackwolf | Sabre",									"models/player/custom_player/legacy/tm_balkan_variantj.mdl"},
-	{"Prof. Shahmat | Elite Crew",							"models/player/custom_player/legacy/tm_leet_varianti.mdl"},
-	{"Rezan The Ready | Sabre",								"models/player/custom_player/legacy/tm_balkan_variantg.mdl"},
-	{"Number K | The Professionals",						"models/player/custom_player/legacy/tm_professional_vari.mdl"},
-	{"Safecracker Voltzmann | The Professionals",			"models/player/custom_player/legacy/tm_professional_varg.mdl"},
-	{"Rezan the Redshirt | Sabre",							"models/player/custom_player/legacy/tm_balkan_variantk.mdl"},
+	{"AgentName_tm_professional_varf5",		"models/player/custom_player/legacy/tm_professional_varf5.mdl"},
+	{"AgentName_tm_jungle_raider_varianta",			"models/player/custom_player/legacy/tm_jungle_raider_varianta.mdl"},
+	{"AgentName_tm_jungle_raider_variantc",				"models/player/custom_player/legacy/tm_jungle_raider_variantc.mdl"},
+	{"AgentName_tm_balkan_variantj",									"models/player/custom_player/legacy/tm_balkan_variantj.mdl"},
+	{"AgentName_tm_leet_varianti",							"models/player/custom_player/legacy/tm_leet_varianti.mdl"},
+	{"AgentName_tm_balkan_variantg",								"models/player/custom_player/legacy/tm_balkan_variantg.mdl"},
+	{"AgentName_tm_professional_vari",						"models/player/custom_player/legacy/tm_professional_vari.mdl"},
+	{"AgentName_tm_professional_varg",			"models/player/custom_player/legacy/tm_professional_varg.mdl"},
+	{"AgentName_tm_balkan_variantk",							"models/player/custom_player/legacy/tm_balkan_variantk.mdl"},
 };
 
 char CTMaster[][][] =
 {
-	{"Chef d'Escadron Rouchard | Gendarmerie Nationale",	"models/player/custom_player/legacy/ctm_gendarmerie_variantc.mdl"},
-	{"Cmdr. Frank 'Wet Sox' Baroud | SEAL Frogman",			"models/player/custom_player/legacy/ctm_diver_variantb.mdl"},
-	{"Cmdr. Davida 'Goggles' Fernandez | SEAL Frogman",		"models/player/custom_player/legacy/ctm_diver_varianta.mdl"},
-	{"Lt. Commander Ricksaw | NSWC SEAL",					"models/player/custom_player/legacy/ctm_st6_varianti.mdl"},
-	{"Special Agent Ava | FBI",								"models/player/custom_player/legacy/ctm_fbi_variantb.mdl"},
-	{"Cmdr. Mae 'Dead Cold' Jamison | SWAT",				"models/player/custom_player/legacy/ctm_swat_variante.mdl"},
+	{"AgentName_ctm_gendarmerie_variantc",	"models/player/custom_player/legacy/ctm_gendarmerie_variantc.mdl"},
+	{"AgentName_ctm_diver_variantb",			"models/player/custom_player/legacy/ctm_diver_variantb.mdl"},
+	{"AgentName_ctm_diver_varianta",		"models/player/custom_player/legacy/ctm_diver_varianta.mdl"},
+	{"AgentName_ctm_st6_varianti",					"models/player/custom_player/legacy/ctm_st6_varianti.mdl"},
+	{"AgentName_ctm_fbi_variantb",								"models/player/custom_player/legacy/ctm_fbi_variantb.mdl"},
+	{"AgentName_ctm_swat_variante",				"models/player/custom_player/legacy/ctm_swat_variante.mdl"},
 };
 
 char TMaster[][][] =
 {
-	{"Vypa Sista of the Revolution | Guerrilla Warfare",	"models/player/custom_player/legacy/tm_jungle_raider_variante.mdl"},
-	{"'Medium Rare' Crasswater | Guerrilla Warfare",		"models/player/custom_player/legacy/tm_jungle_raider_variantb2.mdl"},
-	{"Crasswater The Forgotten | Guerrilla Warfare",		"models/player/custom_player/legacy/tm_jungle_raider_variantb.mdl"},
-	{"'The Doctor' Romanov | Sabre",						"models/player/custom_player/legacy/tm_balkan_varianth.mdl"},
-	{"The Elite Mr. Muhlik | Elite Crew",					"models/player/custom_player/legacy/tm_leet_variantf.mdl"},
-	{"Sir Bloody Miami Darryl | The Professionals",			"models/player/custom_player/legacy/tm_professional_varf.mdl"},
-	{"Sir Bloody Silent Darryl | The Professionals",		"models/player/custom_player/legacy/tm_professional_varf1.mdl"},
-	{"Sir Bloody Skullhead Darryl | The Professionals",		"models/player/custom_player/legacy/tm_professional_varf2.mdl"},
-	{"Sir Bloody Darryl Royale | The Professionals",		"models/player/custom_player/legacy/tm_professional_varf3.mdl"},
-	{"Sir Bloody Loudmouth Darryl | The Professionals",		"models/player/custom_player/legacy/tm_professional_varf4.mdl"},
+	{"AgentName_tm_jungle_raider_variante",	"models/player/custom_player/legacy/tm_jungle_raider_variante.mdl"},
+	{"AgentName_tm_jungle_raider_variantb2",		"models/player/custom_player/legacy/tm_jungle_raider_variantb2.mdl"},
+	{"AgentName_tm_jungle_raider_variantb",		"models/player/custom_player/legacy/tm_jungle_raider_variantb.mdl"},
+	{"AgentName_tm_balkan_varianth",						"models/player/custom_player/legacy/tm_balkan_varianth.mdl"},
+	{"AgentName_tm_leet_variantf",					"models/player/custom_player/legacy/tm_leet_variantf.mdl"},
+	{"AgentName_tm_professional_varf",			"models/player/custom_player/legacy/tm_professional_varf.mdl"},
+	{"AgentName_tm_professional_varf1",		"models/player/custom_player/legacy/tm_professional_varf1.mdl"},
+	{"AgentName_tm_professional_varf2",		"models/player/custom_player/legacy/tm_professional_varf2.mdl"},
+	{"AgentName_tm_professional_varf3",		"models/player/custom_player/legacy/tm_professional_varf3.mdl"},
+	{"AgentName_tm_professional_varf4",		"models/player/custom_player/legacy/tm_professional_varf4.mdl"},
 };
 
 #define		DATA	"1.2.0"
@@ -129,6 +130,7 @@ bool	_checkedMsg[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
+	BB_LoadClientTranslations("csgo_agentschooser.phrases");
 	RegConsoleCmd("sm_agents", Command_Main);
 
 	RegAdminCmd("sm_agents_generatemodels", Command_GenerateModelsForSkinchooser, ADMFLAG_ROOT);
@@ -196,6 +198,12 @@ void OnCvarChange(ConVar cvar, const char[] oldValue, const char[] newValue)
 
 Action Command_GenerateModelsForSkinchooser(int client, int args)
 {
+
+	KeyValues agentPhrases = new KeyValues("Phrases");
+	char phrasePath[PLATFORM_MAX_PATH], agentName[256];
+	BuildPath(Path_SM, phrasePath, sizeof(phrasePath), "translations/csgo_agentschooser.phrases.txt");
+	agentPhrases.ImportFromFile(phrasePath);
+
 	KeyValues kv = new KeyValues("Models");
 
 	kv.JumpToKey("CSGO Agents", true);
@@ -203,25 +211,29 @@ Action Command_GenerateModelsForSkinchooser(int client, int args)
 
 	for (int i = 0; i < sizeof(TDistinguished); i++)
 	{
-		kv.JumpToKey(TDistinguished[i][0], true);
+		GetAgentExportName(agentPhrases, TDistinguished[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", TDistinguished[i][1]);
 		kv.GoBack();
 	}
 	for (int i = 0; i < sizeof(TExceptional); i++)
 	{
-		kv.JumpToKey(TExceptional[i][0], true);
+		GetAgentExportName(agentPhrases, TExceptional[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", TExceptional[i][1]);
 		kv.GoBack();
 	}
 	for (int i = 0; i < sizeof(TSuperior); i++)
 	{
-		kv.JumpToKey(TSuperior[i][0], true);
+		GetAgentExportName(agentPhrases, TSuperior[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", TSuperior[i][1]);
 		kv.GoBack();
 	}
 	for (int i = 0; i < sizeof(TMaster); i++)
 	{
-		kv.JumpToKey(TMaster[i][0], true);
+		GetAgentExportName(agentPhrases, TMaster[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", TMaster[i][1]);
 		kv.GoBack();
 	}
@@ -231,39 +243,60 @@ Action Command_GenerateModelsForSkinchooser(int client, int args)
 
 	for (int i = 0; i < sizeof(CTDistinguished); i++)
 	{
-		kv.JumpToKey(CTDistinguished[i][0], true);
+		GetAgentExportName(agentPhrases, CTDistinguished[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", CTDistinguished[i][1]);
 		kv.GoBack();
 	}
 	for (int i = 0; i < sizeof(CTExceptional); i++)
 	{
-		kv.JumpToKey(CTExceptional[i][0], true);
+		GetAgentExportName(agentPhrases, CTExceptional[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", CTExceptional[i][1]);
 		kv.GoBack();
 	}
 	for (int i = 0; i < sizeof(CTSuperior); i++)
 	{
-		kv.JumpToKey(CTSuperior[i][0], true);
+		GetAgentExportName(agentPhrases, CTSuperior[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", CTSuperior[i][1]);
 		kv.GoBack();
 	}
 	for (int i = 0; i < sizeof(CTMaster); i++)
 	{
-		kv.JumpToKey(CTMaster[i][0], true);
+		GetAgentExportName(agentPhrases, CTMaster[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("path", CTMaster[i][1]);
 		kv.GoBack();
 	}
 	kv.Rewind();
 	kv.ExportToFile("addons/sourcemod/configs/sm_skinchooser_withagents.cfg");
 	delete kv;
+	delete agentPhrases;
 
-	ReplyToCommand(client, "CFG file generated for models.");
+	if (client == 0)
+	{
+		ReplyToCommand(client, "CFG file generated for models.");
+	}
+	else
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgModelsGenerated", client);
+		ReplyToCommand(client, bbText);
+	}
 
 	return Plugin_Handled;
+
 }
 
 Action Command_GenerateModelsForStore(int client, int args)
 {
+
+	KeyValues agentPhrases = new KeyValues("Phrases");
+	char phrasePath[PLATFORM_MAX_PATH], agentName[256];
+	BuildPath(Path_SM, phrasePath, sizeof(phrasePath), "translations/csgo_agentschooser.phrases.txt");
+	agentPhrases.ImportFromFile(phrasePath);
+
 	char price[32] = "3000";
 	KeyValues kv = new KeyValues("Store");
 
@@ -272,7 +305,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 
 	for (int i = 0; i < sizeof(TDistinguished); i++)
 	{
-		kv.JumpToKey(TDistinguished[i][0], true);
+		GetAgentExportName(agentPhrases, TDistinguished[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", TDistinguished[i][1]);
 		kv.SetString("team", "2");
 		kv.SetString("price", price);
@@ -281,7 +315,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 	}
 	for (int i = 0; i < sizeof(TExceptional); i++)
 	{
-		kv.JumpToKey(TExceptional[i][0], true);
+		GetAgentExportName(agentPhrases, TExceptional[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", TExceptional[i][1]);
 		kv.SetString("team", "2");
 		kv.SetString("price", price);
@@ -290,7 +325,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 	}
 	for (int i = 0; i < sizeof(TSuperior); i++)
 	{
-		kv.JumpToKey(TSuperior[i][0], true);
+		GetAgentExportName(agentPhrases, TSuperior[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", TSuperior[i][1]);
 		kv.SetString("team", "2");
 		kv.SetString("price", price);
@@ -299,7 +335,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 	}
 	for (int i = 0; i < sizeof(TMaster); i++)
 	{
-		kv.JumpToKey(TMaster[i][0], true);
+		GetAgentExportName(agentPhrases, TMaster[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", TMaster[i][1]);
 		kv.SetString("team", "2");
 		kv.SetString("price", price);
@@ -312,7 +349,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 
 	for (int i = 0; i < sizeof(CTDistinguished); i++)
 	{
-		kv.JumpToKey(CTDistinguished[i][0], true);
+		GetAgentExportName(agentPhrases, CTDistinguished[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", CTDistinguished[i][1]);
 		kv.SetString("team", "3");
 		kv.SetString("price", price);
@@ -321,7 +359,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 	}
 	for (int i = 0; i < sizeof(CTExceptional); i++)
 	{
-		kv.JumpToKey(CTExceptional[i][0], true);
+		GetAgentExportName(agentPhrases, CTExceptional[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", CTExceptional[i][1]);
 		kv.SetString("team", "3");
 		kv.SetString("price", price);
@@ -330,7 +369,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 	}
 	for (int i = 0; i < sizeof(CTSuperior); i++)
 	{
-		kv.JumpToKey(CTSuperior[i][0], true);
+		GetAgentExportName(agentPhrases, CTSuperior[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", CTSuperior[i][1]);
 		kv.SetString("team", "3");
 		kv.SetString("price", price);
@@ -339,7 +379,8 @@ Action Command_GenerateModelsForStore(int client, int args)
 	}
 	for (int i = 0; i < sizeof(CTMaster); i++)
 	{
-		kv.JumpToKey(CTMaster[i][0], true);
+		GetAgentExportName(agentPhrases, CTMaster[i][0], agentName, sizeof(agentName));
+		kv.JumpToKey(agentName, true);
 		kv.SetString("model", CTMaster[i][1]);
 		kv.SetString("team", "3");
 		kv.SetString("price", price);
@@ -349,10 +390,21 @@ Action Command_GenerateModelsForStore(int client, int args)
 	kv.Rewind();
 	kv.ExportToFile("addons/sourcemod/configs/storeitems_withagents.txt");
 	delete kv;
+	delete agentPhrases;
 
-	ReplyToCommand(client, "CFG file generated for models.");
+	if (client == 0)
+	{
+		ReplyToCommand(client, "CFG file generated for models.");
+	}
+	else
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgModelsGenerated", client);
+		ReplyToCommand(client, bbText);
+	}
 
 	return Plugin_Handled;
+
 }
 
 public void OnClientCookiesCached(int client)
@@ -389,10 +441,22 @@ Action Command_Main(int client, int args)
 {
 	Menu menu = new Menu(SelectTeam, MenuAction_Select  | MenuAction_End);
 
-	menu.SetTitle("Choose Agents Team:");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuTeam", client);
+		menu.SetTitle("%s", bbText);
+	}
 
-	menu.AddItem("", "Counter-Terrorist Team");
-	menu.AddItem("", "Terrorist Team");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuCT", client);
+		menu.AddItem("", bbText);
+	}
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuT", client);
+		menu.AddItem("", bbText);
+	}
 	menu.ExitButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 
@@ -426,13 +490,37 @@ void OpenAgentsMenu(int client)
 {
 	Menu menu = new Menu(SelectType, MenuAction_Select  | MenuAction_End);
 
-	menu.SetTitle("Choose Agents type:");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuType", client);
+		menu.SetTitle("%s", bbText);
+	}
 
-	menu.AddItem("", "Use Default Skins");
-	menu.AddItem("", "Distinguished Agents");
-	menu.AddItem("", "Exceptional Agents");
-	menu.AddItem("", "Superior Agents");
-	menu.AddItem("", "Master Agents");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuDefault", client);
+		menu.AddItem("", bbText);
+	}
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuDistinguished", client);
+		menu.AddItem("", bbText);
+	}
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuExceptional", client);
+		menu.AddItem("", bbText);
+	}
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuSuperior", client);
+		menu.AddItem("", bbText);
+	}
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuMaster", client);
+		menu.AddItem("", bbText);
+	}
 
 
 	menu.ExitBackButton = true;
@@ -456,7 +544,11 @@ int SelectType(Menu menu, MenuAction action, int client, int selection)
 					strcopy(g_ctAgent[client], 128, "");
 					strcopy(g_tAgent[client], 128, "");
 
-					PrintToChat(client, "You dont use a agent model now.");
+					{
+						char bbText[256];
+						BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgDefaultSelected", client);
+						PrintToChat(client, bbText);
+					}
 
 					OpenAgentsMenu(client);
 				}
@@ -485,21 +577,31 @@ void DisMenu(int client, int num)
 {
 	Menu menu = new Menu(AgentChoosed, MenuAction_Select  | MenuAction_End);
 
-	menu.SetTitle("Distinguished Agents");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuDistinguished", client);
+		menu.SetTitle("%s", bbText);
+	}
 
 	if(g_iTeam[client] == CS_TEAM_CT)
 	{
 		for(int i = 0; i < sizeof(CTDistinguished); i++)
 		{
-			menu.AddItem(CTDistinguished[i][1], CTDistinguished[i][0],
-			StrEqual(g_ctAgent[client], CTDistinguished[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", CTDistinguished[i][0], client);
+				menu.AddItem(CTDistinguished[i][1], bbText, StrEqual(g_ctAgent[client], CTDistinguished[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 	else
 	{
 		for(int i = 0; i < sizeof(TDistinguished); i++)	{
-			menu.AddItem(TDistinguished[i][1], TDistinguished[i][0],
-			StrEqual(g_tAgent[client], TDistinguished[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", TDistinguished[i][0], client);
+				menu.AddItem(TDistinguished[i][1], bbText, StrEqual(g_tAgent[client], TDistinguished[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 
@@ -511,22 +613,32 @@ void ExMenu(int client, int num)
 {
 	Menu menu = new Menu(AgentChoosed, MenuAction_Select  | MenuAction_End);
 
-	menu.SetTitle("Exceptional Agents");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuExceptional", client);
+		menu.SetTitle("%s", bbText);
+	}
 
 	if(g_iTeam[client] == CS_TEAM_CT)
 	{
 		for(int i = 0; i < sizeof(CTExceptional); i++)
 		{
-			menu.AddItem(CTExceptional[i][1], CTExceptional[i][0],
-			StrEqual(g_ctAgent[client], CTExceptional[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", CTExceptional[i][0], client);
+				menu.AddItem(CTExceptional[i][1], bbText, StrEqual(g_ctAgent[client], CTExceptional[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 	else
 	{
 		for(int i = 0; i < sizeof(TExceptional); i++)
 		{
-			menu.AddItem(TExceptional[i][1], TExceptional[i][0],
-			StrEqual(g_tAgent[client], TExceptional[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", TExceptional[i][0], client);
+				menu.AddItem(TExceptional[i][1], bbText, StrEqual(g_tAgent[client], TExceptional[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 
@@ -538,22 +650,32 @@ void SuMenu(int client, int num)
 {
 	Menu menu = new Menu(AgentChoosed, MenuAction_Select  | MenuAction_End);
 
-	menu.SetTitle("Superior Agents");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuSuperior", client);
+		menu.SetTitle("%s", bbText);
+	}
 
 	if(g_iTeam[client] == CS_TEAM_CT)
 	{
 		for(int i = 0; i < sizeof(CTSuperior); i++)
 		{
-			menu.AddItem(CTSuperior[i][1], CTSuperior[i][0],
-			StrEqual(g_ctAgent[client], CTSuperior[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", CTSuperior[i][0], client);
+				menu.AddItem(CTSuperior[i][1], bbText, StrEqual(g_ctAgent[client], CTSuperior[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 	else
 	{
 		for(int i = 0; i < sizeof(TSuperior); i++)
 		{
-			menu.AddItem(TSuperior[i][1], TSuperior[i][0],
-			StrEqual(g_tAgent[client], TSuperior[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", TSuperior[i][0], client);
+				menu.AddItem(TSuperior[i][1], bbText, StrEqual(g_tAgent[client], TSuperior[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 
@@ -565,22 +687,32 @@ void MaMenu(int client, int num)
 {
 	Menu menu = new Menu(AgentChoosed, MenuAction_Select  | MenuAction_End);
 
-	menu.SetTitle("Master Agents");
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MenuMaster", client);
+		menu.SetTitle("%s", bbText);
+	}
 
 	if(g_iTeam[client] == CS_TEAM_CT)
 	{
 		for(int i = 0; i < sizeof(CTMaster); i++)
 		{
-			menu.AddItem(CTMaster[i][1], CTMaster[i][0],
-			StrEqual(g_ctAgent[client], CTMaster[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", CTMaster[i][0], client);
+				menu.AddItem(CTMaster[i][1], bbText, StrEqual(g_ctAgent[client], CTMaster[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 	else
 	{
 		for(int i = 0; i < sizeof(TMaster); i++)
 		{
-			menu.AddItem(TMaster[i][1], TMaster[i][0],
-			StrEqual(g_tAgent[client], TMaster[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", TMaster[i][0], client);
+				menu.AddItem(TMaster[i][1], bbText, StrEqual(g_tAgent[client], TMaster[i][1]) ? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
+			}
 		}
 	}
 
@@ -603,7 +735,11 @@ int AgentChoosed(Menu menu, MenuAction action, any client, int selection)
 				case	CS_TEAM_T:	strcopy(g_tAgent[client], 128, model);
 			}
 
-			PrintToChat(client, cv_instant.BoolValue ? "Agent model choosed!":"Agent model choosed! you will have it in the next spawn.");
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", cv_instant.BoolValue ? "MsgAgentSelected" : "MsgAgentNextSpawn", client);
+				PrintToChat(client, bbText);
+			}
 
 			switch(g_iCategory[client])
 			{
@@ -621,7 +757,11 @@ int AgentChoosed(Menu menu, MenuAction action, any client, int selection)
 					GetClientModel(client, dmodel, sizeof(dmodel));
 					if(StrContains(dmodel, "models/player/custom_player/legacy/") == -1)
 					{
-						PrintToChat(client, "You already have a custom player skin, remove your custom player skin for use a agent.");
+						{
+							char bbText[256];
+							BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgCustomSkin", client);
+							PrintToChat(client, bbText);
+						}
 						return 0;
 					}
 				}
@@ -709,7 +849,11 @@ Action Timer_ApplySkin(Handle timer, int id)
 		GetClientModel(client, dmodel, sizeof(dmodel));
 		if(StrContains(dmodel, "models/player/custom_player/legacy/") == -1)
 		{
-			PrintToChat(client, "You already have a custom player skin, remove your custom player skin for use a agent.");
+			{
+				char bbText[256];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", "MsgCustomSkin", client);
+				PrintToChat(client, bbText);
+			}
 			return Plugin_Continue;
 		}
 	}
@@ -807,4 +951,10 @@ bool IsValidClient(int client)
 		return	false;
 
 	return	true;
+}
+void GetAgentExportName(KeyValues phrases, const char[] key, char[] name, int maxlen)
+{
+	phrases.Rewind();
+	phrases.JumpToKey(key);
+	phrases.GetString("en", name, maxlen);
 }

@@ -1,0 +1,8 @@
+"Phrases"
+{
+	"TeamKillBonus"
+	{
+		"#format"	"{1:d}"
+		"en"	" +${1}: Team award for eliminating a Terrorist."
+	}
+}

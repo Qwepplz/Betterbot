@@ -6,11 +6,11 @@
 	}
 	"Increase"
 	{
-		"chi"	"增加 %d%%"
+		"chi"	"增加 {1}%%"
 	}
 	"Decrease"
 	{
-		"chi"	"减少 %d%%"
+		"chi"	"减少 {1}%%"
 	}
 	"ChooseLanguage"
 	{
@@ -52,9 +52,13 @@
 	{
 		"chi"	"选择手套"
 	}
+	"Seed"
+	{
+		"chi"	"图案模板编号"
+	}
 	"SeedTitle"
 	{
-		"chi"	"图案模板： %i"
+		"chi"	"图案模板： {1}"
 	}
 	"SeedTitleNoSeed"
 	{
@@ -92,10 +96,6 @@
 	{
 		"chi"	"图案模板编号已保存。"
 	}
-	"Seed"
-	{
-		"chi"   "图案模板编号"
-	}
 	"SeedReset"
 	{
 		"chi"	"图案模板已重置。"
@@ -123,5 +123,21 @@
 	"FloatSetFailed"
 	{
 		"chi"	"磨损值无效 (0 - 1)"
+	}
+	"TeamCT"
+	{
+		"chi"	"反恐精英"
+	}
+	"TeamT"
+	{
+		"chi"	"恐怖分子"
+	}
+	"ClientDisplay_1"
+	{
+		"chi"	"{1}{2}%%"
+	}
+	"ClientDisplay_2"
+	{
+		"chi"	"{1}{2}%%"
 	}
 }

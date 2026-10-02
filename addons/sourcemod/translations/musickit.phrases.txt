@@ -1,18 +1,279 @@
-﻿"Phrases"
+"Phrases"
 {
 	"MusicMenuTitle"
 	{
-		"en"		"Music Kit Changer"
-		"chi"		"自定义音乐盒"
+		"en"	"Music Kit Changer"
 	}
 	"Default"
 	{
-		"en"		"Default Music Kit"
-		"chi"		"默认音乐盒"
+		"en"	"Default Music Kit"
 	}
 	"Random"
 	{
-		"en"		"Random Music Kit"
-		"chi"		"随机音乐盒"
+		"en"	"Random Music Kit"
+	}
+	"MusicKitName_3"
+	{
+		"en"	"Daniel Sadowski, Crimson Assault"
+	}
+	"MusicKitName_4"
+	{
+		"en"	"Noisia, Sharpened"
+	}
+	"MusicKitName_5"
+	{
+		"en"	"Robert Allaire, Insurgency"
+	}
+	"MusicKitName_6"
+	{
+		"en"	"Sean Murray, A*D*8"
+	}
+	"MusicKitName_7"
+	{
+		"en"	"Feed Me, High Noon"
+	}
+	"MusicKitName_8"
+	{
+		"en"	"Dren, Death's Head Demolition"
+	}
+	"MusicKitName_9"
+	{
+		"en"	"Austin Wintory, Desert Fire"
+	}
+	"MusicKitName_10"
+	{
+		"en"	"Sasha, LNOE"
+	}
+	"MusicKitName_11"
+	{
+		"en"	"Skog, Metal"
+	}
+	"MusicKitName_12"
+	{
+		"en"	"Midnight Riders, All I Want for Christmas"
+	}
+	"MusicKitName_13"
+	{
+		"en"	"Matt Lange, IsoRhythm"
+	}
+	"MusicKitName_14"
+	{
+		"en"	"Mateo Messina, For No Mankind"
+	}
+	"MusicKitName_15"
+	{
+		"en"	"Various Artists, Hotline Miami"
+	}
+	"MusicKitName_16"
+	{
+		"en"	"Daniel Sadowski, Total Domination"
+	}
+	"MusicKitName_17"
+	{
+		"en"	"Damjan Mravunac, The Talos Principle"
+	}
+	"MusicKitName_18"
+	{
+		"en"	"Proxy, Battlepack"
+	}
+	"MusicKitName_19"
+	{
+		"en"	"Ki:Theory, MOLOTOV"
+	}
+	"MusicKitName_20"
+	{
+		"en"	"Troels Folmann, Uber Blasto Phone"
+	}
+	"MusicKitName_21"
+	{
+		"en"	"Kelly Bailey, Hazardous Environments"
+	}
+	"MusicKitName_22"
+	{
+		"en"	"Skog, II-Headshot"
+	}
+	"MusicKitName_23"
+	{
+		"en"	"Daniel Sadowski, The 8-Bit Kit"
+	}
+	"MusicKitName_24"
+	{
+		"en"	"AWOLNATION, I Am"
+	}
+	"MusicKitName_25"
+	{
+		"en"	"Mord Fustang, Diamonds"
+	}
+	"MusicKitName_26"
+	{
+		"en"	"Michael Bross, Invasion!"
+	}
+	"MusicKitName_27"
+	{
+		"en"	"Ian Hultquist, Lion's Mouth"
+	}
+	"MusicKitName_28"
+	{
+		"en"	"New Beat Fund, Sponge Fingerz"
+	}
+	"MusicKitName_29"
+	{
+		"en"	"Beartooth, Disgusting"
+	}
+	"MusicKitName_30"
+	{
+		"en"	"Lennie Moore, Java Havana Funkaloo"
+	}
+	"MusicKitName_31"
+	{
+		"en"	"Darude, Moments CSGO"
+	}
+	"MusicKitName_32"
+	{
+		"en"	"Beartooth, Aggressive"
+	}
+	"MusicKitName_33"
+	{
+		"en"	"Blitz Kids, The Good Youth"
+	}
+	"MusicKitName_34"
+	{
+		"en"	"Hundredth, FREE"
+	}
+	"MusicKitName_35"
+	{
+		"en"	"Neck Deep, Life's Not Out To Get You"
+	}
+	"MusicKitName_36"
+	{
+		"en"	"Roam, Backbone"
+	}
+	"MusicKitName_37"
+	{
+		"en"	"Twin Atlantic, GLA"
+	}
+	"MusicKitName_38"
+	{
+		"en"	"Skog, III-Arena"
+	}
+	"MusicKitName_39"
+	{
+		"en"	"The Verkkars, EZ4ENCE"
+	}
+	"MusicKitName_40"
+	{
+		"en"	"Halo, The Master Chief Collection"
+	}
+	"MusicKitName_41"
+	{
+		"en"	"Scarlxrd: King, Scar"
+	}
+	"MusicKitName_42"
+	{
+		"en"	"Half-Life: Alyx, Anti-Citizen"
+	}
+	"MusicKitName_43"
+	{
+		"en"	"Austin Wintory, Bachram"
+	}
+	"MusicKitName_44"
+	{
+		"en"	"Dren, Gunman Taco Truck"
+	}
+	"MusicKitName_45"
+	{
+		"en"	"Daniel Sadowski, Eye of the Dragon"
+	}
+	"MusicKitName_46"
+	{
+		"en"	"Tree Adams and Ben Bromfield, M.U.D.D. FORCE"
+	}
+	"MusicKitName_47"
+	{
+		"en"	"Tim Huling, Neo Noir"
+	}
+	"MusicKitName_48"
+	{
+		"en"	"Sam Marshall, Bodacious"
+	}
+	"MusicKitName_49"
+	{
+		"en"	"Matt Levine, Drifter"
+	}
+	"MusicKitName_50"
+	{
+		"en"	"Amon Tobin, All for Dust"
+	}
+	"MusicKitName_51"
+	{
+		"en"	"Darren Korb, Hades Music Kit"
+	}
+	"MusicKitName_52"
+	{
+		"en"	"Neck Deep, The Lowlife Pack"
+	}
+	"MusicKitName_53"
+	{
+		"en"	"Scarlxrd, CHAIN$AW.LXADXUT."
+	}
+	"MusicKitName_54"
+	{
+		"en"	"Austin Wintory, Mocha Petal"
+	}
+	"MusicKitName_55"
+	{
+		"en"	"Chipzel, ~Yellow Magic~"
+	}
+	"MusicKitName_56"
+	{
+		"en"	"Freaky DNA, Vici"
+	}
+	"MusicKitName_57"
+	{
+		"en"	"Jesse Harlin, Astro Bellum"
+	}
+	"MusicKitName_58"
+	{
+		"en"	"Laura Shigihara: Work Hard, Play Hard"
+	}
+	"MusicKitName_59"
+	{
+		"en"	"Sarah Schachner, KOLIBRI"
+	}
+	"MusicKitName_60"
+	{
+		"en"	"bbno$, u mad!"
+	}
+	"MusicKitName_61"
+	{
+		"en"	"The Verkkars & n0thing, Flashbang Dance"
+	}
+	"MusicKitName_62"
+	{
+		"en"	"3kliksphilip, Heading for the Source"
+	}
+	"MusicKitName_63"
+	{
+		"en"	"Humanity's Last Breath, Void"
+	}
+	"MusicKitName_64"
+	{
+		"en"	"Juelz, Shooters"
+	}
+	"MusicKitName_65"
+	{
+		"en"	"Knock2, dashstar*"
+	}
+	"MusicKitName_66"
+	{
+		"en"	"Meechy Darko, Gothic Luxury"
+	}
+	"MusicKitName_67"
+	{
+		"en"	"Sullivan King, Lock Me Up"
+	}
+	"MusicKitName_68"
+	{
+		"en"	"Perfect World, 花脸 Hua Lian (Painted Face)"
 	}
 }

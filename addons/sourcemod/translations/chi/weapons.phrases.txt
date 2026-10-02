@@ -26,11 +26,11 @@
 	}
 	"Increase"
 	{
-		"chi"	"增加 %d%%"
+		"chi"	"增加 {1}%%"
 	}
 	"Decrease"
 	{
-		"chi"	"减少 %d%%"
+		"chi"	"减少 {1}%%"
 	}
 	"CustomFloat"
 	{
@@ -52,6 +52,10 @@
 	{
 		"chi"	"指定磨损已设置"
 	}
+	"NameTagInfo"
+	{
+		"chi"	"使用 !nametag <标签> 为当前武器选择名称标签！"
+	}
 	"NameTagColor"
 	{
 		"chi"	"设置名称标签颜色"
@@ -59,6 +63,14 @@
 	"NameTagDisabled"
 	{
 		"chi"	"名称标签已禁用"
+	}
+	"DontSpamNameTag"
+	{
+		"chi"	"请稍等片刻再使用 !nametag。"
+	}
+	"NameTagNeedsParams"
+	{
+		"chi"	"用法：!nametag <标签>"
 	}
 	"ChooseLanguage"
 	{
@@ -83,6 +95,10 @@
 	"Black"
 	{
 		"chi"	"黑"
+	}
+	"Grey"
+	{
+		"chi"	"灰"
 	}
 	"Red"
 	{
@@ -374,7 +390,7 @@
 	}
 	"GracePeriod"
 	{
-		"chi"	"你只能在你死后或开局 %d 秒后，使用 !ws 指令。"
+		"chi"	"你只能在你死后或开局 {1} 秒后，使用 !ws 指令。"
 	}
 	"ChangeLang"
 	{
@@ -396,25 +412,13 @@
 	{
 		"chi"	"名称标签已设置"
 	}
-	"NameTagInfo"
+	"Seed"
 	{
-		"chi"	"使用 !nametag <标签> 为当前武器选择名称标签！"
-	}
-	"DontSpamNameTag"
-	{
-		"chi"	"请稍等片刻再使用 !nametag。"
-	}
-	"NameTagNeedsParams"
-	{
-		"chi"	"用法：!nametag <标签>"
-	}
-	"Grey"
-	{
-		"chi"	"灰"
+		"chi"	"图案模板编号"
 	}
 	"SeedTitle"
 	{
-		"chi"	"图案模板： %i"
+		"chi"	"图案模板： {1}"
 	}
 	"SeedTitleNoSeed"
 	{
@@ -452,10 +456,6 @@
 	{
 		"chi"	"图案模板编号已保存。"
 	}
-    "Seed"
-    {
-        "chi"   "图案模板编号"
-	}
 	"SeedDisabled"
 	{
 		"chi"	"图案模板选项已禁用"
@@ -479,5 +479,105 @@
 	"AppliedToOppositeTeam"
 	{
 		"chi"	"设置已成功应用到对面队伍"
+	}
+	"DefaultChatPrefix"
+	{
+		"chi"	"[Matt]"
+	}
+	"ClientDisplay_1"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_2"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_3"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_4"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_5"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_6"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_7"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_8"
+	{
+		"chi"	" {1} {2}: \"{3}\""
+	}
+	"ClientDisplay_9"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_10"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_11"
+	{
+		"chi"	" {1} {2}: {3}"
+	}
+	"ClientDisplay_12"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_13"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_14"
+	{
+		"chi"	" {1} {2}: {3}"
+	}
+	"ClientDisplay_15"
+	{
+		"chi"	"{1}{2}%%({3})"
+	}
+	"ClientDisplay_16"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_17"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_18"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_19"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_20"
+	{
+		"chi"	"{1}: {2}"
+	}
+	"ClientDisplay_21"
+	{
+		"chi"	" {1} {2}"
+	}
+	"ClientDisplay_22"
+	{
+		"chi"	"{1}{2}%%"
+	}
+	"ClientDisplay_23"
+	{
+		"chi"	"{1}{2}"
+	}
+	"ClientDisplay_24"
+	{
+		"chi"	"{1}{2}"
 	}
 }
