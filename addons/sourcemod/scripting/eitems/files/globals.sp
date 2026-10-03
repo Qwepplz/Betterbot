@@ -1,8 +1,6 @@
 ConVar g_cvHibernationWhenEmpty;
 int g_iHibernateWhenEmpty = 0;
 
-HTTPRequest httpRequest;
-
 enum struct eWearRemap
 {
     float Min;
@@ -189,7 +187,6 @@ int g_iCratesCount = 0;
 bool g_bItemsSynced = false;
 bool g_bItemsSyncing = false;
 bool g_bIsRoundEnd = false;
-bool g_bUseLocal = false;
 bool g_bForceDisableHibernation = false;
 
 
@@ -202,5 +199,3 @@ GlobalForward g_OnItemsSynced;
 
 char g_szConfigFilePath[PLATFORM_MAX_PATH];
 char g_szLanguageCode[12];
-
-int g_iAPIDownloadAttempt = 0;

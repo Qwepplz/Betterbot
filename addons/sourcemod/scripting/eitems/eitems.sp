@@ -1,5 +1,5 @@
 // ESK0/eItems 0.20.2, commit eac6eba3db6265ab9561cc77badbad3937bbcb93 (GPL-3.0).
-// Local changes remove spray parsing, downloads, assets, and natives.
+// Local changes remove sprays and online data fetching; only local English and Simplified Chinese data is supported.
 #include <sourcemod>
 #include <cstrike>
 #include <sdktools>

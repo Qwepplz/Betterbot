@@ -1,71 +1,24 @@
-public Action Timer_ParseItems(Handle timer)
-{
-    ParseItems();
-    return Plugin_Continue;
-}
-
 public void ParseItems()
 {
+    PrintToServer("%s Using local file as a source. Language: '%s'", TAG_NCLR, g_szLanguageCode);
 
-    char szFileToDownload[128];
-    Format(szFileToDownload, sizeof szFileToDownload, "items_%s.json", g_szLanguageCode);
+    char szLocalFilePath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, szLocalFilePath, sizeof szLocalFilePath, "data/items_%s.json", g_szLanguageCode);
 
-    if (g_bUseLocal)
+    if (!FileExists(szLocalFilePath))
     {
-        PrintToServer("%s Using local file as a source. Language: '%s'", TAG_NCLR, g_szLanguageCode);
-
-        char szLocalFilePath[PLATFORM_MAX_PATH];
-        BuildPath(Path_SM, szLocalFilePath, sizeof szLocalFilePath, "data/%s", szFileToDownload);
-
-        if (!FileExists(szLocalFilePath))
-        {
-            SetFailState("%s Unable to find: %s", TAG_NCLR, szLocalFilePath);
-            return;
-        }
-
-        JSONObject jData = JSONObject.FromFile(szLocalFilePath);
-        ParseData(view_as<JSON>(jData));
+        SetFailState("%s Unable to find items file: %s", TAG_NCLR, szLocalFilePath);
         return;
     }
 
-    PrintToServer("%s Downloading eItems data from GitHub", TAG_NCLR);
-
-    char szURL[512];
-    Format(szURL, sizeof(szURL), "https://raw.githubusercontent.com/ESK0/eItems/main/data//%s", szFileToDownload);
-
-    httpRequest = new HTTPRequest(szURL);
-    httpRequest.Get(ParseItemsDownloaded);
-}
-
-
-public Action Timer_AttemptDownload(Handle timer)
-{
-    ParseItems();
-    return Plugin_Continue;
-}
-public void ParseItemsDownloaded(HTTPResponse response, any value)
-{
-    if (response.Status != HTTPStatus_OK)
+    JSONObject jData = JSONObject.FromFile(szLocalFilePath);
+    if (jData == null)
     {
-        if(g_iAPIDownloadAttempt <= 5)
-        {
-            g_iAPIDownloadAttempt++;
-            PrintToServer("%s Downloading eItems data from GitHub failed! Attempt: %i/5, Trying again in 2 seconds", TAG_NCLR, g_iAPIDownloadAttempt);
-            CreateTimer(2.0, Timer_AttemptDownload, TIMER_FLAG_NO_MAPCHANGE); 
-        }
-        else
-        {
-            PrintToServer("%s Downloading eItems data from GitHub failed!", TAG_NCLR);
-        }
+        SetFailState("%s Unable to parse items file: %s", TAG_NCLR, szLocalFilePath);
         return;
     }
-    if (response.Data == null)
-    {
-        PrintToServer("%s Downloading eItems data from GitHub failed!", TAG_NCLR);
-        return;
-    }
-    PrintToServer("%s eItems data for '%s' language downloaded successfully", TAG_NCLR, g_szLanguageCode);
-    ParseData(response.Data);
+
+    ParseData(view_as<JSON>(jData));
 }
 
 public void ParseData(JSON json)
