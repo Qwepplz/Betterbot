@@ -6,11 +6,13 @@
 	}
 	"Increase"
 	{
-		"en"	"Increase by %d%%"
+		"#format"	"{1:d}"
+		"en"	"Increase by {1}%%"
 	}
 	"Decrease"
 	{
-		"en"	"Decrease by %d%%"
+		"#format"	"{1:d}"
+		"en"	"Decrease by {1}%%"
 	}
 	"ChooseLanguage"
 	{
@@ -58,7 +60,8 @@
 	}
 	"SeedTitle"
 	{
-		"en"	"Seed: %i"
+		"#format"	"{1:i}"
+		"en"	"Seed: {1}"
 	}
 	"SeedTitleNoSeed"
 	{
@@ -123,5 +126,23 @@
 	"FloatSetFailed"
 	{
 		"en"	"Invalid Float (0 - 1)"
+	}
+	"TeamCT"
+	{
+		"en"	"CT"
+	}
+	"TeamT"
+	{
+		"en"	"T"
+	}
+	"ClientDisplay_1"
+	{
+		"#format"	"{1:t},{2:d}"
+		"en"	"{1}{2}%%"
+	}
+	"ClientDisplay_2"
+	{
+		"#format"	"{1:t},{2:d}"
+		"en"	"{1}{2}%%"
 	}
 }

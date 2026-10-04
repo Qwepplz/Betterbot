@@ -1,0 +1,311 @@
+"Phrases"
+{
+	"AgentName_ctm_st6_variantn"
+	{
+		"chi"	"陆军中尉普里米罗 | 巴西第一营"
+	}
+	"AgentName_ctm_sas_variantg"
+	{
+		"chi"	"D 中队军官 | 新西兰特种空勤团"
+	}
+	"AgentName_ctm_gendarmerie_variantd"
+	{
+		"chi"	"准尉 | 法国宪兵特勤队"
+	}
+	"AgentName_ctm_st6_variante"
+	{
+		"chi"	"海豹突击队第六分队士兵 | 海军水面战中心海豹部队"
+	}
+	"AgentName_ctm_st6_variantk"
+	{
+		"chi"	"第三特种兵连 | 德国特种部队突击队"
+	}
+	"AgentName_ctm_fbi_variantf"
+	{
+		"chi"	"特种兵 | 联邦调查局（FBI）特警"
+	}
+	"AgentName_ctm_sas_variantf"
+	{
+		"chi"	"B 中队指挥官 | 英国空军特别部队"
+	}
+	"AgentName_ctm_swat_variantj"
+	{
+		"chi"	"化学防害专家 | 特警"
+	}
+	"AgentName_ctm_swat_varianth"
+	{
+		"chi"	"生物防害专家 | 特警"
+	}
+	"AgentName_tm_jungle_raider_variantf"
+	{
+		"chi"	"捕兽者（挑衅者） | 游击队"
+	}
+	"AgentName_tm_leet_variantj"
+	{
+		"chi"	"丛林反抗者 | 精锐分子"
+	}
+	"AgentName_tm_phoenix_variantf"
+	{
+		"chi"	"执行者 | 凤凰战士"
+	}
+	"AgentName_tm_phoenix_varianth"
+	{
+		"chi"	"枪手 | 凤凰战士"
+	}
+	"AgentName_tm_leet_variantg"
+	{
+		"chi"	"地面叛军 | 精锐分子"
+	}
+	"AgentName_tm_phoenix_varianti"
+	{
+		"chi"	"街头士兵 | 凤凰战士"
+	}
+	"AgentName_tm_balkan_variantl"
+	{
+		"chi"	"德拉戈米尔 | 军刀勇士"
+	}
+	"AgentName_ctm_gendarmerie_variante"
+	{
+		"chi"	"军官雅克·贝尔特朗 | 法国宪兵特勤队"
+	}
+	"AgentName_ctm_swat_variantk"
+	{
+		"chi"	"中尉法洛（抱树人） | 特警"
+	}
+	"AgentName_ctm_gendarmerie_varianta"
+	{
+		"chi"	"军医少尉 | 法国宪兵特勤队"
+	}
+	"AgentName_ctm_fbi_variantg"
+	{
+		"chi"	"马尔库斯·戴劳 | 联邦调查局（FBI）人质营救队"
+	}
+	"AgentName_ctm_st6_variantg"
+	{
+		"chi"	"铅弹 | 海军水面战中心海豹部队"
+	}
+	"AgentName_ctm_swat_variantg"
+	{
+		"chi"	"约翰 “范·海伦” 卡斯克 | 特警"
+	}
+	"AgentName_ctm_swat_varianti"
+	{
+		"chi"	"军士长炸弹森 | 特警"
+	}
+	"AgentName_ctm_st6_variantj"
+	{
+		"chi"	"“蓝莓” 铅弹 | 海军水面战中心海豹部队"
+	}
+	"AgentName_tm_jungle_raider_variantd"
+	{
+		"chi"	"上校曼戈斯·达比西 | 游击队"
+	}
+	"AgentName_tm_jungle_raider_variantf2"
+	{
+		"chi"	"捕兽者 | 游击队"
+	}
+	"AgentName_tm_balkan_varianti"
+	{
+		"chi"	"马克西姆斯 | 军刀"
+	}
+	"AgentName_tm_leet_varianth"
+	{
+		"chi"	"奥西瑞斯 | 精锐分子"
+	}
+	"AgentName_tm_phoenix_variantg"
+	{
+		"chi"	"弹弓 | 凤凰战士"
+	}
+	"AgentName_tm_balkan_variantf"
+	{
+		"chi"	"德拉戈米尔 | 军刀"
+	}
+	"AgentName_tm_professional_varj"
+	{
+		"chi"	"出逃的萨莉 | 专业人士"
+	}
+	"AgentName_tm_professional_varh"
+	{
+		"chi"	"小凯夫 | 专业人士"
+	}
+	"AgentName_ctm_gendarmerie_variantb"
+	{
+		"chi"	"化学防害上尉| 法国宪兵特勤队"
+	}
+	"AgentName_ctm_diver_variantc"
+	{
+		"chi"	"中尉雷克斯·克里奇 | 海豹蛙人"
+	}
+	"AgentName_ctm_fbi_varianth"
+	{
+		"chi"	"迈克·赛弗斯 | 联邦调查局（FBI）狙击手"
+	}
+	"AgentName_ctm_st6_variantm"
+	{
+		"chi"	"“两次”麦考伊 | 美国空军战术空中管制部队"
+	}
+	"AgentName_ctm_swat_variantf"
+	{
+		"chi"	"第一中尉法洛 | 特警"
+	}
+	"AgentName_ctm_st6_variantl"
+	{
+		"chi"	"“两次”麦考伊 | 战术空中管制部队装甲兵"
+	}
+	"AgentName_tm_professional_varf5"
+	{
+		"chi"	"残酷的达里尔（穷鬼）| 专业人士"
+	}
+	"AgentName_tm_jungle_raider_varianta"
+	{
+		"chi"	"精锐捕兽者索尔曼 | 游击队"
+	}
+	"AgentName_tm_jungle_raider_variantc"
+	{
+		"chi"	"亚诺（野草） | 游击队"
+	}
+	"AgentName_tm_balkan_variantj"
+	{
+		"chi"	"黑狼 | 军刀"
+	}
+	"AgentName_tm_leet_varianti"
+	{
+		"chi"	"沙哈马特教授 | 精锐分子"
+	}
+	"AgentName_tm_balkan_variantg"
+	{
+		"chi"	"准备就绪的列赞 | 军刀"
+	}
+	"AgentName_tm_professional_vari"
+	{
+		"chi"	"老K | 专业人士"
+	}
+	"AgentName_tm_professional_varg"
+	{
+		"chi"	"飞贼波兹曼 | 专业人士"
+	}
+	"AgentName_tm_balkan_variantk"
+	{
+		"chi"	"红衫列赞 | 军刀"
+	}
+	"AgentName_ctm_gendarmerie_variantc"
+	{
+		"chi"	"中队长鲁沙尔·勒库托 | 法国宪兵特勤队"
+	}
+	"AgentName_ctm_diver_variantb"
+	{
+		"chi"	"指挥官弗兰克·巴鲁德（湿袜） | 海豹蛙人"
+	}
+	"AgentName_ctm_diver_varianta"
+	{
+		"chi"	"指挥官黛维达·费尔南德斯（护目镜） | 海豹蛙人"
+	}
+	"AgentName_ctm_st6_varianti"
+	{
+		"chi"	"海军上尉里克索尔 | 海军水面战中心海豹部队"
+	}
+	"AgentName_ctm_fbi_variantb"
+	{
+		"chi"	"爱娃特工 | 联邦调查局（FBI）"
+	}
+	"AgentName_ctm_swat_variante"
+	{
+		"chi"	"指挥官 梅 “极寒” 贾米森 | 特警"
+	}
+	"AgentName_tm_jungle_raider_variante"
+	{
+		"chi"	"薇帕姐（革新派） | 游击队"
+	}
+	"AgentName_tm_jungle_raider_variantb2"
+	{
+		"chi"	"克拉斯沃特（三分熟） | 游击队"
+	}
+	"AgentName_tm_jungle_raider_variantb"
+	{
+		"chi"	"遗忘者克拉斯沃特 | 游击队"
+	}
+	"AgentName_tm_balkan_varianth"
+	{
+		"chi"	"“医生”罗曼诺夫 | 军刀"
+	}
+	"AgentName_tm_leet_variantf"
+	{
+		"chi"	"精英穆哈里克先生 | 精锐分子"
+	}
+	"AgentName_tm_professional_varf"
+	{
+		"chi"	"残酷的达里尔爵士（迈阿密）| 专业人士"
+	}
+	"AgentName_tm_professional_varf1"
+	{
+		"chi"	"残酷的达里尔爵士（沉默）| 专业人士"
+	}
+	"AgentName_tm_professional_varf2"
+	{
+		"chi"	"残酷的达里尔爵士（头盖骨）| 专业人士"
+	}
+	"AgentName_tm_professional_varf3"
+	{
+		"chi"	"残酷的达里尔爵士（皇家）| 专业人士"
+	}
+	"AgentName_tm_professional_varf4"
+	{
+		"chi"	"残酷的达里尔爵士（聒噪）| 专业人士"
+	}
+	"MsgModelsGenerated"
+	{
+		"chi"	"已生成模型配置文件。"
+	}
+	"MenuTeam"
+	{
+		"chi"	"选择探员队伍："
+	}
+	"MenuCT"
+	{
+		"chi"	"反恐精英"
+	}
+	"MenuT"
+	{
+		"chi"	"恐怖分子"
+	}
+	"MenuType"
+	{
+		"chi"	"选择探员等级："
+	}
+	"MenuDefault"
+	{
+		"chi"	"使用默认模型"
+	}
+	"MenuDistinguished"
+	{
+		"chi"	"卓越探员"
+	}
+	"MenuExceptional"
+	{
+		"chi"	"非凡探员"
+	}
+	"MenuSuperior"
+	{
+		"chi"	"高级探员"
+	}
+	"MenuMaster"
+	{
+		"chi"	"大师探员"
+	}
+	"MsgDefaultSelected"
+	{
+		"chi"	"你已恢复默认探员模型。"
+	}
+	"MsgAgentSelected"
+	{
+		"chi"	"已选择探员模型！"
+	}
+	"MsgAgentNextSpawn"
+	{
+		"chi"	"已选择探员模型！将在下次出生时生效。"
+	}
+	"MsgCustomSkin"
+	{
+		"chi"	"你已使用自定义玩家模型，请先移除它再使用探员。"
+	}
+}

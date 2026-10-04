@@ -1,0 +1,276 @@
+"Phrases"
+{
+	"SLBotsManagedCannotMimic"
+	{
+		"#format"	"{1:N}"
+		"en"	"[BotMimic] {1} is controlled by SL-Bots and cannot mimic a record."
+	}
+	"MsgAlreadyRecording"
+	{
+		"en"	"[BotMimic] You're currently recording! Stop the current take first."
+	}
+	"MsgNotRecording"
+	{
+		"en"	"[BotMimic] You aren't recording."
+	}
+	"MsgBookmarkUsage"
+	{
+		"en"	"[BotMimic] Saves a bookmark with the given name in the record the target records. sm_savebookmark <name|steamid|#userid> <bookmark name>"
+	}
+	"MsgTargetNotRecording"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] Target {1} is not recording."
+	}
+	"MsgBookmarkNameRequired"
+	{
+		"en"	"[BotMimic] You have to give a name for the bookmark."
+	}
+	"MsgBookmarkSaved"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"	"[BotMimic] Saved bookmark \"{1}\" in {2}'s record."
+	}
+	"MsgRenameAborted"
+	{
+		"en"	"[BotMimic] Renaming aborted."
+	}
+	"MsgNoRecordToRename"
+	{
+		"en"	"[BotMimic] You didn't target a record to rename."
+	}
+	"MsgRenameError"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] There was an error changing the name: {1}"
+	}
+	"MsgRecordRenamed"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] Record was renamed to \"{1}\"."
+	}
+	"MsgCategoryAborted"
+	{
+		"en"	"[BotMimic] Creation of category aborted."
+	}
+	"MsgCategoryCreated"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] A new category was created named \"{1}\"."
+	}
+	"MenuStoppedRecording"
+	{
+		"en"	"Stopped recording"
+	}
+	"MenuCategories"
+	{
+		"en"	"Manage Movement Recording Categories"
+	}
+	"MenuNewMovement"
+	{
+		"en"	"Record new movement"
+	}
+	"MenuNewCategory"
+	{
+		"en"	"Create new category"
+	}
+	"MsgMustBeAlive"
+	{
+		"en"	"[BotMimic] You have to be alive to record your movements."
+	}
+	"MsgStopMimicFirst"
+	{
+		"en"	"[BotMimic] You're currently mimicing another record. Stop that first before recording."
+	}
+	"MsgCategoryInstruction"
+	{
+		"en"	"[BotMimic] Type the name of the category in chat or \"!stop\" to abort. Remember that this is used as a folder name too!"
+	}
+	"MenuRecordsInCategory"
+	{
+		"#format"	"{1:s}"
+		"en"	"Manage Recordings in {1}"
+	}
+	"MenuRecordPlaying"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"	"{1} (Playing {2}x)"
+	}
+	"MenuRecordDetails"
+	{
+		"#format"	"{1:s}"
+		"en"	"Record \"{1}\": Details"
+	}
+	"MenuSelectMimicBot"
+	{
+		"en"	"Select a bot to mimic"
+	}
+	"MenuAddMimicBot"
+	{
+		"en"	"Add a bot to mimic"
+	}
+	"MenuStopAllBots"
+	{
+		"en"	"Stop any bots mimicing this record"
+	}
+	"MenuBookmarks"
+	{
+		"en"	"Display bookmarks"
+	}
+	"MenuRenameRecord"
+	{
+		"en"	"Rename this record"
+	}
+	"MenuDeleteRecord"
+	{
+		"en"	"Delete"
+	}
+	"MenuRecordLength"
+	{
+		"#format"	"{1:d}"
+		"en"	"Length: {1} ticks"
+	}
+	"MenuChooseBot"
+	{
+		"en"	"Which bot should mimic this record?"
+	}
+	"MenuBotTeamT"
+	{
+		"#format"	"{1:s}"
+		"en"	"{1} [T]"
+	}
+	"MenuBotTeamCT"
+	{
+		"#format"	"{1:s}"
+		"en"	"{1} [CT]"
+	}
+	"MenuBotPlays"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"	"{1} (Plays {2})"
+	}
+	"MenuChooseTeam"
+	{
+		"en"	"Select the team for the new bot"
+	}
+	"MenuTerrorist"
+	{
+		"en"	"Terrorist"
+	}
+	"MenuCounterTerrorist"
+	{
+		"en"	"Counter-Terrorist"
+	}
+	"MsgStoppedBots"
+	{
+		"#format"	"{1:d},{2:s}"
+		"en"	"[BotMimic] Stopped {1} bots from mimicing record \"{2}\"."
+	}
+	"MsgRenameInstruction"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] Type the new name for record \"{1}\" or type \"!stop\" to cancel."
+	}
+	"MsgRecordDeleted"
+	{
+		"#format"	"{1:d},{2:s}"
+		"en"	"[BotMimic] Stopped {1} bots and deleted record \"{2}\"."
+	}
+	"MsgBotMissing"
+	{
+		"en"	"[BotMimic] The bot you selected can't be found anymore."
+	}
+	"MsgBotStopped"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"	"[BotMimic] {1} stopped mimicing record \"{2}\"."
+	}
+	"MsgBotStarted"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"	"[BotMimic] {1} started mimicing record \"{2}\"."
+	}
+	"MsgBotAdded"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] Added new bot who mimics record \"{1}\"."
+	}
+	"MenuRecordBookmarks"
+	{
+		"#format"	"{1:s}"
+		"en"	"Bookmarks for record \"{1}\""
+	}
+	"MenuBookmarkPlayers"
+	{
+		"#format"	"{1:s}"
+		"en"	"Select which player who currently plays the record should jump to bookmark \"{1}\":"
+	}
+	"MenuNoMimicingPlayers"
+	{
+		"en"	"No players currently mimicing this record."
+	}
+	"MsgBotNotMimicing"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] {1} isn't mimicing anything anymore."
+	}
+	"MsgBotChangedRecord"
+	{
+		"#format"	"{1:s}"
+		"en"	"[BotMimic] {1} isn't mimicing the selected record anymore."
+	}
+	"MenuRecording"
+	{
+		"en"	"Recording..."
+	}
+	"MenuResume"
+	{
+		"en"	"Resume recording"
+	}
+	"MenuPause"
+	{
+		"en"	"Pause recording"
+	}
+	"MenuSave"
+	{
+		"en"	"Save recording"
+	}
+	"MenuDiscard"
+	{
+		"en"	"Discard recording"
+	}
+	"MsgPaused"
+	{
+		"en"	"[BotMimic] Paused recording."
+	}
+	"MsgResumed"
+	{
+		"en"	"[BotMimic] Resumed recording."
+	}
+	"MsgStopInstruction"
+	{
+		"en"	"[BotMimic] Type !stoprecord to stop recording."
+	}
+	"MenuAdminCategory"
+	{
+		"en"	"Bot Mimic"
+	}
+	"MsgAlreadyRecordingShort"
+	{
+		"en"	"[BotMimic] You're already recording!"
+	}
+	"MenuListCategories"
+	{
+		"en"	"List categories"
+	}
+	"MenuRecordedAt"
+	{
+		"#format"	"{1:s}"
+		"en"	"Recorded: {1}"
+	}
+	"MsgTargetError"
+	{
+		"#format"	"{1:t}"
+		"en"	"[SM] {1}"
+	}
+}

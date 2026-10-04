@@ -1,8 +1,8 @@
 #pragma semicolon 1
 
 #include <sourcemod>
-#include <sdkhooks>
 #include <sdktools>
+#include <sdkhooks>
 #include <cstrike>
 #include <eItems>
 #include <PTaH>
@@ -162,13 +162,13 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
 	HookEvent("round_start", Event_OnRoundStart);
 	
-	g_cvAgentChance = CreateConVar("sm_botinv_agent_chance", "65.0", "Chance (0-100) that a bot uses a custom agent model.", _, true, 0.0, true, 100.0);
-	g_cvStickerChance = CreateConVar("sm_botinv_sticker_chance", "40.0", "Chance (0-100) that a weapon has stickers.", _, true, 0.0, true, 100.0);
-	g_cvStickerComboChance = CreateConVar("sm_botinv_sticker_combo_chance", "50.0", "Chance (0-100) for partial sticker combos vs full sets.", _, true, 0.0, true, 100.0);
-	g_cvStatTrakChance = CreateConVar("sm_botinv_stattrak_chance", "30.0", "Chance (0-100) that an eligible weapon is StatTrak.", _, true, 0.0, true, 100.0);
-	g_cvSouvenirChance = CreateConVar("sm_botinv_souvenir_chance", "30.0", "Chance (0-100) that an eligible weapon is Souvenir.", _, true, 0.0, true, 100.0);
-	g_cvPatchChance = CreateConVar("sm_botinv_patch_chance", "40.0", "Chance (0-100) that an agent has patches.", _, true, 0.0, true, 100.0);
-	g_cvPatchComboChance = CreateConVar("sm_botinv_patch_combo_chance", "50.0", "Chance (0-100) for partial patch combos vs full sets.", _, true, 0.0, true, 100.0);
+	g_cvAgentChance = CreateConVar("sm_botinv_agent_chance", "80.0", "Chance (0-100) that a bot uses a custom agent model.", _, true, 0.0, true, 100.0);
+	g_cvStickerChance = CreateConVar("sm_botinv_sticker_chance", "60.0", "Chance (0-100) that a weapon has stickers.", _, true, 0.0, true, 100.0);
+	g_cvStickerComboChance = CreateConVar("sm_botinv_sticker_combo_chance", "60.0", "Chance (0-100) for partial sticker combos vs full sets.", _, true, 0.0, true, 100.0);
+	g_cvStatTrakChance = CreateConVar("sm_botinv_stattrak_chance", "60.0", "Chance (0-100) that an eligible weapon is StatTrak.", _, true, 0.0, true, 100.0);
+	g_cvSouvenirChance = CreateConVar("sm_botinv_souvenir_chance", "60.0", "Chance (0-100) that an eligible weapon is Souvenir.", _, true, 0.0, true, 100.0);
+	g_cvPatchChance = CreateConVar("sm_botinv_patch_chance", "60.0", "Chance (0-100) that an agent has patches.", _, true, 0.0, true, 100.0);
+	g_cvPatchComboChance = CreateConVar("sm_botinv_patch_combo_chance", "60.0", "Chance (0-100) for partial patch combos vs full sets.", _, true, 0.0, true, 100.0);
 	g_cvGloveWearMin = CreateConVar("sm_botinv_glove_wear_min", "0.06", "Minimum glove wear float.", _, true, 0.0, true, 1.0);
 	g_cvGloveWearMax = CreateConVar("sm_botinv_glove_wear_max", "0.80", "Maximum glove wear float.", _, true, 0.0, true, 1.0);
 	g_cvCustomContent = CreateConVar("sm_botinv_custom_content", "1", "Enable custom content (custom knives, skins with def index >= 1300).", _, true, 0.0, true, 1.0);

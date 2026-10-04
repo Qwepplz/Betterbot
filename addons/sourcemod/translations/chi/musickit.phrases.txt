@@ -1,0 +1,279 @@
+"Phrases"
+{
+	"MusicMenuTitle"
+	{
+		"chi"	"自定义音乐盒"
+	}
+	"Default"
+	{
+		"chi"	"默认音乐盒"
+	}
+	"Random"
+	{
+		"chi"	"随机音乐盒"
+	}
+	"MusicKitName_3"
+	{
+		"chi"	"Daniel Sadowski — 深红突击"
+	}
+	"MusicKitName_4"
+	{
+		"chi"	"Noisia — 尖峰时刻"
+	}
+	"MusicKitName_5"
+	{
+		"chi"	"Robert Allaire — 叛乱"
+	}
+	"MusicKitName_6"
+	{
+		"chi"	"Sean Murray — A*D*8"
+	}
+	"MusicKitName_7"
+	{
+		"chi"	"Feed Me — 如日中天"
+	}
+	"MusicKitName_8"
+	{
+		"chi"	"Dren — 骷髅爆破"
+	}
+	"MusicKitName_9"
+	{
+		"chi"	"Austin Wintory — 沙漠之焰"
+	}
+	"MusicKitName_10"
+	{
+		"chi"	"Sasha — 地球末夜"
+	}
+	"MusicKitName_11"
+	{
+		"chi"	"Skog — 金属"
+	}
+	"MusicKitName_12"
+	{
+		"chi"	"Midnight Riders — 圣诞之欲"
+	}
+	"MusicKitName_13"
+	{
+		"chi"	"Matt Lange — 同型节奏"
+	}
+	"MusicKitName_14"
+	{
+		"chi"	"Mateo Messina — 无人之境"
+	}
+	"MusicKitName_15"
+	{
+		"chi"	"多名作曲家 — 迈阿密热线"
+	}
+	"MusicKitName_16"
+	{
+		"chi"	"Daniel Sadowski — 绝对统御"
+	}
+	"MusicKitName_17"
+	{
+		"chi"	"Damjan Mravunac — 塔罗斯的法则"
+	}
+	"MusicKitName_18"
+	{
+		"chi"	"Proxy — 万夫莫敌包"
+	}
+	"MusicKitName_19"
+	{
+		"chi"	"Ki:Theory — 莫洛托夫烈火"
+	}
+	"MusicKitName_20"
+	{
+		"chi"	"Troels Folmann — 超爆话筒"
+	}
+	"MusicKitName_21"
+	{
+		"chi"	"Kelly Bailey — 有害物质环境"
+	}
+	"MusicKitName_22"
+	{
+		"chi"	"Skog — II-爆头"
+	}
+	"MusicKitName_23"
+	{
+		"chi"	"Daniel Sadowski — 8 位音乐盒"
+	}
+	"MusicKitName_24"
+	{
+		"chi"	"AWOLNATION — 就是我"
+	}
+	"MusicKitName_25"
+	{
+		"chi"	"Mord Fustang — 永恒之钻"
+	}
+	"MusicKitName_26"
+	{
+		"chi"	"Michael Bross — 大举入侵！"
+	}
+	"MusicKitName_27"
+	{
+		"chi"	"Ian Hultquist — 雄狮之口"
+	}
+	"MusicKitName_28"
+	{
+		"chi"	"New Beat Fund — 海绵手指"
+	}
+	"MusicKitName_29"
+	{
+		"chi"	"Beartooth — 令人发指"
+	}
+	"MusicKitName_30"
+	{
+		"chi"	"Lennie Moore — 爪哇哈瓦那放克乐"
+	}
+	"MusicKitName_31"
+	{
+		"chi"	"Darude — CSGO 精彩时刻"
+	}
+	"MusicKitName_32"
+	{
+		"chi"	"Beartooth — 咄咄逼人"
+	}
+	"MusicKitName_33"
+	{
+		"chi"	"Blitz Kids — 有为青年"
+	}
+	"MusicKitName_34"
+	{
+		"chi"	"Hundredth — 冲破藩篱"
+	}
+	"MusicKitName_35"
+	{
+		"chi"	"Neck Deep — 人生何处不青山"
+	}
+	"MusicKitName_36"
+	{
+		"chi"	"Roam — 决心"
+	}
+	"MusicKitName_37"
+	{
+		"chi"	"Twin Atlantic, GLA"
+	}
+	"MusicKitName_38"
+	{
+		"chi"	"Skog — III-竞技场"
+	}
+	"MusicKitName_39"
+	{
+		"chi"	"The Verkkars - EZ4ENCE"
+	}
+	"MusicKitName_40"
+	{
+		"chi"	"《光环：士官长合集》"
+	}
+	"MusicKitName_41"
+	{
+		"chi"	"Scarlxrd: 疤王"
+	}
+	"MusicKitName_42"
+	{
+		"chi"	"《半衰期：爱莉克斯》，反叛者"
+	}
+	"MusicKitName_43"
+	{
+		"chi"	"Austin Wintory — 巴克拉姆"
+	}
+	"MusicKitName_44"
+	{
+		"chi"	"Dren — 枪炮卷饼卡车"
+	}
+	"MusicKitName_45"
+	{
+		"chi"	"Daniel Sadowski — 巨龙之眼"
+	}
+	"MusicKitName_46"
+	{
+		"chi"	"Tree Adams/Ben Bromfield — M.U.D.D. 军团"
+	}
+	"MusicKitName_47"
+	{
+		"chi"	"Tim Huling — 新黑色电影"
+	}
+	"MusicKitName_48"
+	{
+		"chi"	"Sam Marshall — 大胆尝试"
+	}
+	"MusicKitName_49"
+	{
+		"chi"	"Matt Levine — 漂泊者"
+	}
+	"MusicKitName_50"
+	{
+		"chi"	"Amon Tobin — 尘归尘"
+	}
+	"MusicKitName_51"
+	{
+		"chi"	"Darren Korb - 黑帝斯"
+	}
+	"MusicKitName_52"
+	{
+		"chi"	"Neck Deep - 痞子帮"
+	}
+	"MusicKitName_53"
+	{
+		"chi"	"Scarlxrd - 电锯:追命"
+	}
+	"MusicKitName_54"
+	{
+		"chi"	"Austin Wintory - 咖啡拉花"
+	}
+	"MusicKitName_55"
+	{
+		"chi"	"Chipzel - 黄色魔法"
+	}
+	"MusicKitName_56"
+	{
+		"chi"	"Freaky DNA - 征服"
+	}
+	"MusicKitName_57"
+	{
+		"chi"	"Jesse Harlin - 战火星空"
+	}
+	"MusicKitName_58"
+	{
+		"chi"	"Laura Shigihara - 好好干，好好活"
+	}
+	"MusicKitName_59"
+	{
+		"chi"	"Sarah Schachner - 蜂鸟"
+	}
+	"MusicKitName_60"
+	{
+		"chi"	"bbno$ - 你急了！"
+	}
+	"MusicKitName_61"
+	{
+		"chi"	"The Verkkars & n0thing - 闪光舞"
+	}
+	"MusicKitName_62"
+	{
+		"chi"	"3kliksphilip - 追溯起源"
+	}
+	"MusicKitName_63"
+	{
+		"chi"	"Humanity's Last Breath - 虚空"
+	}
+	"MusicKitName_64"
+	{
+		"chi"	"Juelz - 神枪手"
+	}
+	"MusicKitName_65"
+	{
+		"chi"	"Knock2 - 冲击星*"
+	}
+	"MusicKitName_66"
+	{
+		"chi"	"Meechy Darko - 哥特浮华"
+	}
+	"MusicKitName_67"
+	{
+		"chi"	"Sullivan King - 困兽"
+	}
+	"MusicKitName_68"
+	{
+		"chi"	"完美世界 - 花脸"
+	}
+}

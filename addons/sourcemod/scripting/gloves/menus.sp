@@ -1,7 +1,54 @@
+Menu GetClientGloveMenu(int client, Menu menu)
+{
+	int language = GetClientGloveLanguage(client);
+	int previous = 1 - language;
+	for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
+	{
+		if (menu == menuGlovesGroup[previous][team])
+		{
+			return menuGlovesGroup[language][team];
+		}
+		for (int group = 1; group < sizeof(menuGloves[][]); group++)
+		{
+			if (menu == menuGloves[previous][team][group])
+			{
+				return menuGloves[language][team][group];
+			}
+		}
+	}
+	return menu;
+}
+
+bool GetClientGloveItemText(int client, Menu menu, const char[] info, char[] display, int maxlen)
+{
+	Menu localized = GetClientGloveMenu(client, menu);
+	if (localized == null || localized == menu)
+	{
+		return false;
+	}
+	char candidate[32];
+	int style;
+	for (int item = 0; item < localized.ItemCount; item++)
+	{
+		localized.GetItem(item, candidate, sizeof(candidate), style, display, maxlen);
+		if (StrEqual(candidate, info))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 public int GloveMenuHandler(Menu menu, MenuAction action, int client, int selection)
 {
 	switch (action)
 	{
+		case MenuAction_Display:
+		{
+			char title[64];
+			GetClientGloveMenu(client, menu).GetTitle(title, sizeof(title));
+			view_as<Panel>(selection).SetTitle(title);
+		}
 		case MenuAction_Select:
 		{
 			if (IsClientInGame(client))
@@ -45,7 +92,11 @@ public int GloveMenuHandler(Menu menu, MenuAction action, int client, int select
 
 				if (StrContains(info, "-1") > -1)
 				{
-					Format(display, sizeof(display), "%T", "RandomGloves", client);
+					BB_FormatClient(client, display, sizeof(display), "%T", "RandomGloves", client);
+					return RedrawMenuItem(display);
+				}
+				if (GetClientGloveItemText(client, menu, info, display, sizeof(display)))
+				{
 					return RedrawMenuItem(display);
 				}
 			}
@@ -54,7 +105,7 @@ public int GloveMenuHandler(Menu menu, MenuAction action, int client, int select
 		{
 			if (IsClientInGame(client) && selection == MenuCancel_ExitBack)
 			{
-				menuGlovesGroup[g_iClientLanguage[client]][g_iTeam[client]].Display(client, MENU_TIME_FOREVER);
+				menuGlovesGroup[GetClientGloveLanguage(client)][g_iTeam[client]].Display(client, MENU_TIME_FOREVER);
 			}
 		}
 	}
@@ -76,8 +127,15 @@ public Action ResetGlovesTimer(Handle timer, DataPack pack)
 
 public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int selection)
 {
+
 	switch (action)
 	{
+		case MenuAction_Display:
+		{
+			char title[256];
+			BB_FormatClient(client, title, sizeof(title), "%T", "GloveMenuTitle", client);
+			view_as<Panel>(selection).SetTitle(title);
+		}
 		case MenuAction_Select:
 		{
 			if (IsClientInGame(client))
@@ -122,7 +180,7 @@ public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int se
 				}
 				else
 				{
-					menuGloves[g_iClientLanguage[client]][g_iTeam[client]][index].Display(client, MENU_TIME_FOREVER);
+					menuGloves[GetClientGloveLanguage(client)][g_iTeam[client]][index].Display(client, MENU_TIME_FOREVER);
 				}
 			}
 		}
@@ -136,12 +194,16 @@ public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int se
 
 				if (StrEqual(info, "0"))
 				{
-					Format(display, sizeof(display), "%T", "DefaultGloves", client);
+					BB_FormatClient(client, display, sizeof(display), "%T", "DefaultGloves", client);
 					return RedrawMenuItem(display);
 				}
 				else if (StrEqual(info, "-1"))
 				{
-					Format(display, sizeof(display), "%T", "RandomGloves", client);
+					BB_FormatClient(client, display, sizeof(display), "%T", "RandomGloves", client);
+					return RedrawMenuItem(display);
+				}
+				if (GetClientGloveItemText(client, menu, info, display, sizeof(display)))
+				{
 					return RedrawMenuItem(display);
 				}
 			}
@@ -155,6 +217,7 @@ public int GloveMainMenuHandler(Menu menu, MenuAction action, int client, int se
 		}
 	}
 	return 0;
+
 }
 
 public Action GlovesMenuTimer(Handle timer, DataPack pack)
@@ -166,7 +229,7 @@ public Action GlovesMenuTimer(Handle timer, DataPack pack)
 
 	if (IsClientInGame(clientIndex))
 	{
-		menu.DisplayAt(clientIndex, menuSelectionPosition, MENU_TIME_FOREVER);
+		GetClientGloveMenu(clientIndex, menu).DisplayAt(clientIndex, menuSelectionPosition, MENU_TIME_FOREVER);
 	}
 	return Plugin_Stop;
 }
@@ -180,12 +243,16 @@ Menu CreateFloatMenu(int client)
 	fValue = fValue * 100.0;
 	int wear = 100 - RoundFloat(fValue);
 
-	menu.SetTitle("%T%d%%", "SetFloat", client, wear);
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_1", client, "SetFloat", wear);
+		menu.SetTitle("%s", bbText);
+	}
 
-	Format(buffer, sizeof(buffer), "%T", "Increase", client, g_iFloatIncrementPercentage);
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "Increase", client, g_iFloatIncrementPercentage);
 	menu.AddItem("increase", buffer, wear == 100 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 
-	Format(buffer, sizeof(buffer), "%T", "Decrease", client, g_iFloatIncrementPercentage);
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "Decrease", client, g_iFloatIncrementPercentage);
 	menu.AddItem("decrease", buffer, wear == 0 ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 
 	menu.ExitBackButton = true;
@@ -285,7 +352,7 @@ public int MainMenuHandler(Menu menu, MenuAction action, int client, int selecti
 					{
 						g_iTeam[client] = CS_TEAM_T;
 					}
-					menuGlovesGroup[g_iClientLanguage[client]][g_iTeam[client]].Display(client, MENU_TIME_FOREVER);
+					menuGlovesGroup[GetClientGloveLanguage(client)][g_iTeam[client]].Display(client, MENU_TIME_FOREVER);
 				}
 			}
 		}
@@ -302,11 +369,15 @@ Menu CreateMainMenu(int client)
 	char buffer[60];
 	Menu menu = new Menu(MainMenuHandler, MENU_ACTIONS_DEFAULT);
 
-	menu.SetTitle("%T", "GloveMenuTitle", client);
+	{
+		char bbText[256];
+		BB_FormatClient(client, bbText, sizeof(bbText), "%T", "GloveMenuTitle", client);
+		menu.SetTitle("%s", bbText);
+	}
 
-	strcopy(buffer, sizeof(buffer), "CT");
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "TeamCT", client);
 	menu.AddItem("ct", buffer);
-	strcopy(buffer, sizeof(buffer), "T");
+	BB_FormatClient(client, buffer, sizeof(buffer), "%T", "TeamT", client);
 	menu.AddItem("t", buffer);
 
 	if (g_iEnableFloat == 1 && IsPlayerAlive(client))
@@ -318,51 +389,10 @@ Menu CreateMainMenu(int client)
 			float fValue = g_fFloatValue[client][playerTeam];
 			fValue = fValue * 100.0;
 			int wear = 100 - RoundFloat(fValue);
-			Format(buffer, sizeof(buffer), "%T%d%%", "SetFloat", client, wear);
+			BB_FormatClient(client, buffer, sizeof(buffer), "%T", "ClientDisplay_2", client, "SetFloat", wear);
 			menu.AddItem("float", buffer);
 		}
 	}
 
 	return menu;
-}
-
-Menu CreateLanguageMenu(int client)
-{
-	Menu menu = new Menu(LanguageMenuHandler);
-	menu.SetTitle("%T", "ChooseLanguage", client);
-
-	char buffer[4];
-
-	for (int i = 0; i < sizeof(g_Language); i++)
-	{
-		if (strlen(g_Language[i]) == 0)
-			break;
-		IntToString(i, buffer, sizeof(buffer));
-		menu.AddItem(buffer, g_Language[i]);
-	}
-
-	return menu;
-}
-
-public int LanguageMenuHandler(Menu menu, MenuAction action, int client, int selection)
-{
-	switch (action)
-	{
-		case MenuAction_Select:
-		{
-			if (IsClientInGame(client))
-			{
-				char langIndexStr[4];
-				menu.GetItem(selection, langIndexStr, sizeof(langIndexStr));
-				int langIndex = StringToInt(langIndexStr);
-
-				g_iClientLanguage[client] = langIndex;
-			}
-		}
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-	}
-	return 0;
 }

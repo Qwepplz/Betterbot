@@ -50,14 +50,9 @@ stock void CleanNameTag(char[] nameTag, int size) {
 }
 
 stock int GetClientMenuLanguage(int client) {
-  int language = g_iClientLanguage[client];
-  if (language < 0 || language >= MAX_LANG || menuWeapons[language][0] == null) {
-    language = g_iDefaultLanguage;
-  }
-  if (language < 0 || language >= MAX_LANG || menuWeapons[language][0] == null) {
-    language = 0;
-  }
-  return language;
+
+  return BB_GetClientTextLanguage(client) == GetLanguageByCode("chi") ? 1 : 0;
+
 }
 
 stock int GetRandomSkin(int client, int index) {
@@ -212,18 +207,7 @@ stock bool IsValidWeapon(int weaponEntity) {
   return StrContains(weaponClass, "weapon_") == 0;
 }
 
-stock void FirstCharUpper(char[] string) {
-  if (strlen(string) > 0) {
-    string[0] = CharToUpper(string[0]);
-  }
-}
 
-stock void StringToLowerCase(char[] string) {
-  int length = strlen(string);
-  for (int index = 0; index < length; index++) {
-    string[index] = CharToLower(string[index]);
-  }
-}
 
 stock int GetTotalKnifeStatTrakCount(int client) {
   int count = 0;
@@ -259,4 +243,12 @@ stock int GetWeaponDataTeam(int client, int index) {
 
 stock void GetWeaponTeamPrefix(int team, char[] prefix, int maxlen) {
   strcopy(prefix, maxlen, team == CS_TEAM_T ? "" : "ct_");
+}
+
+stock void GetClientChatPrefix(int client, char[] prefix, int maxlen) {
+  if (StrEqual(g_ChatPrefix, g_DefaultChatPrefix)) {
+    BB_FormatClient(client, prefix, maxlen, "%T", "DefaultChatPrefix", client);
+  } else {
+    strcopy(prefix, maxlen, g_ChatPrefix);
+  }
 }

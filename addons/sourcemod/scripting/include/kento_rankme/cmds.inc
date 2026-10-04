@@ -62,7 +62,7 @@ public Action CMD_Purge(int client, int args){
 	
 	int deletebefore;
 	if(StringToInt(arg1) == 0){
-		CPrintToChat(client, "%s %T", MSG, "Usagepurge",client);
+		RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "Usagepurge", client);
 		return Plugin_Handled;
 	}
 	deletebefore = GetTime() - (StringToInt(arg1)*86400);
@@ -70,7 +70,7 @@ public Action CMD_Purge(int client, int args){
 	Format(query,sizeof(query),"DELETE FROM `%s` WHERE lastconnect < '%d'",g_sSQLTable,deletebefore);
 	SQL_TQuery(g_hStatsDb,SQL_PurgeCallback,query);
 	LogAction(client,-1,"[RankMe]: Purged rank (%s days inactivity)",arg1);
-	CPrintToChat(client, "%s %T", MSG, "Purged",client);
+	RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "Purged", client);
 	return Plugin_Handled;
 }
 
@@ -100,9 +100,15 @@ public Action CMD_TopWeapon(int client, int args){
 		}
 	} else {
 		Menu menu = CreateMenu(MenuHandler_TopWeapon_Choose);
-		menu.SetTitle("Top Weapon:");
+		char weaponTitle[128];
+	BB_FormatClient(client, weaponTitle, sizeof(weaponTitle), "%T", "TopWeaponMenuTitle", client);
+		menu.SetTitle("%s", weaponTitle);
 		for(int i=0;i<42;i++){
-			menu.AddItem(g_sWeaponsNamesGame[i],g_sWeaponsNamesFull[i]);
+			{
+				char weaponName[128];
+				BB_FormatClient(client, weaponName, sizeof(weaponName), "%T", g_sWeaponsNamesFull[i], client);
+				menu.AddItem(g_sWeaponsNamesGame[i], weaponName);
+			}
 		}
 		menu.Display(client,MENU_TIME_FOREVER);
 	}
@@ -178,7 +184,7 @@ public void SQL_TopWeaponCallback(Handle owner, Handle hndl, const char[] error,
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio), MenuHandler_TopWeapon);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 
@@ -186,13 +192,13 @@ public void SQL_TopWeaponCallback(Handle owner, Handle hndl, const char[] error,
 	{
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,17+weapon));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "Kills", SQL_FetchInt(hndl,17+weapon));
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	char temp1[20];
 	Format(temp1,sizeof(temp1),"%d;%d",weapon,0);
 	menu.AddItem(temp1,temp);
@@ -200,11 +206,11 @@ public void SQL_TopWeaponCallback(Handle owner, Handle hndl, const char[] error,
 	
 	Format(temp,sizeof(temp),"%d;%d",weapon,at+i);
 	
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	Format(temp,sizeof(temp),"%d;%d",weapon,at-i);
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 	
@@ -302,7 +308,7 @@ public void SQL_TopCallback(Handle owner, Handle hndl, const char[] error, any D
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_Top);
 	
 	float kdr;
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -320,24 +326,24 @@ public void SQL_TopCallback(Handle owner, Handle hndl, const char[] error, any D
 			deaths=SQL_FetchInt(hndl,6);
 		
 		kdr = SQL_FetchFloat(hndl,5)/deaths;
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - KDR: %.2f\n",i+at,name,SQL_FetchInt(hndl,4),kdr);
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_6", client, i+at, name, SQL_FetchInt(hndl,4), kdr);
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 	
@@ -422,7 +428,7 @@ public void SQL_TopHSCallback(Handle owner, Handle hndl, const char[] error, any
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopHS);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -434,24 +440,24 @@ public void SQL_TopHSCallback(Handle owner, Handle hndl, const char[] error, any
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Headshots",client,SQL_FetchInt(hndl,12));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "Headshots", SQL_FetchInt(hndl,12));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -537,7 +543,7 @@ public void SQL_TopKillsCallback(Handle owner, Handle hndl, const char[] error, 
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopKills);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -549,24 +555,24 @@ public void SQL_TopKillsCallback(Handle owner, Handle hndl, const char[] error, 
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Kills",client,SQL_FetchInt(hndl,5));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "Kills", SQL_FetchInt(hndl,5));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -652,7 +658,7 @@ public void SQL_TopDeathsCallback(Handle owner, Handle hndl, const char[] error,
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio), MenuHandler_TopDeaths);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -664,24 +670,24 @@ public void SQL_TopDeathsCallback(Handle owner, Handle hndl, const char[] error,
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Deaths",client,SQL_FetchInt(hndl,6));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "Deaths", SQL_FetchInt(hndl,6));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -772,7 +778,7 @@ public void SQL_TopAccCallback(Handle owner, Handle hndl, const char[] error, an
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopAcc);
 
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	int shots;
 	int hits;
@@ -790,24 +796,24 @@ public void SQL_TopAccCallback(Handle owner, Handle hndl, const char[] error, an
 		
 		hits = SQL_FetchInt(hndl,11);
 		
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %.2f%%\n",i+at,name,SQL_FetchInt(hndl,4),"Accuracy",client,IntToFloat(hits)/shots*100);
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_35", client, i+at, name, SQL_FetchInt(hndl,4), "Accuracy", IntToFloat(hits)/shots*100);
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 	
@@ -893,7 +899,7 @@ public void SQL_TopTimeCallback(Handle owner, Handle hndl, const char[] error, a
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopTime);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	int time;
@@ -913,24 +919,24 @@ public void SQL_TopTimeCallback(Handle owner, Handle hndl, const char[] error, a
 		minutes = RoundToFloor(time/60.0);
 		time = time-(minutes*60);
 		
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %d:%d:%d\n",i+at,name,SQL_FetchInt(hndl,4),hours,minutes,time);
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_34", client, i+at, name, SQL_FetchInt(hndl,4), hours, minutes, time);
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -972,14 +978,14 @@ public Action CMD_Rank(int client, int args){
 		return Plugin_Handled;
 	//LogToFile("rankme.debug.log","\"sm_rank\" command called by client %d.",client);
 	if(g_aStats[client].KILLS < g_MinimalKills){
-		CPrintToChat(client,"%s %T",MSG,"NotRanked",client,g_aStats[client].KILLS,g_MinimalKills);
+		RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "NotRanked", client, g_aStats[client].KILLS, g_MinimalKills);
 		return Plugin_Handled;
 	}
 	
 	// check cooldown
 	if(g_bShowRankAll && hRankTimer[client] != INVALID_HANDLE)
 	{
-		CPrintToChat(client,"%s %T",MSG,"RankCooldown",client);
+		RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "RankCooldown", client);
 		return Plugin_Handled;
 	}
 	
@@ -1042,14 +1048,14 @@ public void SQL_RankCallback(Handle owner, Handle hndl, const char[] error, any 
 					if(IsClientInGame(j))
 					{
 						if(client == j || !hidechat[j])	
-							CPrintToChat(j,"%s %T",MSG,"IsRankedAt",j,g_aClientName[client],i,g_TotalPlayers,g_aStats[client].SCORE,g_aStats[client].KILLS,g_aStats[client].DEATHS,g_aStats[client].ASSISTS,kills/deaths,g_aStats[client].TK,g_aStats[client].MVP);
+							RankMePrintToChat(j, "%T %T", "DefaultChatPrefix", j, "IsRankedAt", j, g_aClientName[client], i, g_TotalPlayers, g_aStats[client].SCORE, g_aStats[client].KILLS, g_aStats[client].DEATHS, g_aStats[client].ASSISTS, kills/deaths, g_aStats[client].TK, g_aStats[client].MVP);
 						if(g_fRankAllTimer > 0.0)	hRankTimer[j] = CreateTimer(g_fRankAllTimer, KillRankAllTimer, j);
 					}
 				}
 			} 
 			else 
 			{
-				CPrintToChat(client,"%s %T",MSG,"IsRankedAt",client,g_aClientName[client],i,g_TotalPlayers,g_aStats[client].SCORE,g_aStats[client].KILLS,g_aStats[client].DEATHS,g_aStats[client].ASSISTS,kills/deaths,g_aStats[client].TK,g_aStats[client].MVP);
+				RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "IsRankedAt", client, g_aClientName[client], i, g_TotalPlayers, g_aStats[client].SCORE, g_aStats[client].KILLS, g_aStats[client].DEATHS, g_aStats[client].ASSISTS, kills/deaths, g_aStats[client].TK, g_aStats[client].MVP);
 			}
 			break;
 		}
@@ -1072,9 +1078,9 @@ public Action CMD_Session(int client, int args){
 	Menu panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 	char text[512];
 	char temp[255];
-	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "BasicStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %i\n","Points",client,g_aSession[client].SCORE);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_29", client, "Points", g_aSession[client].SCORE);
 	StrCat(text,sizeof(text),temp);
 	int ikills = g_aSession[client].KILLS;
 	int ideaths=g_aSession[client].DEATHS;
@@ -1100,67 +1106,67 @@ public Action CMD_Session(int client, int args){
 	int idamage = g_aSession[client].DAMAGE;
 	float damage = IntToFloat(idamage);
 	
-	Format(temp,sizeof(temp),"%T   KDR: %.2f\n","KillsDeathsAssists",client,ikills,ideaths,g_aSession[client].ASSISTS,kills/deaths);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_22", client, "KillsDeathsAssists", ikills, ideaths, g_aSession[client].ASSISTS, kills/deaths);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistTeams",client,g_aSession[client].ATK);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistTeams", g_aSession[client].ATK);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %d\n","Headshots", client, g_aSession[client].HEADSHOTS,"Suicides",client,g_aSession[client].SUICIDES,"TKs",client,g_aSession[client].TK);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_13", client, "Headshots", g_aSession[client].HEADSHOTS, "Suicides", g_aSession[client].SUICIDES, "TKs", g_aSession[client].TK);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %.2f   %T: %.2f\n","Damage", client, idamage,"KPR", client, kills/rounds,"DPR", client, damage/rounds);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_27", client, "Damage", idamage, "KPR", kills/rounds, "DPR", damage/rounds);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  \n","First Bloods", client, g_aSession[client].FB);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_19", client, "First Bloods", g_aSession[client].FB);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  %T: %d\n","Thru Smokes", client, g_aSession[client].SMOKE, "Flashed Kills", client, g_aSession[client].BLIND);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_18", client, "Thru Smokes", g_aSession[client].SMOKE, "Flashed Kills", g_aSession[client].BLIND);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistFlashes", client, g_aSession[client].AF);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistFlashes", g_aSession[client].AF);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistTeamFlashes", client, g_aSession[client].ATF);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistTeamFlashes", g_aSession[client].ATF);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","Wallbangs", client, g_aSession[client].WALL);
-	StrCat(text,sizeof(text),temp);
-	panel.AddItem("",text);
-	text="";
-
-	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
-	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d/%d   %T: %d/%d   %T: %d\n","TRWins",client,g_aSession[client].TR_WIN,g_aSession[client].ROUNDS_TR,"CTWins",client,g_aSession[client].CT_WIN,g_aSession[client].ROUNDS_CT,"MVPs",client,g_aSession[client].MVP);
-	StrCat(text,sizeof(text),temp);
-	panel.AddItem("",text);
-	text="";
-	
-	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
-	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %.2f%%\n","Shots",client,shots,"Hits",client,g_aSession[client].HITS,"Accuracy",client,IntToFloat(g_aSession[client].HITS)/shots*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "Wallbangs", g_aSession[client].WALL);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 
-	Format(temp,sizeof(temp),"- %T\n","NoScopeStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "RoundStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %.2fm \n","NoScopes",client,g_aSession[client].NS, "Farthest", client, IntToFloat(g_aSession[client].NSD)/100 );
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_33", client, "TRWins", g_aSession[client].TR_WIN, g_aSession[client].ROUNDS_TR, "CTWins", g_aSession[client].CT_WIN, g_aSession[client].ROUNDS_CT, "MVPs", g_aSession[client].MVP);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 	
-	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "HitStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,g_aSession[client].C4_PLANTED,"ExplodedBombs",client,g_aSession[client].C4_EXPLODED,"DefusedBombs",client,g_aSession[client].C4_DEFUSED);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_15", client, "Shots", shots, "Hits", g_aSession[client].HITS, "Accuracy", IntToFloat(g_aSession[client].HITS)/shots*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d","RescuedHostages",client,g_aSession[client].HOSTAGES_RESCUED);
+	panel.AddItem("",text);
+	text="";
+
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "NoScopeStats");
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_14", client, "NoScopes", g_aSession[client].NS, "Farthest", IntToFloat(g_aSession[client].NSD)/100);
+	StrCat(text,sizeof(text),temp);
+	panel.AddItem("",text);
+	text="";
+	
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "BombHostagesStats");
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_13", client, "PlantedBombs", g_aSession[client].C4_PLANTED, "ExplodedBombs", g_aSession[client].C4_EXPLODED, "DefusedBombs", g_aSession[client].C4_DEFUSED);
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_32", client, "RescuedHostages", g_aSession[client].HOSTAGES_RESCUED);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 	
 	if(g_bVipEnabled){
-		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "VIPStats");
 		StrCat(text,sizeof(text),temp);
-		Format(temp,sizeof(temp),"%T: %d/%d   %T: %d\n","VIPEscapes",client,g_aSession[client].VIP_ESCAPED,g_aSession[client].VIP_PLAYED,"VIPsKilled",client,g_aSession[client].VIP_KILLED);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_11", client, "VIPEscapes", g_aSession[client].VIP_ESCAPED, g_aSession[client].VIP_PLAYED, "VIPsKilled", g_aSession[client].VIP_KILLED);
 		StrCat(text,sizeof(text),temp);
 		panel.AddItem("",text);
 		text="";
 	}
 	
-	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "OtherStats");
 	StrCat(text,sizeof(text),temp);
 	int time = GetTime()-g_aSession[client].CONNECTED;
 	int hours = RoundToFloor(time/3600.0);
@@ -1169,7 +1175,7 @@ public Action CMD_Session(int client, int args){
 	int minutes = RoundToFloor(time/60.0);
 	time = time-(minutes*60);
 	
-	Format(temp,sizeof(temp),"%T","TimeConnected",client,hours,minutes,time);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TimeConnected", client, hours, minutes, time);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
@@ -1193,21 +1199,21 @@ public Action CMD_HitBox(int client, int args){
 	else
 		hits = IntToFloat(ihits);
 	
-	Format(temp,sizeof(temp),"HitBox:\n");
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "HitBoxTitle", client);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)\n","Head",client,g_aHitBox[client].HEAD,(g_aHitBox[client].HEAD/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_31", client, "Head", g_aHitBox[client].HEAD, (g_aHitBox[client].HEAD/hits)*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)\n","Chest",client,g_aHitBox[client].CHEST,(g_aHitBox[client].CHEST/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_31", client, "Chest", g_aHitBox[client].CHEST, (g_aHitBox[client].CHEST/hits)*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)\n","Stomach",client,g_aHitBox[client].STOMACH,(g_aHitBox[client].STOMACH/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_31", client, "Stomach", g_aHitBox[client].STOMACH, (g_aHitBox[client].STOMACH/hits)*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)\n","LeftArm",client,g_aHitBox[client].LEFT_ARM,(g_aHitBox[client].LEFT_ARM/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_31", client, "LeftArm", g_aHitBox[client].LEFT_ARM, (g_aHitBox[client].LEFT_ARM/hits)*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)\n","RightArm",client,g_aHitBox[client].RIGHT_ARM,(g_aHitBox[client].RIGHT_ARM/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_31", client, "RightArm", g_aHitBox[client].RIGHT_ARM, (g_aHitBox[client].RIGHT_ARM/hits)*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)\n","LeftLeg",client,g_aHitBox[client].LEFT_LEG,(g_aHitBox[client].LEFT_LEG/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_31", client, "LeftLeg", g_aHitBox[client].LEFT_LEG, (g_aHitBox[client].LEFT_LEG/hits)*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d (%.2f%%)","RightLeg",client,g_aHitBox[client].RIGHT_LEG,(g_aHitBox[client].RIGHT_LEG/hits)*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_30", client, "RightLeg", g_aHitBox[client].RIGHT_LEG, (g_aHitBox[client].RIGHT_LEG/hits)*100);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 
@@ -1260,10 +1266,10 @@ public Action CMD_WeaponMe(int client, int args){
 		hits = IntToFloat(ikills);
 
 	char temp[255];
-	Format(temp,sizeof(temp),"%T","WeaponsStats",client);
-	panel.SetTitle(temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "WeaponsStats", client);
+	panel.SetTitle("%s", temp);
 	for(int i=0;i<42;i++){
-		Format(temp,sizeof(temp),"%s: %d (%.2f%%)",g_sWeaponsNamesFull[weapons_b[i][0]],weapons_b[i][1],(weapons_b[i][1]/hits)*100);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_30", client, g_sWeaponsNamesFull[weapons_b[i][0]], weapons_b[i][1], (weapons_b[i][1]/hits)*100);
 		panel.AddItem(temp,temp,ITEMDRAW_DISABLED);
 	}
 	
@@ -1348,7 +1354,7 @@ public Action CMD_StatsMe2(int client, int args){
 		
 		CloseHandle(hDatapack);
 		
-		CPrintToChat(client,"%s %T", MSG,"UsageStatsme2",client);
+		RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "UsageStatsme2", client);
 		
 		return Plugin_Handled;
 	}
@@ -1432,7 +1438,7 @@ public void SQL_StatsMe2Callback(Handle owner, Handle hndl, const char[] error, 
 	
 	Menu panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 	
-	panel.SetTitle(Name_receive);
+	panel.SetTitle("%s", Name_receive);
 	
 	char text[512];
 	int ikills = SQL_FetchInt(hndl,5);
@@ -1458,74 +1464,74 @@ public void SQL_StatsMe2Callback(Handle owner, Handle hndl, const char[] error, 
 	
 	int hits = SQL_FetchInt(hndl,11);
 	char temp[255];
-	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "BasicStats");
 	StrCat(text,sizeof(text),temp);
 	if(i == 0)
-		Format(temp,sizeof(temp),"%T: %i\n","Points",client,SQL_FetchInt(hndl,4));
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_29", client, "Points", SQL_FetchInt(hndl,4));
 	else
-		Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i\n",i,g_TotalPlayers,"Points",client,SQL_FetchInt(hndl,4));
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_28", client, i, g_TotalPlayers, "Points", SQL_FetchInt(hndl,4));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T   KDR: %.2f\n","KillsDeathsAssists",client,ikills,ideaths,SQL_FetchInt(hndl,7),kills/deaths);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_22", client, "KillsDeathsAssists", ikills, ideaths, SQL_FetchInt(hndl,7), kills/deaths);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistTeams",client,SQL_FetchInt(hndl,87));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistTeams", SQL_FetchInt(hndl,87));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %d\n","Headshots", client, SQL_FetchInt(hndl,12),"Suicides",client,SQL_FetchInt(hndl,8),"TKs",client,SQL_FetchInt(hndl,9));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_13", client, "Headshots", SQL_FetchInt(hndl,12), "Suicides", SQL_FetchInt(hndl,8), "TKs", SQL_FetchInt(hndl,9));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %.2f   %T: %.2f\n","Damage", client, idamage,"KPR", client, kills/rounds, "DPR", client, damage/rounds);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_27", client, "Damage", idamage, "KPR", kills/rounds, "DPR", damage/rounds);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  \n","First Bloods", client, SQL_FetchInt(hndl, 80));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_19", client, "First Bloods", SQL_FetchInt(hndl, 80));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  %T: %d\n","Thru Smokes", client, SQL_FetchInt(hndl, 83), "Flashed Kills", client, SQL_FetchInt(hndl, 84));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_18", client, "Thru Smokes", SQL_FetchInt(hndl, 83), "Flashed Kills", SQL_FetchInt(hndl, 84));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistFlashes", client, SQL_FetchInt(hndl, 85));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistFlashes", SQL_FetchInt(hndl, 85));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistTeamFlashes", client, SQL_FetchInt(hndl, 86));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistTeamFlashes", SQL_FetchInt(hndl, 86));
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","Wallbangs", client, SQL_FetchInt(hndl, 88));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "Wallbangs", SQL_FetchInt(hndl, 88));
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 
-	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "RoundStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d/%d   %T: %d/%d   %T: %d\n%T: %d   %T: %d   %T: %d\n","TRWins",client,SQL_FetchInt(hndl,70),SQL_FetchInt(hndl,14),"CTWins",client,SQL_FetchInt(hndl,69),SQL_FetchInt(hndl,15),"MVPs",client,SQL_FetchInt(hndl,75), "MatchWins", client, SQL_FetchInt(hndl, 77), "MatchDraws", client, SQL_FetchInt(hndl, 78), "MatchLosses", client, SQL_FetchInt(hndl, 79));
-	StrCat(text,sizeof(text),temp);
-	panel.AddItem("",text);
-	text="";
-	
-	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
-	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %.2f%% \n","Shots",client,shots,"Hits",client,hits,"Accuracy",client,IntToFloat(hits)/shots*100);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_26", client, "TRWins", SQL_FetchInt(hndl,70), SQL_FetchInt(hndl,14), "CTWins", SQL_FetchInt(hndl,69), SQL_FetchInt(hndl,15), "MVPs", SQL_FetchInt(hndl,75), "MatchWins", SQL_FetchInt(hndl, 77), "MatchDraws", SQL_FetchInt(hndl, 78), "MatchLosses", SQL_FetchInt(hndl, 79));
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 	
-	Format(temp,sizeof(temp),"- %T\n","NoScopeStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "HitStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %.2fm \n","NoScopes",client,SQL_FetchInt(hndl,81), "Farthest", client, IntToFloat(SQL_FetchInt(hndl,82))/100 );
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_25", client, "Shots", shots, "Hits", hits, "Accuracy", IntToFloat(hits)/shots*100);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 	
-	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "NoScopeStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,SQL_FetchInt(hndl,66),"ExplodedBombs",client,SQL_FetchInt(hndl,67),"DefusedBombs",client,SQL_FetchInt(hndl,68));
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_14", client, "NoScopes", SQL_FetchInt(hndl,81), "Farthest", IntToFloat(SQL_FetchInt(hndl,82))/100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","RescuedHostages",client,SQL_FetchInt(hndl,71));
+	panel.AddItem("",text);
+	text="";
+	
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "BombHostagesStats");
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_13", client, "PlantedBombs", SQL_FetchInt(hndl,66), "ExplodedBombs", SQL_FetchInt(hndl,67), "DefusedBombs", SQL_FetchInt(hndl,68));
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "RescuedHostages", SQL_FetchInt(hndl,71));
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 				
 	if(g_bVipEnabled){
-		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "VIPStats");
 		StrCat(text,sizeof(text),temp);
-		Format(temp,sizeof(temp),"%T: %d/%d   %T: %d\n","VIPEscapes",client,SQL_FetchInt(hndl,73),SQL_FetchInt(hndl,74),"VIPsKilled",client,SQL_FetchInt(hndl,72));
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_11", client, "VIPEscapes", SQL_FetchInt(hndl,73), SQL_FetchInt(hndl,74), "VIPsKilled", SQL_FetchInt(hndl,72));
 		StrCat(text,sizeof(text),temp);
 		panel.AddItem("",text);
 		text="";
 	}
 	
-	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "OtherStats");
 	StrCat(text,sizeof(text),temp);
 	
 	int time = SQL_FetchInt(hndl,13);
@@ -1538,7 +1544,7 @@ public void SQL_StatsMe2Callback(Handle owner, Handle hndl, const char[] error, 
 	int minutes = RoundToFloor(time/60.0);
 	time = time-(minutes*60);
 	
-	Format(temp,sizeof(temp),"%T","TimeConnected",client,hours,minutes,time);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TimeConnected", client, hours, minutes, time);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
@@ -1603,74 +1609,74 @@ public void SQL_StatsMeCallback(Handle owner, Handle hndl, const char[] error, a
 	float damage = IntToFloat(idamage);
 
 	char temp[255];
-	Format(temp,sizeof(temp),"- %T\n","BasicStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "BasicStats");
 	StrCat(text,sizeof(text),temp);
 	if(i == 0)
-		Format(temp,sizeof(temp),"%T: %i [%i]\n","Points",client,g_aStats[client].SCORE,g_aSession[client].SCORE);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_24", client, "Points", g_aStats[client].SCORE, g_aSession[client].SCORE);
 	else
-		Format(temp,sizeof(temp),"Rank: %i/%i   %T: %i [%i]\n",i,SQL_GetRowCount(hndl),"Points",client,g_aStats[client].SCORE,g_aSession[client].SCORE);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_23", client, i, SQL_GetRowCount(hndl), "Points", g_aStats[client].SCORE, g_aSession[client].SCORE);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T   KDR: %.2f\n","KillsDeathsAssists",client,ikills,ideaths,g_aStats[client].ASSISTS,kills/deaths);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_22", client, "KillsDeathsAssists", ikills, ideaths, g_aStats[client].ASSISTS, kills/deaths);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  \n","AssistTeams", client, g_aStats[client].ATK);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_19", client, "AssistTeams", g_aStats[client].ATK);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  %T: %d  %T: %d\n","Headshots",client,g_aStats[client].HEADSHOTS,"Suicides",client,g_aStats[client].SUICIDES,"TKs",client,g_aStats[client].TK);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_21", client, "Headshots", g_aStats[client].HEADSHOTS, "Suicides", g_aStats[client].SUICIDES, "TKs", g_aStats[client].TK);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  %T: %.2f   %T: %.2f\n","Damage", client, idamage,"KPR", client, kills/rounds, "DPR", client, damage/rounds);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_20", client, "Damage", idamage, "KPR", kills/rounds, "DPR", damage/rounds);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  \n","First Bloods", client, g_aStats[client].FB);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_19", client, "First Bloods", g_aStats[client].FB);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d  %T: %d\n","Thru Smokes", client, g_aStats[client].SMOKE, "Flashed Kills", client, g_aStats[client].BLIND);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_18", client, "Thru Smokes", g_aStats[client].SMOKE, "Flashed Kills", g_aStats[client].BLIND);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistFlashes", client, g_aStats[client].AF);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistFlashes", g_aStats[client].AF);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","AssistTeamFlashes", client, g_aStats[client].ATF);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "AssistTeamFlashes", g_aStats[client].ATF);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d\n","Wallbangs", client, g_aStats[client].WALL);
-	StrCat(text,sizeof(text),temp);
-	panel.AddItem("",text);
-	text="";
-	
-	Format(temp,sizeof(temp),"- %T\n","RoundStats",client);
-	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d/%d   %T: %d/%d   %T: %d\n%T: %d   %T: %d   %T: %d \n","TRWins",client,g_aStats[client].TR_WIN,g_aStats[client].ROUNDS_TR,"CTWins",client,g_aStats[client].CT_WIN,g_aStats[client].ROUNDS_CT,"MVPs",client,g_aStats[client].MVP, "MatchWins", client, g_aStats[client].MATCH_WIN, "MatchDraws", client, g_aStats[client].MATCH_DRAW, "MatchLosses", client, g_aStats[client].MATCH_LOSE);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_17", client, "Wallbangs", g_aStats[client].WALL);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 	
-	Format(temp,sizeof(temp),"- %T\n","HitStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "RoundStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %.2f%%\n","Shots",client,shots,"Hits",client,g_aStats[client].HITS,"Accuracy",client,IntToFloat(g_aStats[client].HITS)/shots*100);
-	StrCat(text,sizeof(text),temp);
-	panel.AddItem("",text);
-	text="";
-	
-	Format(temp,sizeof(temp),"- %T\n","NoScopeStats",client);
-	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %.2fm \n","NoScopes",client,g_aStats[client].NS, "Farthest", client, IntToFloat(g_aStats[client].NSD)/100 );
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_16", client, "TRWins", g_aStats[client].TR_WIN, g_aStats[client].ROUNDS_TR, "CTWins", g_aStats[client].CT_WIN, g_aStats[client].ROUNDS_CT, "MVPs", g_aStats[client].MVP, "MatchWins", g_aStats[client].MATCH_WIN, "MatchDraws", g_aStats[client].MATCH_DRAW, "MatchLosses", g_aStats[client].MATCH_LOSE);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 	
-	Format(temp,sizeof(temp),"- %T\n","BombHostagesStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "HitStats");
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d   %T: %d   %T: %d\n","PlantedBombs",client,g_aStats[client].C4_PLANTED,"ExplodedBombs",client,g_aStats[client].C4_EXPLODED,"DefusedBombs",client,g_aStats[client].C4_DEFUSED);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_15", client, "Shots", shots, "Hits", g_aStats[client].HITS, "Accuracy", IntToFloat(g_aStats[client].HITS)/shots*100);
 	StrCat(text,sizeof(text),temp);
-	Format(temp,sizeof(temp),"%T: %d \n","RescuedHostages",client,g_aStats[client].HOSTAGES_RESCUED);
+	panel.AddItem("",text);
+	text="";
+	
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "NoScopeStats");
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_14", client, "NoScopes", g_aStats[client].NS, "Farthest", IntToFloat(g_aStats[client].NSD)/100);
+	StrCat(text,sizeof(text),temp);
+	panel.AddItem("",text);
+	text="";
+	
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "BombHostagesStats");
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_13", client, "PlantedBombs", g_aStats[client].C4_PLANTED, "ExplodedBombs", g_aStats[client].C4_EXPLODED, "DefusedBombs", g_aStats[client].C4_DEFUSED);
+	StrCat(text,sizeof(text),temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_12", client, "RescuedHostages", g_aStats[client].HOSTAGES_RESCUED);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
 				
 	if(g_bVipEnabled){
-		Format(temp,sizeof(temp),"- %T\n","VIPStats",client);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "VIPStats");
 		StrCat(text,sizeof(text),temp);
-		Format(temp,sizeof(temp),"%T: %d/%d   %T: %d\n","VIPEscapes",client,g_aStats[client].VIP_ESCAPED,g_aStats[client].VIP_PLAYED,"VIPsKilled",client,g_aStats[client].VIP_KILLED);
+		BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_11", client, "VIPEscapes", g_aStats[client].VIP_ESCAPED, g_aStats[client].VIP_PLAYED, "VIPsKilled", g_aStats[client].VIP_KILLED);
 		StrCat(text,sizeof(text),temp);
 		panel.AddItem("",text);
 		text="";
 	}
 	
-	Format(temp,sizeof(temp),"- %T\n","OtherStats",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_10", client, "OtherStats");
 	StrCat(text,sizeof(text),temp);
 	int time = g_aStats[client].CONNECTED + GetTime()-g_aSession[client].CONNECTED;
 	int hours = RoundToFloor(time/3600.0);
@@ -1679,7 +1685,7 @@ public void SQL_StatsMeCallback(Handle owner, Handle hndl, const char[] error, a
 	int minutes = RoundToFloor(time/60.0);
 	time = time-(minutes*60);
 	
-	Format(temp,sizeof(temp),"%T","TimeConnected",client,hours,minutes,time);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TimeConnected", client, hours, minutes, time);
 	StrCat(text,sizeof(text),temp);
 	panel.AddItem("",text);
 	text="";
@@ -1766,7 +1772,7 @@ public void SQL_NextCallback(Handle owner, Handle hndl, const char[] error, any 
 	Menu panel = CreateMenuEx(_,MenuHandler_DoNothing,MENU_ACTIONS_ALL);
 	char text[500];
 	char temp[255];
-	Format(temp,sizeof(temp),"%T\n","Next9Players",client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_9", client, "Next9Players");
 	StrCat(text,sizeof(text),temp);
 	
 	int max;
@@ -1777,7 +1783,7 @@ public void SQL_NextCallback(Handle owner, Handle hndl, const char[] error, any 
 	}
 	for(int b=0;b<=max;b++){
 		if(!StrEqual(next_players_name[b],"",false)){
-			Format(temp,sizeof(temp),"- %s (%d) => +%d\n",next_players_name[b],next_players_score[b],next_players_score[b]-g_aStats[client].SCORE);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_8", client, next_players_name[b], next_players_score[b], next_players_score[b]-g_aStats[client].SCORE);
 			StrCat(text,500,temp);
 		}
 		
@@ -1807,85 +1813,85 @@ public Action CMD_RankMe(int client, int args){
 	SetMenuExitButton(hMenu,true);
 	
 	char temp[512];
-	Format(temp, sizeof(temp), "%T", "RankMe Menu", client);
-	hMenu.SetTitle(temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "RankMe Menu", client);
+	hMenu.SetTitle("%s", temp);
 	
-	Format(temp, sizeof(temp), "%T", "My Rank", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "My Rank", client);
 	hMenu.AddItem("rank", temp);
 	
-	Format(temp, sizeof(temp), "%T", "My Stats", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "My Stats", client);
 	hMenu.AddItem("statsme", temp);
 
-	Format(temp, sizeof(temp), "%T", "Session", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "Session", client);
 	hMenu.AddItem("session", temp);
 	
-	Format(temp, sizeof(temp), "%T", "Show Other Players Stats", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "Show Other Players Stats", client);
 	hMenu.AddItem("statsme2", temp);
 	
-	Format(temp, sizeof(temp), "%T", "My HitBox Stats", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "My HitBox Stats", client);
 	hMenu.AddItem("hitboxme", temp);
 	
-	Format(temp, sizeof(temp), "%T", "My Weapon Stats", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "My Weapon Stats", client);
 	hMenu.AddItem("weaponme", temp);
 	
-	Format(temp, sizeof(temp), "%T", "Show Players Above Me", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "Show Players Above Me", client);
 	hMenu.AddItem("next", temp);
 	
-	Format(temp, sizeof(temp), "%T", "TOP 10", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP 10", client);
 	hMenu.AddItem("top10", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Kills", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Kills", client);
 	hMenu.AddItem("topkills", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Deaths", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Deaths", client);
 	hMenu.AddItem("topdeaths", temp);
 	
-	Format(temp, sizeof(temp), "%T", "TOP Assists", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Assists", client);
 	hMenu.AddItem("topassists", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP HS", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP HS", client);
 	hMenu.AddItem("tophs", temp);
 	
-	Format(temp, sizeof(temp), "%T", "TOP Weapon", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Weapon", client);
 	hMenu.AddItem("topweapon", temp);
 	
-	Format(temp, sizeof(temp), "%T", "TOP TK", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP TK", client);
 	hMenu.AddItem("toptk", temp);
 	
-	Format(temp, sizeof(temp), "%T", "TOP MVP", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP MVP", client);
 	hMenu.AddItem("topmvp", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Damage", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Damage", client);
 	hMenu.AddItem("topdamage", temp);
 	
-	Format(temp, sizeof(temp), "%T", "TOP Accuracy", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Accuracy", client);
 	hMenu.AddItem("topacc", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Time Connected", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Time Connected", client);
 	hMenu.AddItem("toptime", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP KDR", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP KDR", client);
 	hMenu.AddItem("topkdr", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Points", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Points", client);
 	hMenu.AddItem("toppoints", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP First Blood", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP First Blood", client);
 	hMenu.AddItem("topfb", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Noscope", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Noscope", client);
 	hMenu.AddItem("topns", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Noscope Distance", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Noscope Distance", client);
 	hMenu.AddItem("topnsd", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Flashed Kill", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Flashed Kill", client);
 	hMenu.AddItem("topfk", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Thru Smoke", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Thru Smoke", client);
 	hMenu.AddItem("topthrusmoke", temp);
 
-	Format(temp, sizeof(temp), "%T", "TOP Wallbang", client);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "TOP Wallbang", client);
 	hMenu.AddItem("topwall", temp);
 	
 	hMenu.Display(client,MENU_TIME_FOREVER);
@@ -2073,7 +2079,7 @@ public void SQL_TopAssistsCallback(Handle owner, Handle hndl, const char[] error
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopAssists);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2083,24 +2089,24 @@ public void SQL_TopAssistsCallback(Handle owner, Handle hndl, const char[] error
 		
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Assists",client,SQL_FetchInt(hndl,7));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "Assists", SQL_FetchInt(hndl,7));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -2187,7 +2193,7 @@ public void SQL_TopTKCallback(Handle owner, Handle hndl, const char[] error, any
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopTK);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2199,24 +2205,24 @@ public void SQL_TopTKCallback(Handle owner, Handle hndl, const char[] error, any
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"TKs",client,SQL_FetchInt(hndl,9));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "TKs", SQL_FetchInt(hndl,9));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -2303,7 +2309,7 @@ public void SQL_TopMVPCallback(Handle owner, Handle hndl, const char[] error, an
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopMVP);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2315,24 +2321,24 @@ public void SQL_TopMVPCallback(Handle owner, Handle hndl, const char[] error, an
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"MVPs",client,SQL_FetchInt(hndl,75));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "MVPs", SQL_FetchInt(hndl,75));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -2419,7 +2425,7 @@ public void SQL_TopDamageCallback(Handle owner, Handle hndl, const char[] error,
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopDamage);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2431,24 +2437,24 @@ public void SQL_TopDamageCallback(Handle owner, Handle hndl, const char[] error,
 			
 		
 	
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - %T: %d\n",i+at,name,SQL_FetchInt(hndl,4),"Damage",client,SQL_FetchInt(hndl,74));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_7", client, i+at, name, SQL_FetchInt(hndl,4), "Damage", SQL_FetchInt(hndl,74));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -2539,7 +2545,7 @@ public void SQL_TopKDRCallback(Handle owner, Handle hndl, const char[] error, an
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopKDR);
 	
 	float kdr;
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2557,24 +2563,24 @@ public void SQL_TopKDRCallback(Handle owner, Handle hndl, const char[] error, an
 			deaths=SQL_FetchInt(hndl,6);
 		
 		kdr = SQL_FetchFloat(hndl,5)/deaths;
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - KDR: %.2f\n",i+at,name,SQL_FetchInt(hndl,4),kdr);
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_6", client, i+at, name, SQL_FetchInt(hndl,4), kdr);
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 	
@@ -2661,7 +2667,7 @@ public void SQL_TopPointsCallback(Handle owner, Handle hndl, const char[] error,
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopPoints);
 	
 	float kdr;
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2679,24 +2685,24 @@ public void SQL_TopPointsCallback(Handle owner, Handle hndl, const char[] error,
 			deaths=SQL_FetchInt(hndl,6);
 		
 		kdr = SQL_FetchFloat(hndl,5)/deaths;
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) - KDR: %.2f\n",i+at,name,SQL_FetchInt(hndl,4),kdr);
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_6", client, i+at, name, SQL_FetchInt(hndl,4), kdr);
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 	
@@ -2783,7 +2789,7 @@ public void SQL_TopFBCallback(Handle owner, Handle hndl, const char[] error, any
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopFB);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2791,23 +2797,23 @@ public void SQL_TopFBCallback(Handle owner, Handle hndl, const char[] error, any
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) : %d\n",i+at,name,SQL_FetchInt(hndl,4),SQL_FetchInt(hndl,80));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_3", client, i+at, name, SQL_FetchInt(hndl,4), SQL_FetchInt(hndl,80));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -2894,7 +2900,7 @@ public void SQL_TopNSCallback(Handle owner, Handle hndl, const char[] error, any
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopNS);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -2902,23 +2908,23 @@ public void SQL_TopNSCallback(Handle owner, Handle hndl, const char[] error, any
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) : %d\n",i+at,name,SQL_FetchInt(hndl,4),SQL_FetchInt(hndl,81));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_3", client, i+at, name, SQL_FetchInt(hndl,4), SQL_FetchInt(hndl,81));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -3005,7 +3011,7 @@ public void SQL_TopNSDCallback(Handle owner, Handle hndl, const char[] error, an
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopNSD);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -3014,23 +3020,23 @@ public void SQL_TopNSDCallback(Handle owner, Handle hndl, const char[] error, an
 		SQL_FetchString(hndl,2,name,sizeof(name));
 
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) : %.2fm\n",i+at,name,SQL_FetchInt(hndl,4), IntToFloat(SQL_FetchInt(hndl,82))/100);
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_5", client, i+at, name, SQL_FetchInt(hndl,4), IntToFloat(SQL_FetchInt(hndl,82))/100);
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -3117,7 +3123,7 @@ public void SQL_TopBlindCallback(Handle owner, Handle hndl, const char[] error, 
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopBlind);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -3125,23 +3131,23 @@ public void SQL_TopBlindCallback(Handle owner, Handle hndl, const char[] error, 
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) : %d\n",i+at,name,SQL_FetchInt(hndl,4),SQL_FetchInt(hndl,84));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_3", client, i+at, name, SQL_FetchInt(hndl,4), SQL_FetchInt(hndl,84));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -3228,7 +3234,7 @@ public void SQL_TopSmokeCallback(Handle owner, Handle hndl, const char[] error, 
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopSmoke);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -3236,23 +3242,23 @@ public void SQL_TopSmokeCallback(Handle owner, Handle hndl, const char[] error, 
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) : %d\n",i+at,name,SQL_FetchInt(hndl,4),SQL_FetchInt(hndl,83));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_3", client, i+at, name, SQL_FetchInt(hndl,4), SQL_FetchInt(hndl,83));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -3339,7 +3345,7 @@ public void SQL_TopWallCallback(Handle owner, Handle hndl, const char[] error, a
 	
 	Menu menu = CreateMenuEx(GetMenuStyleHandle(MenuStyle_Radio),MenuHandler_TopWall);
 	
-	Format(temp,sizeof(temp)," %T\n","Showing",client,at+1,at+10,g_TotalPlayers);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_4", client, "Showing", at+1, at+10, g_TotalPlayers);
 	menu.SetTitle("");
 	char sBuffer[200];
 	while(SQL_HasResultSet(hndl) && SQL_FetchRow(hndl))
@@ -3347,23 +3353,23 @@ public void SQL_TopWallCallback(Handle owner, Handle hndl, const char[] error, a
 		i++;
 		SQL_FetchString(hndl,2,name,sizeof(name));
 			
-		Format(sBuffer,sizeof(sBuffer),"%d - %s (%d) : %d\n",i+at,name,SQL_FetchInt(hndl,4),SQL_FetchInt(hndl,88));
+		BB_FormatClient(client, sBuffer, sizeof(sBuffer), "%T", "StatsDisplayRow_3", client, i+at, name, SQL_FetchInt(hndl,4), SQL_FetchInt(hndl,88));
 		
 		if(strlen(temp)+strlen(sBuffer) < MAX_LENGTH_MENU){
-			Format(temp,sizeof(temp),"%s%s",temp,sBuffer);
+			BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_2", client, temp, sBuffer);
 			sBuffer="\0";
 		}
 	} 
-	Format(temp,sizeof(temp),"%s\n",temp);
+	BB_FormatClient(client, temp, sizeof(temp), "%T", "StatsDisplayRow_1", client, temp);
 	menu.AddItem(temp,temp);
 	
 	IntToString(at+i,temp,sizeof(temp));
 	char temp1[20];
-	Format(temp1,sizeof(temp1),"%T","Next",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Next", client);
 	if(i>9)
 		menu.AddItem(temp,temp1);
 	IntToString(at-i,temp,sizeof(temp));
-	Format(temp1,sizeof(temp1),"%T","Back",client);
+	BB_FormatClient(client, temp1, sizeof(temp1), "%T", "Back", client);
 	if(at+i-1 >9)
 		menu.AddItem(temp,temp1);
 
@@ -3579,12 +3585,12 @@ public Action OnSayText(int client, const char[] command, int argc)
 public Action CMD_HideChat(int client, int args){
 	if(!hidechat[client]){
 		SetClientCookie(client, hidechatcookie, "1");
-		CPrintToChat(client, "%s %T", MSG, "Hide Rankme Chat", client);
+		RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "Hide Rankme Chat", client);
 		hidechat[client] = true;
 	}
 	else if(hidechat[client]){
 		SetClientCookie(client, hidechatcookie, "0");
-		CPrintToChat(client, "%s %T", MSG, "Show Rankme Chat", client);
+		RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "Show Rankme Chat", client);
 		hidechat[client] = false;
 	}
 

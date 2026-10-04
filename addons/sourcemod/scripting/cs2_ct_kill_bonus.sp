@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <cstrike>
+#include <bb_client_translations>
 
 #define PLUGIN_VERSION "1.0.0"
 #define DEFAULT_MAX_MONEY 16000
@@ -29,7 +30,6 @@ ConVar g_cvBonusAmount;
 ConVar g_cvMaxMoney;
 
 bool g_bRoundActive;
-bool g_bClientChinese[MAXPLAYERS + 1];
 
 public Plugin myinfo =
 {
@@ -48,6 +48,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int errMax)
 
 public void OnPluginStart()
 {
+	BB_LoadClientTranslations("cs2_ct_kill_bonus.phrases");
 	CreateConVar("sm_cs2_ct_kill_bonus_version", PLUGIN_VERSION, "CS2 CT kill bonus version", FCVAR_NOTIFY | FCVAR_DONTRECORD);
 	g_cvEnabled = CreateConVar("sm_cs2_ct_kill_bonus_enabled", "1", "Enable CS2 CT team kill bonus.", _, true, 0.0, true, 1.0);
 	g_cvBonusAmount = CreateConVar("sm_cs2_ct_kill_bonus_amount", "50", "Money each CT receives when a CT kills a Terrorist.", _, true, 0.0);
@@ -59,21 +60,11 @@ public void OnPluginStart()
 	HookEvent("bomb_exploded", Event_BombExploded, EventHookMode_PostNoCopy);
 	HookEvent("player_death", Event_PlayerDeath);
 
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		RefreshClientLanguage(client);
-	}
 }
 
-public void OnClientPutInServer(int client)
-{
-	RefreshClientLanguage(client);
-}
 
-public void OnClientDisconnect(int client)
-{
-	g_bClientChinese[client] = false;
-}
+
+
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
@@ -137,59 +128,22 @@ public void Frame_GiveCTKillBonus(any data)
 	}
 }
 
-void RefreshClientLanguage(int client)
-{
-	if (!IsValidClient(client) || IsFakeClient(client))
-		return;
 
-	g_bClientChinese[client] = false;
-	QueryClientConVar(client, "cl_language", OnClientLanguageQueried);
-}
 
-public void OnClientLanguageQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue)
-{
-	if (!IsValidClient(client) || IsFakeClient(client))
-		return;
 
-	g_bClientChinese[client] = result == ConVarQuery_Okay && cvarValue[0] != '\0' && IsChineseLanguageValue(cvarValue);
-}
 
-bool IsChineseLanguageValue(const char[] value)
-{
-	return StrEqual(value, "schinese", false)
-		|| StrEqual(value, "tchinese", false)
-		|| StrEqual(value, "chi", false)
-		|| StrEqual(value, "zho", false)
-		|| StrEqual(value, "zh", false)
-		|| StrEqual(value, "zh-hans", false)
-		|| StrEqual(value, "zh_hans", false)
-		|| StrEqual(value, "zh-cn", false)
-		|| StrEqual(value, "zh_cn", false)
-		|| StrEqual(value, "zh-sg", false)
-		|| StrEqual(value, "zh_sg", false)
-		|| StrEqual(value, "zh-hant", false)
-		|| StrEqual(value, "zh_hant", false)
-		|| StrEqual(value, "zh-tw", false)
-		|| StrEqual(value, "zh_tw", false)
-		|| StrEqual(value, "zh-hk", false)
-		|| StrEqual(value, "zh_hk", false)
-		|| StrContains(value, "simplified", false) != -1
-		|| StrContains(value, "traditional", false) != -1
-		|| StrContains(value, "chinese", false) != -1;
-}
+
 
 void PrintTeamKillBonusMessage(int client, int amount)
 {
+
 	if (IsFakeClient(client))
 		return;
 
-	if (g_bClientChinese[client])
-	{
-		PrintToChat(client, " \x06+$%d\x01: 消灭一名恐怖分子的团队奖励。", amount);
-		return;
-	}
+	char message[256];
+	BB_FormatClient(client, message, sizeof(message), "%T", "TeamKillBonus", client, amount);
+	PrintToChat(client, "%s", message);
 
-	PrintToChat(client, " \x06+$%d\x01: Team award for eliminating a Terrorist.", amount);
 }
 
 bool IsEconomyLivePhase()

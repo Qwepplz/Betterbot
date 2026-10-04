@@ -40,7 +40,7 @@ int g_iWeaponDefIndex[] = {
 /*50*/ 518, /*51*/ 521, /*52*/ 525, /*53*/ 526, /*54*/ 527, /*55*/ 528
 };
 
-const int MAX_LANG = 40;
+const int MAX_LANG = 2;
 
 Database db = null;
 
@@ -55,6 +55,7 @@ char g_TablePrefix[10];
 
 ConVar g_Cvar_ChatPrefix;
 char g_ChatPrefix[32];
+char g_DefaultChatPrefix[32];
 
 ConVar g_Cvar_FloatIncrementSize;
 float g_fFloatIncrementSize;
@@ -200,13 +201,8 @@ char g_KnifeMenuPhrase[][32] = {
   "weapon_knife_gut"
 };
 
-char g_Language[MAX_LANG][32];
-int g_iClientLanguage[MAXPLAYERS+1];
-int g_iDefaultLanguage;
 Menu menuWeapons[MAX_LANG][sizeof(g_WeaponClasses)];
 Menu menuKnife;
 
 StringMap g_smWeaponIndex;
 StringMap g_smWeaponDefIndex;
-StringMap g_smLanguageIndex;
-

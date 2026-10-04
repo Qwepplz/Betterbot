@@ -10,13 +10,21 @@ public Action Command_Stickers(int client, int args)
 {
 	if (!g_cvarEnabled.BoolValue)
 	{
-		CPrintToChat(client, "%t", "Disabled Feature");
+		{
+			char bbText[MAX_LENGTH_DISPLAY];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ChatMessage", client, "Prefiks", PREFIX_SEPARATOR, "Disabled Feature");
+			CPrintToChat(client, "%s", bbText);
+		}
 		return Plugin_Handled;
 	}
 
 	if (strlen(g_requiredFlag) > 0 && !ClientHasFlag(client, g_requiredFlag))
 	{
-		CPrintToChat(client, "%t", "Need Access");
+		{
+			char bbText[MAX_LENGTH_DISPLAY];
+			BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ChatMessage", client, "Prefiks", PREFIX_SEPARATOR, "Need Access");
+			CPrintToChat(client, "%s", bbText);
+		}
 		return Plugin_Handled;
 	}
 
@@ -27,7 +35,11 @@ public Action Command_Stickers(int client, int args)
 
 		if (strlen(arg) < 2)
 		{
-			CPrintToChat(client, "%t", "Min Length Search");
+			{
+				char bbText[MAX_LENGTH_DISPLAY];
+				BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ChatMessage", client, "Prefiks", PREFIX_SEPARATOR, "Min Length Search");
+				CPrintToChat(client, "%s", bbText);
+			}
 			return Plugin_Handled;
 		}
 

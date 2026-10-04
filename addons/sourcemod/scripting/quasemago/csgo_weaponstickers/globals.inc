@@ -68,3 +68,8 @@ enum struct PlayerWeapon
 PlayerWeapon g_PlayerWeapon[MAXPLAYERS + 1][MAX_WEAPONS];
 bool g_isStickerRefresh[MAXPLAYERS + 1] = {false, ...};
 int g_playerReuseTime[MAXPLAYERS + 1] = {0, ...};
+/* Display names keyed by stable item IDs; en and chi only. */
+StringMap g_smLocalizedStickerNames[2];
+StringMap g_smLocalizedStickerSetNames[2];
+StringMap g_smLocalizedStickerWeaponNames[2];
+StringMap g_smMissingStickerNames;

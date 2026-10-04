@@ -2,7 +2,8 @@
 
 #define PLUGIN_VERSION "3.0.3.Kento.33.3"
 
-#include <sourcemod> 
+#include <sourcemod>
+#include <bb_client_translations>
 #include <adminmenu>
 #include <kento_csgocolors>
 #include <geoip>
@@ -53,7 +54,7 @@ static const char g_sSqlRemoveDuplicateMySQL[] = "delete from `%s` USING `%s`, `
 static const char g_sSqlRemoveDuplicateNameMySQL[] = "delete from `%s` USING `%s`, `%s` as vtable WHERE (`%s`.id>vtable.id) AND (`%s`.name=vtable.name);";
 static const char g_sSqlRemoveDuplicateIpMySQL[] = "delete from `%s` USING `%s`, `%s` as vtable WHERE (`%s`.id>vtable.id) AND (`%s`.ip=vtable.ip);";
 stock const char g_sWeaponsNamesGame[42][] =  { "knife", "glock", "hkp2000", "usp_silencer", "p250", "deagle", "elite", "fiveseven", "tec9", "cz75a", "revolver", "nova", "xm1014", "mag7", "sawedoff", "bizon", "mac10", "mp9", "mp7", "ump45", "p90", "galilar", "ak47", "scar20", "famas", "m4a1", "m4a1_silencer", "aug", "ssg08", "sg556", "awp", "g3sg1", "m249", "negev", "hegrenade", "flashbang", "smokegrenade", "inferno", "decoy", "taser", "mp5sd", "breachcharge"};
-stock const char g_sWeaponsNamesFull[42][] =  { "Knife", "Glock", "P2000", "USP-S", "P250", "Desert Eagle", "Dual Berettas", "Five-Seven", "Tec 9", "CZ75-Auto", "R8 Revolver", "Nova", "XM1014", "Mag 7", "Sawed-off", "PP-Bizon", "MAC-10", "MP9", "MP7", "UMP45", "P90", "Galil AR", "AK-47", "SCAR-20", "Famas", "M4A4", "M4A1-S", "AUG", "SSG 08", "SG 553", "AWP", "G3SG1", "M249", "Negev", "HE Grenade", "Flashbang", "Smoke Grenade", "Inferno", "Decoy", "Zeus x27", "MP5-SD", "Breach Charges"};
+stock const char g_sWeaponsNamesFull[42][] =  { "WeaponName_knife", "WeaponName_glock", "WeaponName_hkp2000", "WeaponName_usp_silencer", "WeaponName_p250", "WeaponName_deagle", "WeaponName_elite", "WeaponName_fiveseven", "WeaponName_tec9", "WeaponName_cz75a", "WeaponName_revolver", "WeaponName_nova", "WeaponName_xm1014", "WeaponName_mag7", "WeaponName_sawedoff", "WeaponName_bizon", "WeaponName_mac10", "WeaponName_mp9", "WeaponName_mp7", "WeaponName_ump45", "WeaponName_p90", "WeaponName_galilar", "WeaponName_ak47", "WeaponName_scar20", "WeaponName_famas", "WeaponName_m4a1", "WeaponName_m4a1_silencer", "WeaponName_aug", "WeaponName_ssg08", "WeaponName_sg556", "WeaponName_awp", "WeaponName_g3sg1", "WeaponName_m249", "WeaponName_negev", "WeaponName_hegrenade", "WeaponName_flashbang", "WeaponName_smokegrenade", "WeaponName_inferno", "WeaponName_decoy", "WeaponName_taser", "WeaponName_mp5sd", "WeaponName_breachcharge" };
 
 char g_sSQLTable[200];
 Handle g_hStatsDb;
@@ -94,11 +95,6 @@ Handle hRankTimer[MAXPLAYERS + 1];
 Handle hidechatcookie;
 bool hidechat[MAXPLAYERS+1];
 
-char MSG[64];
-int g_iRankMeLanguageEnglish = -1;
-int g_iRankMeLanguageChineseSimplified = -1;
-int g_iRankMeLanguageChineseTraditional = -1;
-int g_iRankMeClientLanguage[MAXPLAYERS + 1];
 bool g_bRankMeLanguageReady[MAXPLAYERS + 1];
 bool g_bPendingRankConnectAnnounce[MAXPLAYERS + 1];
 bool g_bRankMeBotIdentity[MAXPLAYERS + 1];
@@ -269,8 +265,7 @@ public void OnPluginStart() {
 	AutoExecConfig(true, "kento.rankme");
 		
 	// LOAD TRANSLATIONS
-	LoadTranslations("kento.rankme.phrases");
-	InitializeRankMeLanguageTargets();
+	BB_LoadClientTranslations("kento.rankme.phrases");
 	
 	//	Hook the say and say_team for chat triggers
 	AddCommandListener(OnSayText, "say");
@@ -290,7 +285,6 @@ public void OnPluginStart() {
 	/* Hide chat */
 	hidechatcookie = RegClientCookie("rankme_hidechat", "Hide rankme chat messages", CookieAccess_Private);
 
-	Format(MSG, sizeof(MSG), "%t", "Chat Prefix");
 	InitializeErrorHandling();
 
 	for (int i = 1; i <= MaxClients; i++) {
@@ -605,7 +599,6 @@ void ResetPlayerCombatData(int client) {
 void ResetPlayerRuntimeData(int client) {
 	ResetPlayerCombatData(client);
 	g_aMaxKillStreak[client] = 0;
-	g_iRankMeClientLanguage[client] = 0;
 	g_bRankMeLanguageReady[client] = false;
 	g_bPendingRankConnectAnnounce[client] = false;
 }
@@ -622,307 +615,106 @@ void LoadHideChatPreference(int client) {
 		hidechat[client] = true;
 }
 
-void InitializeRankMeLanguageTargets() {
-	g_iRankMeLanguageEnglish = GetLanguageByCode("en");
-	g_iRankMeLanguageChineseSimplified = GetLanguageByCode("chi");
-	g_iRankMeLanguageChineseTraditional = GetLanguageByCode("zho");
-}
-
-bool IsRankMeTraditionalLanguageValue(const char[] value) {
-	return StrEqual(value, "tchinese", false)
-		|| StrEqual(value, "zho", false)
-		|| StrEqual(value, "zh-hant", false)
-		|| StrEqual(value, "zh_hant", false)
-		|| StrEqual(value, "zh-tw", false)
-		|| StrEqual(value, "zh_tw", false)
-		|| StrEqual(value, "zh-hk", false)
-		|| StrEqual(value, "zh_hk", false)
-		|| StrContains(value, "traditional", false) != -1;
-}
-
-bool IsRankMeChineseLanguageValue(const char[] value) {
-	return StrEqual(value, "schinese", false)
-		|| StrEqual(value, "chi", false)
-		|| StrEqual(value, "zh", false)
-		|| StrEqual(value, "zh-hans", false)
-		|| StrEqual(value, "zh_hans", false)
-		|| StrEqual(value, "zh-cn", false)
-		|| StrEqual(value, "zh_cn", false)
-		|| StrEqual(value, "zh-sg", false)
-		|| StrEqual(value, "zh_sg", false)
-		|| StrContains(value, "simplified", false) != -1
-		|| StrContains(value, "chinese", false) != -1
-		|| IsRankMeTraditionalLanguageValue(value);
-}
-
-int ResolveRankMeLanguageFromValue(const char[] value) {
-	int sourceModLanguage = GetLanguageByName(value);
-	if (sourceModLanguage == -1) {
-		sourceModLanguage = GetLanguageByCode(value);
-	}
-	
-	if (sourceModLanguage == g_iRankMeLanguageChineseTraditional && g_iRankMeLanguageChineseTraditional >= 0) {
-		return g_iRankMeLanguageChineseTraditional;
-	}
-	
-	if (sourceModLanguage == g_iRankMeLanguageChineseSimplified && g_iRankMeLanguageChineseSimplified >= 0) {
-		return g_iRankMeLanguageChineseSimplified;
-	}
-	
-	if (IsRankMeTraditionalLanguageValue(value) && g_iRankMeLanguageChineseTraditional >= 0) {
-		return g_iRankMeLanguageChineseTraditional;
-	}
-	
-	if (IsRankMeChineseLanguageValue(value)) {
-		if (g_iRankMeLanguageChineseSimplified >= 0) {
-			return g_iRankMeLanguageChineseSimplified;
-		}
-		
-		if (g_iRankMeLanguageChineseTraditional >= 0) {
-			return g_iRankMeLanguageChineseTraditional;
-		}
-	}
-	
-	return GetFallbackRankMeLanguage();
-}
-
-int GetFallbackRankMeLanguage() {
-	if (g_iRankMeLanguageEnglish >= 0) {
-		return g_iRankMeLanguageEnglish;
-	}
-
-	return GetServerLanguage();
-}
-
-int NormalizeRankMeOutputLanguage(int language) {
-	if (language == g_iRankMeLanguageChineseTraditional && g_iRankMeLanguageChineseTraditional >= 0) {
-		return g_iRankMeLanguageChineseTraditional;
-	}
-	
-	if (language == g_iRankMeLanguageChineseSimplified && g_iRankMeLanguageChineseSimplified >= 0) {
-		return g_iRankMeLanguageChineseSimplified;
-	}
-	
-	return GetFallbackRankMeLanguage();
-}
-
-void ApplyRankMeLanguage(int client, int language) {
-	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
-		return;
-	}
-
-	language = NormalizeRankMeOutputLanguage(language);
-
-	g_iRankMeClientLanguage[client] = language;
-
-	if (GetClientLanguage(client) != language) {
-		SetClientLanguage(client, language);
-	}
-}
-
 void RefreshRankMeClientLanguage(int client) {
-	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
-		return;
-	}
-
+	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) return;
 	g_bRankMeLanguageReady[client] = false;
-	if (g_iRankMeClientLanguage[client] <= 0) {
-		ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
-	}
 	QueryClientConVar(client, "cl_language", OnRankMeLanguageQueried);
 }
 
 public void OnRankMeLanguageQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any value) {
-	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
-		return;
-	}
-	
-	if (result == ConVarQuery_Okay && cvarValue[0] != '\0') {
-		ApplyRankMeLanguage(client, ResolveRankMeLanguageFromValue(cvarValue));
-	}
-	else {
-		ApplyRankMeLanguage(client, GetFallbackRankMeLanguage());
-	}
-
+	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) return;
 	g_bRankMeLanguageReady[client] = true;
-
-	if (g_bPendingRankConnectAnnounce[client]) {
-		AnnounceRankConnect(client);
-	}
-}
-
-bool IsRankMeTraditionalLanguage(int language) {
-	return language == g_iRankMeLanguageChineseTraditional;
-}
-
-bool IsRankMeChineseLanguage(int language) {
-	return language == g_iRankMeLanguageChineseSimplified || language == g_iRankMeLanguageChineseTraditional;
-}
-
-int GetRankMeClientOutputLanguage(int client) {
-	if (client < 1 || client > MaxClients || !IsClientConnected(client) || IsFakeClient(client)) {
-		return GetFallbackRankMeLanguage();
-	}
-
-	if (g_iRankMeClientLanguage[client] > 0) {
-		return NormalizeRankMeOutputLanguage(g_iRankMeClientLanguage[client]);
-	}
-
-	return GetFallbackRankMeLanguage();
-}
-
-bool IsRankMeTraditionalOutput(int client) {
-	return IsRankMeTraditionalLanguage(GetRankMeClientOutputLanguage(client));
+	if (g_bPendingRankConnectAnnounce[client]) AnnounceRankConnect(client);
 }
 
 void FormatRankMeJoinChatMessage(int client, char[] buffer, int maxlen, const char[] playerName, int rank, int points, const char[] country) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "玩家 {PINK}%s{NORMAL} 來自 {LIGHTGREEN}%s{NORMAL} 進入伺服器. {YELLOW}(排名 {GREEN}%d {YELLOW}- {PURPLE}%d {YELLOW}點)", playerName, country, rank, points);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "玩家 {PINK}%s{NORMAL} 来自 {LIGHTGREEN}%s{NORMAL} 进入服务器. {YELLOW}(排名 {GREEN}%d {YELLOW}- {PURPLE}%d {YELLOW}点)", playerName, country, rank, points);
-	}
-	else {
-		FormatEx(buffer, maxlen, "{PINK}%s{NORMAL} from {LIGHTGREEN}%s {NORMAL}joined the server. {YELLOW}(Pos {GREEN}%d {YELLOW}- {PURPLE}%d {YELLOW}Points){NORMAL}.", playerName, country, rank, points);
-	}
+
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	char localizedCountry[64];
+	if (country[0] == '\0') FormatEx(localizedCountry, sizeof(localizedCountry), "%T", "UnknownCountry", client);
+	else strcopy(localizedCountry, sizeof(localizedCountry), country);
+	FormatEx(buffer, maxlen, "%T", "ClientJoinChat", client, playerName, localizedCountry, rank, points);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeTopJoinChatMessage(int client, char[] buffer, int maxlen, int topPosition, const char[] playerName, int rank, const char[] country) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "Top {RED}%d{NORMAL} 玩家 {PINK}%s{NORMAL} 來自 {LIGHTGREEN}%s{NORMAL} 進入伺服器, 目前排名 {GREEN}%d", topPosition, playerName, country, rank);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "Top {RED}%d{NORMAL} 玩家 {PINK}%s{NORMAL} 来自 {LIGHTGREEN}%s{NORMAL} 进入服务器, 目前排名 {GREEN}%d", topPosition, playerName, country, rank);
-	}
-	else {
-		FormatEx(buffer, maxlen, "Top {RED}%d{NORMAL} player {PINK}%s{NORMAL} from {LIGHTGREEN}%s {NORMAL}connected, currently rank {GREEN}%d{NORMAL}.", topPosition, playerName, country, rank);
-	}
+
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	char localizedCountry[64];
+	if (country[0] == '\0') FormatEx(localizedCountry, sizeof(localizedCountry), "%T", "UnknownCountry", client);
+	else strcopy(localizedCountry, sizeof(localizedCountry), country);
+	FormatEx(buffer, maxlen, "%T", "ClientTopJoinChat", client, topPosition, playerName, localizedCountry, rank);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeJoinHintMessage(int client, char[] buffer, int maxlen, const char[] playerName, int rank, int points, const char[] country) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "<font color='#28FF28'>訊息:</font> \n <font color='#B15BFF'>%s</font> 來自 <font color='#00FF7F'>%s</font> 加入遊戲. \n 排名 <font color='#28FF28'>%d</font> - <font color='#E800E8'>%d</font> 點", playerName, country, rank, points);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "<font color='#28FF28'>消息: </font> \n <font color='#B15BFF'>%s</font> 来自 <font color='#00FF7F'>%s</font> 加入游戏. \n 排名 <font color='#28FF28'>%d</font> - <font color='#E800E8'>%d</font> 点", playerName, country, rank, points);
-	}
-	else {
-		FormatEx(buffer, maxlen, "<font color='#28FF28'>Info</font> \n <font color='#B15BFF'>%s</font> from <font color='#00FF7F'>%s</font> joined the server. \n Pos <font color='#28FF28'>%d</font> - <font color='#E800E8'>%d</font> Points", playerName, country, rank, points);
-	}
+
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	char localizedCountry[64];
+	if (country[0] == '\0') FormatEx(localizedCountry, sizeof(localizedCountry), "%T", "UnknownCountry", client);
+	else strcopy(localizedCountry, sizeof(localizedCountry), country);
+	FormatEx(buffer, maxlen, "%T", "ClientJoinHint", client, playerName, localizedCountry, rank, points);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeTopJoinHintMessage(int client, char[] buffer, int maxlen, int topPosition, const char[] playerName, int rank, const char[] country) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "<font color='#28FF28'>訊息:</font> \n Top <font color='#FF0000'>%d</font> 玩家 <font color='#B15BFF'>%s</font> 來自 <font color='#00FF7F'>%s</font> 加入遊戲 \n 目前排名: <font color='#28FF28'>%d</font>", topPosition, playerName, country, rank);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "<font color='#28FF28'>消息: </font> \n Top <font color='#FF0000'>%d</font> 玩家 <font color='#B15BFF'>%s</font> 来自 <font color='#00FF7F'>%s</font> 加入游戏 \n 目前排名: <font color='#28FF28'>%d</font>", topPosition, playerName, country, rank);
-	}
-	else {
-		FormatEx(buffer, maxlen, "<font color='#28FF28'>Info</font> \n Top <font color='#FF0000'>%d</font> player <font color='#B15BFF'>%s</font> from <font color='#00FF7F'>%s</font> connected \n Currently rank <font color='#28FF28'>%d</font>", topPosition, playerName, country, rank);
-	}
+
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	char localizedCountry[64];
+	if (country[0] == '\0') FormatEx(localizedCountry, sizeof(localizedCountry), "%T", "UnknownCountry", client);
+	else strcopy(localizedCountry, sizeof(localizedCountry), country);
+	FormatEx(buffer, maxlen, "%T", "ClientTopJoinHint", client, topPosition, playerName, localizedCountry, rank);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMePlayerLeftMessage(int client, char[] buffer, int maxlen, const char[] playerName, int points, const char[] reason) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "玩家 {PINK}%s{PURPLE} (%d) {NORMAL} 離開伺服器. {YELLOW}(%s)", playerName, points, reason);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "玩家 {PINK}%s{PURPLE} (%d) {NORMAL} 离开服务器. {YELLOW}(%s)", playerName, points, reason);
-	}
-	else {
-		FormatEx(buffer, maxlen, "{PINK}%s{PURPLE} (%d) {NORMAL}left the server. {YELLOW}(%s)", playerName, points, reason);
-	}
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	FormatEx(buffer, maxlen, "%T", "ClientLeft", client, playerName, points, reason);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeFirstBloodGlobalMessage(int client, char[] buffer, int maxlen, const char[] attackerName, const char[] victimName, int bonusPoints) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "{GREEN}★首殺{NORMAL}! {PURPLE}%s {RED}擊殺了 {NORMAL}%s {LIGHTGREEN}並獲得 %d 點{NORMAL}!", attackerName, victimName, bonusPoints);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "{GREEN}★首杀{NORMAL}! {PURPLE}%s {RED}击杀了 {NORMAL}%s {LIGHTGREEN}并获得 %d 点{NORMAL}!", attackerName, victimName, bonusPoints);
-	}
-	else {
-		FormatEx(buffer, maxlen, "{GREEN}★ First Blood! {PURPLE}%s {RED}killed {NORMAL}%s {LIGHTGREEN}and got %d points{NORMAL}!", attackerName, victimName, bonusPoints);
-	}
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	FormatEx(buffer, maxlen, "%T", "FirstBloodGlobal", client, attackerName, victimName, bonusPoints);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeRevengeGlobalMessage(int client, char[] buffer, int maxlen, const char[] attackerName, const char[] victimName, int bonusPoints) {
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "{GREEN}復仇成功{NORMAL}! {PURPLE}%s {RED}擊殺了 {NORMAL}%s {LIGHTGREEN}並獲得 %d 點{NORMAL}.", attackerName, victimName, bonusPoints);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "{GREEN}复仇成功{NORMAL}! {PURPLE}%s {RED}击杀了 {NORMAL}%s {LIGHTGREEN}并获得 %d 点{NORMAL}.", attackerName, victimName, bonusPoints);
-	}
-	else {
-		FormatEx(buffer, maxlen, "{GREEN}Revenge Success{NORMAL}! {PURPLE}%s {RED}killed {NORMAL}%s {LIGHTGREEN}and got %d points{NORMAL}!", attackerName, victimName, bonusPoints);
-	}
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	FormatEx(buffer, maxlen, "%T", "RevengeGlobal", client, attackerName, victimName, bonusPoints);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeKillStreakName(int client, const char[] streakPhrase, char[] buffer, int maxlen) {
-	if (StrEqual(streakPhrase, "DoubleKill")) {
-		if (IsRankMeTraditionalOutput(client)) {
-			strcopy(buffer, maxlen, "{LIGHTGREEN}雙殺");
-		}
-		else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-			strcopy(buffer, maxlen, "{LIGHTGREEN}双杀");
-		}
-		else {
-			strcopy(buffer, maxlen, "{LIGHTGREEN}Double Kill");
-		}
-		return;
-	}
-
-	if (StrEqual(streakPhrase, "TripleKill")) {
-		if (IsRankMeTraditionalOutput(client)) {
-			strcopy(buffer, maxlen, "{YELLOW}三殺");
-		}
-		else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-			strcopy(buffer, maxlen, "{YELLOW}三杀");
-		}
-		else {
-			strcopy(buffer, maxlen, "{YELLOW}Triple Kill");
-		}
-		return;
-	}
-
-	if (StrEqual(streakPhrase, "MegaKill")) {
-		if (IsRankMeTraditionalOutput(client)) {
-			strcopy(buffer, maxlen, "{ORANGE}瘋狂殺戮");
-		}
-		else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-			strcopy(buffer, maxlen, "{ORANGE}疯狂杀戮");
-		}
-		else {
-			strcopy(buffer, maxlen, "{ORANGE}Mega Kill");
-		}
-		return;
-	}
-
-	if (IsRankMeTraditionalOutput(client)) {
-		strcopy(buffer, maxlen, "{RED}超神殺戮");
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		strcopy(buffer, maxlen, "{RED}超神杀戮");
-	}
-	else {
-		strcopy(buffer, maxlen, "{RED}Ultra Kill");
-	}
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	FormatEx(buffer, maxlen, "%T", streakPhrase, client);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 void FormatRankMeKillStreakGlobalMessage(int client, char[] buffer, int maxlen, const char[] attackerName, int score, const char[] streakPhrase, int bonusPoints) {
+	int previousLanguage;
+	buffer[0] = '\0';
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
 	char streakName[64];
 	FormatRankMeKillStreakName(client, streakPhrase, streakName, sizeof(streakName));
-
-	if (IsRankMeTraditionalOutput(client)) {
-		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} 正在 {RED}%s{NORMAL}! {LIGHTGREEN}並獲得 %d 點{NORMAL}!", attackerName, score, streakName, bonusPoints);
-	}
-	else if (IsRankMeChineseLanguage(GetRankMeClientOutputLanguage(client))) {
-		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} 正在 {RED}%s{NORMAL}! {LIGHTGREEN}并获得 %d 点{NORMAL}!", attackerName, score, streakName, bonusPoints);
-	}
-	else {
-		FormatEx(buffer, maxlen, "{PURPLE}★ %s {PINK}(%d){NORMAL} is on {RED}%s{NORMAL}! {LIGHTGREEN}and got %d points{NORMAL}!", attackerName, score, streakName, bonusPoints);
-	}
+	FormatEx(buffer, maxlen, "%T", "KillStreakGlobal", client, attackerName, score, streakName, bonusPoints);
+	BB_EndClientTranslation(client, previousLanguage);
 }
 
 public void OnPluginEnd() {
@@ -991,11 +783,11 @@ public void Event_VipEscaped(Handle event, const char[] name, bool dontBroadcast
 		return;
 	for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "CT_VIPEscaped", i, g_PointsVipEscapedTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "CT_VIPEscaped", i, g_PointsVipEscapedTeam);
 	if (client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "VIPEscaped", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsVipEscapedTeam + g_PointsVipEscapedPlayer);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "VIPEscaped", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsVipEscapedTeam + g_PointsVipEscapedPlayer);
 }
 
 public void Event_VipKilled(Handle event, const char[] name, bool dontBroadcast) {
@@ -1027,11 +819,11 @@ public void Event_VipKilled(Handle event, const char[] name, bool dontBroadcast)
 		return;
 	for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "TR_VIPKilled", i, g_PointsVipKilledTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "TR_VIPKilled", i, g_PointsVipKilledTeam);
 	if (killer != 0 && (g_bRankBots || !IsFakeClient(killer)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "VIPKilled", i, g_aClientName[killer], g_aStats[killer].SCORE, g_PointsVipKilledTeam + g_PointsVipKilledPlayer);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "VIPKilled", i, g_aClientName[killer], g_aStats[killer].SCORE, g_PointsVipKilledTeam + g_PointsVipKilledPlayer);
 }
 
 public void Event_HostageRescued(Handle event, const char[] name, bool dontBroadcast) {
@@ -1059,12 +851,12 @@ public void Event_HostageRescued(Handle event, const char[] name, bool dontBroad
 	if (g_PointsHostageRescTeam > 0)
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "CT_Hostage", i, g_PointsHostageRescTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "CT_Hostage", i, g_PointsHostageRescTeam);
 	
 	if (g_PointsHostageRescPlayer > 0 && client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "Hostage", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsHostageRescPlayer + g_PointsHostageRescTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "Hostage", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsHostageRescPlayer + g_PointsHostageRescTeam);
 	
 }
 
@@ -1085,7 +877,7 @@ public void Event_RoundMVP(Handle event, const char[] name, bool dontBroadcast) 
 			g_aSession[client].SCORE += g_PointsMvpTr;
 			for (int i = 1; i <= MaxClients; i++)
 			if (IsClientInGame(i))
-				if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "MVP", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsMvpTr);
+				if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "MVP", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsMvpTr);
 			
 		} else {
 			
@@ -1093,7 +885,7 @@ public void Event_RoundMVP(Handle event, const char[] name, bool dontBroadcast) 
 			g_aSession[client].SCORE += g_PointsMvpCt;
 			for (int i = 1; i <= MaxClients; i++)
 			if (IsClientInGame(i))
-				if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "MVP", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsMvpCt);
+				if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "MVP", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsMvpCt);
 		}
 	}
 	g_aStats[client].MVP++;
@@ -1118,7 +910,7 @@ public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) 
 						if (!announced && g_bChatChange) {
 							for (int j = 1; j <= MaxClients; j++)
 							if (IsClientInGame(j))
-								if(!hidechat[j]) RankMePrintToChat(j, "%s %T", MSG, "TR_Round", j, g_PointsRoundWin[TR]);
+								if(!hidechat[j]) RankMePrintToChat(j, "%T %T", "DefaultChatPrefix", j, "TR_Round", j, g_PointsRoundWin[TR]);
 						}
 					}
 				}
@@ -1129,7 +921,7 @@ public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) 
 						if (!announced && g_bChatChange) {
 							for (int j = 1; j <= MaxClients; j++)
 							if (IsClientInGame(j))
-								if(!hidechat[j]) RankMePrintToChat(j, "%s %T", MSG, "CT_Round_Lose", j, g_PointsRoundLose[CT]);
+								if(!hidechat[j]) RankMePrintToChat(j, "%T %T", "DefaultChatPrefix", j, "CT_Round_Lose", j, g_PointsRoundLose[CT]);
 						}
 						
 					}
@@ -1145,7 +937,7 @@ public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) 
 						if (!announced && g_bChatChange) {
 							for (int j = 1; j <= MaxClients; j++)
 							if (IsClientInGame(j))
-								if(!hidechat[j]) RankMePrintToChat(j, "%s %T", MSG, "CT_Round", j, g_PointsRoundWin[CT]);
+								if(!hidechat[j]) RankMePrintToChat(j, "%T %T", "DefaultChatPrefix", j, "CT_Round", j, g_PointsRoundWin[CT]);
 						}
 					}
 				}
@@ -1156,7 +948,7 @@ public void Event_RoundEnd(Handle event, const char[] name, bool dontBroadcast) 
 						if (!announced && g_bChatChange) {
 							for (int j = 1; j <= MaxClients; j++)
 							if (IsClientInGame(j))
-								if(!hidechat[j]) RankMePrintToChat(j, "%s %T", MSG, "TR_Round_Lose", j, g_PointsRoundLose[TR]);
+								if(!hidechat[j]) RankMePrintToChat(j, "%T %T", "DefaultChatPrefix", j, "TR_Round_Lose", j, g_PointsRoundLose[TR]);
 						}
 					}
 				}
@@ -1233,11 +1025,11 @@ public void Event_BombPlanted(Handle event, const char[] name, bool dontBroadcas
 	if (g_PointsBombPlantedTeam > 0)
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "TR_Planting", i, g_PointsBombPlantedTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "TR_Planting", i, g_PointsBombPlantedTeam);
 	if (g_PointsBombPlantedPlayer > 0 && client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "Planting", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombPlantedTeam + g_PointsBombPlantedPlayer);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "Planting", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombPlantedTeam + g_PointsBombPlantedPlayer);
 	
 }
 
@@ -1266,11 +1058,11 @@ public void Event_BombDefused(Handle event, const char[] name, bool dontBroadcas
 	if (g_PointsBombDefusedTeam > 0)
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "CT_Defusing", i, g_PointsBombDefusedTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "CT_Defusing", i, g_PointsBombDefusedTeam);
 	if (g_PointsBombDefusedPlayer > 0 && client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "Defusing", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombDefusedTeam + g_PointsBombDefusedPlayer);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "Defusing", i, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombDefusedTeam + g_PointsBombDefusedPlayer);
 }
 
 public void Event_BombExploded(Handle event, const char[] name, bool dontBroadcast)
@@ -1302,11 +1094,11 @@ public void Event_BombExploded(Handle event, const char[] name, bool dontBroadca
 	if (g_PointsBombExplodeTeam > 0)
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "TR_Exploding", i, g_PointsBombExplodeTeam);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "TR_Exploding", i, g_PointsBombExplodeTeam);
 	if (g_PointsBombExplodePlayer > 0 && client != 0 && (g_bRankBots || !IsFakeClient(client)))
 		for (int i = 1; i <= MaxClients; i++)
 	if (IsClientInGame(i))
-		if(!hidechat[i]) RankMePrintToChat(i, "%s %T", MSG, "Exploding", i, g_sC4PlantedByName, g_aStats[client].SCORE, g_PointsBombExplodeTeam + g_PointsBombExplodePlayer);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "Exploding", i, g_sC4PlantedByName, g_aStats[client].SCORE, g_PointsBombExplodeTeam + g_PointsBombExplodePlayer);
 }
 
 public void Event_BombPickup(Handle event, const char[] name, bool dontBroadcast)
@@ -1322,7 +1114,7 @@ public void Event_BombPickup(Handle event, const char[] name, bool dontBroadcast
 	if (!g_bChatChange)
 		return;
 	if (g_PointsBombPickup > 0)
-		if(!hidechat[client])	RankMePrintToChat(client, "%s %T", MSG, "BombPickup", client, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombPickup);
+		if(!hidechat[client])	RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "BombPickup", client, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombPickup);
 	
 }
 
@@ -1340,7 +1132,7 @@ public void Event_BombDropped(Handle event, const char[] name, bool dontBroadcas
 	if (!g_bChatChange)
 		return;
 	if (g_PointsBombDropped > 0 && client != 0)
-		if(!hidechat[client])	RankMePrintToChat(client, "%s %T", MSG, "BombDropped", client, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombDropped);
+		if(!hidechat[client])	RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "BombDropped", client, g_aClientName[client], g_aStats[client].SCORE, g_PointsBombDropped);
 	
 }
 
@@ -1367,7 +1159,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 		ApplyScoreLoss(victim, g_PointsLoseSuicide);
 		
 		if (g_PointsLoseSuicide > 0 && g_bChatChange) {
-			if(!hidechat[victim])	RankMePrintToChat(victim, "%s %T", MSG, "LostSuicide", victim, g_aClientName[victim], g_aStats[victim].SCORE, g_PointsLoseSuicide);
+			if(!hidechat[victim])	RankMePrintToChat(victim, "%T %T", "DefaultChatPrefix", victim, "LostSuicide", victim, g_aClientName[victim], g_aStats[victim].SCORE, g_PointsLoseSuicide);
 		}
 		
 	} 
@@ -1378,8 +1170,8 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			ApplyScoreLoss(attacker, g_PointsLoseTk);
 		
 			if (g_PointsLoseTk > 0 && g_bChatChange) {
-				if(!hidechat[victim])	RankMePrintToChat(victim, "%s %T", MSG, "LostTK", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsLoseTk, g_aClientName[victim]);
-				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "LostTK", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsLoseTk, g_aClientName[victim]);
+				if(!hidechat[victim])	RankMePrintToChat(victim, "%T %T", "DefaultChatPrefix", victim, "LostTK", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsLoseTk, g_aClientName[victim]);
+				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "LostTK", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsLoseTk, g_aClientName[victim]);
 			}
 		}
 	} 
@@ -1448,34 +1240,34 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				//PrintToServer("%s %T",MSG,"Killing",g_aClientName[attacker],g_aStats[attacker].SCORE,score_dif,g_aClientName[victim],g_aStats[victim].SCORE);
 				if(!hidechat[victim])	
 				{
-					RankMePrintToChat(victim, "%s %T", MSG, "Killing", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE);
+					RankMePrintToChat(victim, "%T %T", "DefaultChatPrefix", victim, "Killing", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE);
 				}
 				if (attacker < MAXPLAYERS)
 				{
 					if(!hidechat[attacker])
 					{
-						RankMePrintToChat(attacker, "%s %T", MSG, "Killing", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE);
+						RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "Killing", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE);
 					}
 				}
 			}
 		} else {
 			if (g_aStats[victim].KILLS < g_MinimalKills && g_aStats[attacker].KILLS < g_MinimalKills) {
 				if (g_bChatChange) {
-					if(!hidechat[victim])	RankMePrintToChat(victim, "%s %T", MSG, "KillingBothNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills, g_aStats[victim].KILLS, g_MinimalKills);
+					if(!hidechat[victim])	RankMePrintToChat(victim, "%T %T", "DefaultChatPrefix", victim, "KillingBothNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills, g_aStats[victim].KILLS, g_MinimalKills);
 					if (attacker < MAXPLAYERS)
-						if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "KillingBothNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills, g_aStats[victim].KILLS, g_MinimalKills);
+						if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "KillingBothNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills, g_aStats[victim].KILLS, g_MinimalKills);
 				}
 			} else if (g_aStats[victim].KILLS < g_MinimalKills) {
 				if (g_bChatChange) {
-					if(!hidechat[victim])	RankMePrintToChat(victim, "%s %T", MSG, "KillingVictimNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
+					if(!hidechat[victim])	RankMePrintToChat(victim, "%T %T", "DefaultChatPrefix", victim, "KillingVictimNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
 					if (attacker < MAXPLAYERS)
-						if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "KillingVictimNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
+						if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "KillingVictimNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[victim].KILLS, g_MinimalKills);
 				}
 			} else {
 				if (g_bChatChange) {
-					if(!hidechat[victim])	RankMePrintToChat(victim, "%s %T", MSG, "KillingKillerNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills);
+					if(!hidechat[victim])	RankMePrintToChat(victim, "%T %T", "DefaultChatPrefix", victim, "KillingKillerNotRanked", victim, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills);
 					if (attacker < MAXPLAYERS)
-						if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "KillingKillerNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills);
+						if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "KillingKillerNotRanked", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, score_dif, g_aClientName[victim], g_aStats[victim].SCORE, g_aStats[attacker].KILLS, g_MinimalKills);
 				}
 			}
 		}
@@ -1487,7 +1279,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			g_aStats[attacker].SCORE += g_PointsHs;
 			g_aSession[attacker].SCORE += g_PointsHs;
 			if (g_bChatChange && g_PointsHs > 0)
-				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "Headshot", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsHs);
+				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "Headshot", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsHs);
 		}
 
 		if (attackerblind) {
@@ -1496,7 +1288,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			g_aStats[attacker].SCORE += g_PointsBlind;
 			g_aSession[attacker].SCORE += g_PointsBlind;
 			if (g_bChatChange && g_PointsBlind > 0)
-				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "Flashed Kill", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsBlind);
+				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "Flashed Kill", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsBlind);
 		}
 
 		if (thrusmoke) {
@@ -1505,7 +1297,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			g_aStats[attacker].SCORE += g_PointsSmoke;
 			g_aSession[attacker].SCORE += g_PointsSmoke;
 			if (g_bChatChange && g_PointsSmoke > 0)
-				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "Thru Smoke", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsSmoke);
+				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "Thru Smoke", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsSmoke);
 		}
 
 		if(penetrated > 0) {
@@ -1514,7 +1306,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			g_aStats[attacker].SCORE += g_PointsWall;
 			g_aSession[attacker].SCORE += g_PointsWall;
 			if (g_bChatChange && g_PointsWall > 0)
-				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "Wallbang", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsWall);
+				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "Wallbang", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsWall);
 		}
 
 		/* First blood */
@@ -1526,7 +1318,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			g_aStats[attacker].FB ++;
 			g_aSession[attacker].FB ++;
 			if (g_bChatChange && g_PointsFb > 0)
-				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%s %T", MSG, "First Blood", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsFb);
+				if(!hidechat[attacker])	RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "First Blood", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsFb);
 			if (g_bAnnounceFirstBloodGlobal && IsClientInGame(attacker) && IsClientInGame(victim))
 			{
 				for (int i = 1; i <= MaxClients; i++)
@@ -1535,7 +1327,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 					{
 						char message[256];
 						FormatRankMeFirstBloodGlobalMessage(i, message, sizeof(message), g_aClientName[attacker], g_aClientName[victim], g_PointsFb);
-						RankMePrintToChat(i, "%s %s", MSG, message);
+						RankMePrintToChat(i, "%T %s", "DefaultChatPrefix", i, message);
 					}
 					
 					CSkipList[i] = false;
@@ -1561,7 +1353,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 			if(g_bChatChange && g_PointsNS > 0){
 				if(!hidechat[attacker])	
 				{
-					RankMePrintToChat(attacker, "%s %T", MSG, "No Scope", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsNS, g_aClientName[victim], weapon, fNSD);
+					RankMePrintToChat(attacker, "%T %T", "DefaultChatPrefix", attacker, "No Scope", attacker, g_aClientName[attacker], g_aStats[attacker].SCORE, g_PointsNS, g_aClientName[victim], weapon, fNSD);
 				}
 			}
 		}
@@ -1587,7 +1379,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				g_aSession[assist].ATF++;
 
 				if(g_bChatChange && g_PointsAssistKill > 0){
-					if(!hidechat[assist])	RankMePrintToChat(assist, "%s %T", MSG, "AssistTeamFlash", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsAssistTeamFlash, g_aClientName[attacker], g_aClientName[victim]);
+					if(!hidechat[assist])	RankMePrintToChat(assist, "%T %T", "DefaultChatPrefix", assist, "AssistTeamFlash", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsAssistTeamFlash, g_aClientName[attacker], g_aClientName[victim]);
 				}
 			}
 			else {
@@ -1597,7 +1389,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				g_aSession[assist].ATK++;
 
 				if(g_bChatChange && g_PointsAssistKill > 0){
-					if(!hidechat[assist])	RankMePrintToChat(assist, "%s %T", MSG, "AssistTeamKill", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsLoseATk, g_aClientName[attacker], g_aClientName[victim]);
+					if(!hidechat[assist])	RankMePrintToChat(assist, "%T %T", "DefaultChatPrefix", assist, "AssistTeamKill", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsLoseATk, g_aClientName[attacker], g_aClientName[victim]);
 				}
 			}
 		}
@@ -1611,7 +1403,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				g_aSession[assist].AF++;
 
 				if(g_bChatChange && g_PointsAssistKill > 0){
-					if(!hidechat[assist])	RankMePrintToChat(assist, "%s %T", MSG, "AssistFlash", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsAssistFlash, g_aClientName[attacker], g_aClientName[victim]);
+					if(!hidechat[assist])	RankMePrintToChat(assist, "%T %T", "DefaultChatPrefix", assist, "AssistFlash", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsAssistFlash, g_aClientName[attacker], g_aClientName[victim]);
 				}
 			}
 			else {
@@ -1621,7 +1413,7 @@ public void EventPlayerDeath(Handle event, const char [] name, bool dontBroadcas
 				g_aSession[assist].ASSISTS++;
 				
 				if(g_bChatChange && g_PointsAssistKill > 0){
-					if(!hidechat[assist])	RankMePrintToChat(assist, "%s %T", MSG, "AssistKill", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsAssistKill, g_aClientName[attacker], g_aClientName[victim]);
+					if(!hidechat[assist])	RankMePrintToChat(assist, "%T %T", "DefaultChatPrefix", assist, "AssistKill", assist, g_aClientName[assist], g_aStats[assist].SCORE, g_PointsAssistKill, g_aClientName[attacker], g_aClientName[victim]);
 				}
 			}
 		}
@@ -2006,7 +1798,7 @@ public void SQL_PurgeCallback(Handle owner, Handle hndl, const char[] error, any
 	
 	PrintToServer("[RankMe]: %d players purged by inactivity", SQL_GetAffectedRows(owner));
 	if (client != 0) {
-		PrintToChat(client, "[RankMe]: %d players purged by inactivity", SQL_GetAffectedRows(owner));
+		RankMePrintToChat(client, "%T", "MaintenancePlayersPurged", client, SQL_GetAffectedRows(owner));
 	}
 }
 
@@ -2127,11 +1919,13 @@ stock bool IsRankMeChatRecipient(int client)
 
 stock void RankMePrintToChat(int client, const char[] format, any ...)
 {
-	if (!IsRankMeChatRecipient(client))
-		return;
-
+	if (!IsRankMeChatRecipient(client)) return;
 	char message[512];
+	int previousLanguage;
+	if (!BB_BeginClientTranslation(client, previousLanguage)) return;
+	SetGlobalTransTarget(client);
 	VFormat(message, sizeof(message), format, 3);
+	BB_EndClientTranslation(client, previousLanguage);
 	CPrintToChat(client, "%s", message);
 }
 
@@ -2196,10 +1990,10 @@ void AnnounceRankConnect(int client)
 	char s_Country[32];
 	char s_address[32];
 	GetClientIP(client, s_address, sizeof(s_address));
-	Format(s_Country, sizeof(s_Country), "Unknown");
+	s_Country[0] = '\0';
 	GeoipCountry(s_address, s_Country, sizeof(s_Country));
 	if (s_Country[0] == 0) {
-		Format(s_Country, sizeof(s_Country), "Unknown", s_Country);
+		s_Country[0] = '\0';
 	}
 	else if (StrContains(s_Country, "United", false) != -1 || 
 		StrContains(s_Country, "Republic", false) != -1 || 
@@ -2211,7 +2005,7 @@ void AnnounceRankConnect(int client)
 		StrContains(s_Country, "Maldives", false) != -1 || 
 		StrContains(s_Country, "Philippines", false) != -1 || 
 		StrContains(s_Country, "Vatican", false) != -1) {
-		Format(s_Country, sizeof(s_Country), "The %s", s_Country);
+		Format(s_Country, sizeof(s_Country), "%T", "CountryArticle", LANG_SERVER, s_Country);
 	}
 	
 	if (!ShouldHideAnnounce(client)) {
@@ -2221,7 +2015,7 @@ void AnnounceRankConnect(int client)
 					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i]) {
 						char message[256];
 						FormatRankMeJoinChatMessage(i, message, sizeof(message), sClientName, g_aRankOnConnect[client], g_aPointsOnConnect[client], s_Country);
-						RankMePrintToChat(i, "%s %s", MSG, message);
+						RankMePrintToChat(i, "%T %s", "DefaultChatPrefix", i, message);
 					}
 					
 					CSkipList[i] = false;
@@ -2245,7 +2039,7 @@ void AnnounceRankConnect(int client)
 					if (IsClientInGame(i) && !IsFakeClient(i) && !CSkipList[i]) {
 						char message[256];
 						FormatRankMeTopJoinChatMessage(i, message, sizeof(message), g_AnnounceTopPosConnect, sClientName, g_aRankOnConnect[client], s_Country);
-						RankMePrintToChat(i, "%s %s", MSG, message);
+						RankMePrintToChat(i, "%T %s", "DefaultChatPrefix", i, message);
 					}
 					
 					CSkipList[i] = false;
@@ -2292,7 +2086,7 @@ public void Event_PlayerDisconnect(Handle event, const char[] name, bool dontBro
 		{
 			char message[256];
 			FormatRankMePlayerLeftMessage(i, message, sizeof(message), g_sBufferClientName[client], g_aPointsOnDisconnect[client], disconnectReason);
-			RankMePrintToChat(i, "%s %s", MSG, message);
+			RankMePrintToChat(i, "%T %s", "DefaultChatPrefix", i, message);
 		}
 		
 		CSkipList[i] = false;
@@ -2352,8 +2146,8 @@ public void Event_WinPanelMatch(Handle event, const char[] name, bool dontBroadc
 			{
 				if(!hidechat[i])
 				{
-					RankMePrintToChat(i, "%s %T", MSG, "TR_Win", i, g_PointsMatchWin);
-					RankMePrintToChat(i, "%s %T", MSG, "CT_Lose", i, g_PointsMatchLose);
+					RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "TR_Win", i, g_PointsMatchWin);
+					RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "CT_Lose", i, g_PointsMatchLose);
 				}
 				
 				if(GetClientTeam(i) == TR)
@@ -2424,6 +2218,6 @@ public void SQL_DuplicateCallback(Handle owner, Handle hndl, const char[] error,
 	
 	PrintToServer("[RankMe]: %d duplicated rows removed", SQL_GetAffectedRows(owner));
 	if (client != 0) {
-		PrintToChat(client, "[RankMe]: %d duplicated rows removed", SQL_GetAffectedRows(owner));
+		RankMePrintToChat(client, "%T", "MaintenanceDuplicatesRemoved", client, SQL_GetAffectedRows(owner));
 	}
 }

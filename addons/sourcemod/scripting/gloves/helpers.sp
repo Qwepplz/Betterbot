@@ -36,13 +36,13 @@ stock void GetRandomSkin(int client, int team, char[] output, int outputSize, in
 	}
 	else
 	{
-		max = menuGlovesGroup[g_iClientLanguage[client]][team].ItemCount - 1;
+		max = menuGlovesGroup[GetClientGloveLanguage(client)][team].ItemCount - 1;
 		random = GetRandomInt(2, max) - 1;
 	}
 
-	max = menuGloves[g_iClientLanguage[client]][team][random].ItemCount - 1;
+	max = menuGloves[GetClientGloveLanguage(client)][team][random].ItemCount - 1;
 	int random2 = GetRandomInt(1, max);
-	menuGloves[g_iClientLanguage[client]][team][random].GetItem(random2, output, outputSize);
+	menuGloves[GetClientGloveLanguage(client)][team][random].GetItem(random2, output, outputSize);
 }
 
 stock bool IsValidClient(int client)
@@ -69,13 +69,7 @@ stock void GetGloveTeamPrefix(int team, char[] prefix, int maxlen)
 	strcopy(prefix, maxlen, team == CS_TEAM_T ? "t" : "ct");
 }
 
-stock void FirstCharUpper(char[] string)
-{
-	if (strlen(string) > 0)
-	{
-		string[0] = CharToUpper(string[0]);
-	}
-}
+
 
 stock void FixCustomArms(int client)
 {
@@ -156,4 +150,8 @@ stock void ApplyGlovesWithWeaponReset(int client)
 		dpack.WriteCell(client);
 		dpack.WriteCell(activeWeapon);
 	}
+}
+stock int GetClientGloveLanguage(int client)
+{
+	return BB_GetClientTextLanguage(client) == GetLanguageByCode("chi") ? 1 : 0;
 }

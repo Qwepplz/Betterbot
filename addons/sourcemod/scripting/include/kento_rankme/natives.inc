@@ -42,10 +42,10 @@ public int Native_GivePoint(Handle plugin, int numParams)
 		for (int i = 1; i <= MaxClients; i++)
 		if (IsClientInGame(i))
 			//CPrintToChatEx(i,i,"%s %T",MSG,"GotPointsBy",Name,g_aStats[client].SCORE,iPoints,Reason);
-		if(!hidechat[i]) CPrintToChat(i, "%s %T", MSG, "GotPointsBy", i, Name, g_aStats[client].SCORE, iPoints, Reason);
+		if(!hidechat[i]) RankMePrintToChat(i, "%T %T", "DefaultChatPrefix", i, "GotPointsBy", i, Name, g_aStats[client].SCORE, iPoints, Reason);
 	} else if (iPrintToPlayer == 1) {
 		//CPrintToChatEx(client,client,"%s %T",MSG,"GotPointsBy",Name,g_aStats[client].SCORE,iPoints,Reason);
-		if(!hidechat[client]) CPrintToChat(client, "%s %T", MSG, "GotPointsBy", client, Name, g_aStats[client].SCORE, iPoints, Reason);
+		if(!hidechat[client]) RankMePrintToChat(client, "%T %T", "DefaultChatPrefix", client, "GotPointsBy", client, Name, g_aStats[client].SCORE, iPoints, Reason);
 	}
 
 	return 0;

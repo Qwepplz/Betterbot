@@ -106,7 +106,7 @@ public Action ChatListener(int client, const char[] command, int args) {
   char msg[128];
   GetCmdArgString(msg, sizeof(msg));
   StripQuotes(msg);
-  if (StrEqual(msg, "!ws") || StrEqual(msg, "!pf") || StrEqual(msg, "!knife") || StrEqual(msg, "!dao") || StrEqual(msg, "!wslang") ||
+  if (StrEqual(msg, "!ws") || StrEqual(msg, "!pf") || StrEqual(msg, "!knife") || StrEqual(msg, "!dao") ||
       StrContains(msg, "!nametag") == 0 || StrContains(msg, "!seed") == 0) {
     return Plugin_Handled;
   } else if (g_bWaitingForNametag[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
@@ -115,7 +115,13 @@ public Action ChatListener(int client, const char[] command, int args) {
     g_bWaitingForNametag[client] = false;
 
     if (StrEqual(msg, "!cancel") || StrEqual(msg, "!iptal")) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "NameTagCancelled");
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_7", client, bbPrefix, "NameTagCancelled");
+        PrintToChat(client, "%s", bbText);
+      }
       return Plugin_Handled;
     }
 
@@ -134,7 +140,13 @@ public Action ChatListener(int client, const char[] command, int args) {
     Format(updateFields, sizeof(updateFields), "%s%s_tag = '%s'", teamName, weaponName, escaped);
     UpdatePlayerData(client, updateFields);
 
-    PrintToChat(client, " %s \x04%t: \x01\"%s\"", g_ChatPrefix, "NameTagSuccess", msg);
+    {
+      char bbPrefix[32];
+      GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+      char bbText[512];
+      BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_8", client, bbPrefix, "NameTagSuccess", msg);
+      PrintToChat(client, "%s", bbText);
+    }
 
     return Plugin_Handled;
   } else if (g_bWaitingForSeed[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
@@ -142,10 +154,22 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     int seedInt;
     if (StrEqual(msg, "!cancel") || StrEqual(msg, "!iptal") || StrEqual(msg, "")) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "SeedCancelled");
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_9", client, bbPrefix, "SeedCancelled");
+        PrintToChat(client, "%s", bbText);
+      }
       return Plugin_Handled;
     } else if ((seedInt = StringToInt(msg)) < 0 || seedInt > 8192) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "SeedFailed");
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_10", client, bbPrefix, "SeedFailed");
+        PrintToChat(client, "%s", bbText);
+      }
       return Plugin_Handled;
     }
     int team = GetWeaponDataTeam(client, g_iIndex[client]);
@@ -156,7 +180,13 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     CreateTimer(0.1, SeedMenuTimer, GetClientUserId(client));
 
-    PrintToChat(client, " %s \x04%t: \x01%i", g_ChatPrefix, "SeedSuccess", seedInt);
+    {
+      char bbPrefix[32];
+      GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+      char bbText[512];
+      BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_11", client, bbPrefix, "SeedSuccess", seedInt);
+      PrintToChat(client, "%s", bbText);
+    }
 
     return Plugin_Handled;
   } else if (g_bWaitingForWear[client] && IsValidClient(client) && g_iIndex[client] > -1 && !IsChatTrigger()) {
@@ -164,10 +194,22 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     float floatVal;
     if (StrEqual(msg, "!cancel") || StrEqual(msg, "!iptal") || StrEqual(msg, "")) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "CustomFloatCancelled");
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_12", client, bbPrefix, "CustomFloatCancelled");
+        PrintToChat(client, "%s", bbText);
+      }
       return Plugin_Handled;
     } else if ((floatVal = StringToFloat(msg)) <= 0 || floatVal >= 1) {
-      PrintToChat(client, " %s \x02%t", g_ChatPrefix, "CustomFloatFailed");
+      {
+        char bbPrefix[32];
+        GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+        char bbText[512];
+        BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_13", client, bbPrefix, "CustomFloatFailed");
+        PrintToChat(client, "%s", bbText);
+      }
       return Plugin_Handled;
     }
     int team = GetWeaponDataTeam(client, g_iIndex[client]);
@@ -177,7 +219,13 @@ public Action ChatListener(int client, const char[] command, int args) {
 
     CreateFloatMenu(client).Display(client, MENU_TIME_FOREVER);
 
-    PrintToChat(client, " %s \x04%t: \x01%f", g_ChatPrefix, "CustomFloatSuccess", floatVal);
+    {
+      char bbPrefix[32];
+      GetClientChatPrefix(client, bbPrefix, sizeof(bbPrefix));
+      char bbText[512];
+      BB_FormatClient(client, bbText, sizeof(bbText), "%T", "ClientDisplay_14", client, bbPrefix, "CustomFloatSuccess", floatVal);
+      PrintToChat(client, "%s", bbText);
+    }
 
     return Plugin_Handled;
   }
@@ -229,4 +277,3 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &inflictor, float
 public void OnRoundStart(Handle event, const char[] name, bool dontBroadcast) {
   g_iRoundStartTime = GetTime();
 }
-

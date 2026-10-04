@@ -2,32 +2,17 @@ public void ReadConfig()
 {
 	if (g_smGlovesGroupIndex != null) delete g_smGlovesGroupIndex;
 	g_smGlovesGroupIndex = new StringMap();
-	if (g_smLanguageIndex != null) delete g_smLanguageIndex;
-	g_smLanguageIndex = new StringMap();
 
-	int langCount = GetLanguageCount();
-	int langCounter = 0;
-	for (int i = 0; i < langCount; i++)
+	char languages[][] = {"english", "schinese"};
+	for (int langCounter = 0; langCounter < MAX_LANG; langCounter++)
 	{
-		char code[4];
-		char language[32];
-		GetLanguageInfo(i, code, sizeof(code), language, sizeof(language));
-
-		BuildPath(Path_SM, configPath, sizeof(configPath), "configs/gloves/gloves_%s.cfg", language);
-
-		if (!FileExists(configPath)) continue;
-
-		g_smLanguageIndex.SetValue(language, langCounter);
-		FirstCharUpper(language);
-		strcopy(g_Language[langCounter], 32, language);
+		BuildPath(Path_SM, configPath, sizeof(configPath), "configs/gloves/gloves_%s.cfg", languages[langCounter]);
 
 		KeyValues kv = CreateKeyValues("Gloves");
-		FileToKeyValues(kv, configPath);
-
-		if (!KvGotoFirstSubKey(kv))
+		if (!FileToKeyValues(kv, configPath) || !KvGotoFirstSubKey(kv))
 		{
-			SetFailState("CFG File not found: %s", configPath);
 			CloseHandle(kv);
+			SetFailState("CFG File not found: %s", configPath);
 		}
 
 		for (int k = CS_TEAM_T; k <= CS_TEAM_CT; k++)
@@ -36,10 +21,9 @@ public void ReadConfig()
 			{
 				delete menuGlovesGroup[langCounter][k];
 			}
-			menuGlovesGroup[langCounter][k] = new Menu(GloveMainMenuHandler, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
-			menuGlovesGroup[langCounter][k].SetTitle("%T", "GloveMenuTitle", LANG_SERVER);
-			menuGlovesGroup[langCounter][k].AddItem("0", "Default");
-			menuGlovesGroup[langCounter][k].AddItem("-1", "Random");
+			menuGlovesGroup[langCounter][k] = new Menu(GloveMainMenuHandler, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
+			menuGlovesGroup[langCounter][k].AddItem("0", "");
+			menuGlovesGroup[langCounter][k].AddItem("-1", "");
 			menuGlovesGroup[langCounter][k].ExitBackButton = true;
 		}
 
@@ -66,10 +50,10 @@ public void ReadConfig()
 				{
 					delete menuGloves[langCounter][k][counter];
 				}
-				menuGloves[langCounter][k][counter] = new Menu(GloveMenuHandler, MENU_ACTIONS_DEFAULT|MenuAction_DisplayItem);
-				menuGloves[langCounter][k][counter].SetTitle(name);
+				menuGloves[langCounter][k][counter] = new Menu(GloveMenuHandler, MENU_ACTIONS_DEFAULT|MenuAction_Display|MenuAction_DisplayItem);
+				menuGloves[langCounter][k][counter].SetTitle("%s", name);
 				Format(buffer, sizeof(buffer), "%s;-1", group);
-				menuGloves[langCounter][k][counter].AddItem(buffer, "Random");
+				menuGloves[langCounter][k][counter].AddItem(buffer, "");
 
 				menuGloves[langCounter][k][counter].ExitBackButton = true;
 			}
@@ -97,11 +81,6 @@ public void ReadConfig()
 
 		CloseHandle(kv);
 
-		langCounter++;
 	}
 
-	if (langCounter == 0)
-	{
-		SetFailState("Could not find a config file for any languages.");
-	}
 }

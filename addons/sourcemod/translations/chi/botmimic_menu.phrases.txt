@@ -1,0 +1,251 @@
+"Phrases"
+{
+	"SLBotsManagedCannotMimic"
+	{
+		"chi"	"[BotMimic] {1} 由 SL-Bots 控制，无法回放录像。"
+	}
+	"MsgAlreadyRecording"
+	{
+		"chi"	"[BotMimic] 你正在录制！请先停止当前录制。"
+	}
+	"MsgNotRecording"
+	{
+		"chi"	"[BotMimic] 你没有在录制。"
+	}
+	"MsgBookmarkUsage"
+	{
+		"chi"	"[BotMimic] 为目标的当前录制保存指定名称的书签。sm_savebookmark <名称|steamid|#userid> <书签名称>"
+	}
+	"MsgTargetNotRecording"
+	{
+		"chi"	"[BotMimic] 目标 {1} 没有在录制。"
+	}
+	"MsgBookmarkNameRequired"
+	{
+		"chi"	"[BotMimic] 请指定书签名称。"
+	}
+	"MsgBookmarkSaved"
+	{
+		"chi"	"[BotMimic] 已在 {2} 的录制中保存书签 \"{1}\"。"
+	}
+	"MsgRenameAborted"
+	{
+		"chi"	"[BotMimic] 已取消重命名。"
+	}
+	"MsgNoRecordToRename"
+	{
+		"chi"	"[BotMimic] 你没有选择要重命名的录制。"
+	}
+	"MsgRenameError"
+	{
+		"chi"	"[BotMimic] 更改名称时发生错误：{1}"
+	}
+	"MsgRecordRenamed"
+	{
+		"chi"	"[BotMimic] 录制已重命名为 \"{1}\"。"
+	}
+	"MsgCategoryAborted"
+	{
+		"chi"	"[BotMimic] 已取消创建分类。"
+	}
+	"MsgCategoryCreated"
+	{
+		"chi"	"[BotMimic] 已创建分类 \"{1}\"。"
+	}
+	"MenuStoppedRecording"
+	{
+		"chi"	"已停止录制"
+	}
+	"MenuCategories"
+	{
+		"chi"	"管理动作录制分类"
+	}
+	"MenuNewMovement"
+	{
+		"chi"	"录制新动作"
+	}
+	"MenuNewCategory"
+	{
+		"chi"	"创建新分类"
+	}
+	"MsgMustBeAlive"
+	{
+		"chi"	"[BotMimic] 你必须存活才能录制动作。"
+	}
+	"MsgStopMimicFirst"
+	{
+		"chi"	"[BotMimic] 你正在回放另一段录制，请先停止回放。"
+	}
+	"MsgCategoryInstruction"
+	{
+		"chi"	"[BotMimic] 在聊天中输入分类名称，或输入 \"!stop\" 取消。该名称也将用作文件夹名称！"
+	}
+	"MenuRecordsInCategory"
+	{
+		"chi"	"管理 {1} 中的录制"
+	}
+	"MenuRecordPlaying"
+	{
+		"chi"	"{1}（正在回放 {2} 次）"
+	}
+	"MenuRecordDetails"
+	{
+		"chi"	"录制 \"{1}\"：详情"
+	}
+	"MenuSelectMimicBot"
+	{
+		"chi"	"选择回放 Bot"
+	}
+	"MenuAddMimicBot"
+	{
+		"chi"	"添加回放 Bot"
+	}
+	"MenuStopAllBots"
+	{
+		"chi"	"停止所有回放此录制的 Bot"
+	}
+	"MenuBookmarks"
+	{
+		"chi"	"查看书签"
+	}
+	"MenuRenameRecord"
+	{
+		"chi"	"重命名此录制"
+	}
+	"MenuDeleteRecord"
+	{
+		"chi"	"删除"
+	}
+	"MenuRecordLength"
+	{
+		"chi"	"长度：{1} ticks"
+	}
+	"MenuChooseBot"
+	{
+		"chi"	"由哪个 Bot 回放此录制？"
+	}
+	"MenuBotTeamT"
+	{
+		"chi"	"{1} [T]"
+	}
+	"MenuBotTeamCT"
+	{
+		"chi"	"{1} [CT]"
+	}
+	"MenuBotPlays"
+	{
+		"chi"	"{1}（回放 {2}）"
+	}
+	"MenuChooseTeam"
+	{
+		"chi"	"选择新 Bot 的队伍"
+	}
+	"MenuTerrorist"
+	{
+		"chi"	"恐怖分子"
+	}
+	"MenuCounterTerrorist"
+	{
+		"chi"	"反恐精英"
+	}
+	"MsgStoppedBots"
+	{
+		"chi"	"[BotMimic] 已停止 {1} 个 Bot 回放录制 \"{2}\"。"
+	}
+	"MsgRenameInstruction"
+	{
+		"chi"	"[BotMimic] 输入录制 \"{1}\" 的新名称，或输入 \"!stop\" 取消。"
+	}
+	"MsgRecordDeleted"
+	{
+		"chi"	"[BotMimic] 已停止 {1} 个 Bot 并删除录制 \"{2}\"。"
+	}
+	"MsgBotMissing"
+	{
+		"chi"	"[BotMimic] 你选择的 Bot 已不存在。"
+	}
+	"MsgBotStopped"
+	{
+		"chi"	"[BotMimic] {1} 已停止回放录制 \"{2}\"。"
+	}
+	"MsgBotStarted"
+	{
+		"chi"	"[BotMimic] {1} 已开始回放录制 \"{2}\"。"
+	}
+	"MsgBotAdded"
+	{
+		"chi"	"[BotMimic] 已添加回放录制 \"{1}\" 的新 Bot。"
+	}
+	"MenuRecordBookmarks"
+	{
+		"chi"	"录制 \"{1}\" 的书签"
+	}
+	"MenuBookmarkPlayers"
+	{
+		"chi"	"选择当前回放此录制并要跳转到书签 \"{1}\" 的玩家："
+	}
+	"MenuNoMimicingPlayers"
+	{
+		"chi"	"当前没有玩家回放此录制。"
+	}
+	"MsgBotNotMimicing"
+	{
+		"chi"	"[BotMimic] {1} 已不再回放任何录制。"
+	}
+	"MsgBotChangedRecord"
+	{
+		"chi"	"[BotMimic] {1} 已不再回放所选录制。"
+	}
+	"MenuRecording"
+	{
+		"chi"	"正在录制……"
+	}
+	"MenuResume"
+	{
+		"chi"	"继续录制"
+	}
+	"MenuPause"
+	{
+		"chi"	"暂停录制"
+	}
+	"MenuSave"
+	{
+		"chi"	"保存录制"
+	}
+	"MenuDiscard"
+	{
+		"chi"	"放弃录制"
+	}
+	"MsgPaused"
+	{
+		"chi"	"[BotMimic] 已暂停录制。"
+	}
+	"MsgResumed"
+	{
+		"chi"	"[BotMimic] 已继续录制。"
+	}
+	"MsgStopInstruction"
+	{
+		"chi"	"[BotMimic] 输入 !stoprecord 停止录制。"
+	}
+	"MenuAdminCategory"
+	{
+		"chi"	"Bot Mimic"
+	}
+	"MsgAlreadyRecordingShort"
+	{
+		"chi"	"[BotMimic] 你已经在录制！"
+	}
+	"MenuListCategories"
+	{
+		"chi"	"查看分类"
+	}
+	"MenuRecordedAt"
+	{
+		"chi"	"录制时间：{1}"
+	}
+	"MsgTargetError"
+	{
+		"chi"	"[SM] {1}"
+	}
+}

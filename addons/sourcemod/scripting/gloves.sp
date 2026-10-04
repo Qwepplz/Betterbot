@@ -1,4 +1,5 @@
 #include <sourcemod>
+#include <bb_client_translations>
 #include <sdktools>
 #include <cstrike>
 
@@ -24,11 +25,11 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	LoadTranslations("gloves.phrases");
+	BB_LoadClientTranslations("gloves.phrases");
 
-	g_Cvar_DBConnection = CreateConVar("sm_gloves_db_connection", "storage-local", "Database connection name in databases.cfg to use");
+	g_Cvar_DBConnection = CreateConVar("sm_gloves_db_connection", "gloves", "Database connection name in databases.cfg to use");
 	g_Cvar_TablePrefix = CreateConVar("sm_gloves_table_prefix", "", "Prefix for database table (example: 'xyz_')");
-	g_Cvar_ChatPrefix = CreateConVar("sm_gloves_chat_prefix", "[oyunhost.net]", "Prefix for chat messages");
+	g_Cvar_ChatPrefix = CreateConVar("sm_gloves_chat_prefix", "[Matt]", "Prefix for chat messages");
 	g_Cvar_EnableFloat = CreateConVar("sm_gloves_enable_float", "1", "Enable/Disable gloves float options");
 	g_Cvar_FloatIncrementSize = CreateConVar("sm_gloves_float_increment_size", "0.2", "Increase/Decrease by value for gloves float");
 	g_Cvar_EnableWorldModel = CreateConVar("sm_gloves_enable_world_model", "1", "Enable/Disable gloves to be seen by other living players");
@@ -39,7 +40,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_glove", CommandGlove);
 	RegConsoleCmd("sm_eldiven", CommandGlove);
 	RegConsoleCmd("sm_st", CommandGlove);
-	RegConsoleCmd("sm_gllang", CommandGloveLang);
 
 	HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Pre);
 
@@ -83,14 +83,7 @@ public Action CommandGlove(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action CommandGloveLang(int client, int args)
-{
-	if (IsValidClient(client))
-	{
-		CreateLanguageMenu(client).Display(client, MENU_TIME_FOREVER);
-	}
-	return Plugin_Handled;
-}
+
 
 public void OnClientPostAdminCheck(int client)
 {
@@ -110,17 +103,10 @@ public void OnClientPostAdminCheck(int client)
 		{
 			GetPlayerData(client);
 		}
-		QueryClientConVar(client, "cl_language", ConVarCallBack);
 	}
 }
 
-public void ConVarCallBack(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue)
-{
-	if (!g_smLanguageIndex.GetValue(cvarValue, g_iClientLanguage[client]))
-	{
-		g_iClientLanguage[client] = 0;
-	}
-}
+
 
 public void GivePlayerGloves(int client)
 {

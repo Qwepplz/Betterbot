@@ -1,0 +1,207 @@
+"Phrases"
+{
+	"BombExplodedTimeLeftMessage"
+	{
+		"chi"	"{GREEN}[{1}] {BLUE}{2}{Default} 差 {RED}{3} {Default}秒就能拆除C4!"
+	}
+	"SuccessfulDefuseTimeLeftMessage"
+	{
+		"chi"	"{GREEN}[{1}] {BLUE}{2}{Default} 在剩下 {RED}{3}{Default} 秒时拆除C4!"
+	}
+	"DefuserDiedTimeLeftMessage"
+	{
+		"chi"	"{GREEN}[{1}] {BLUE}{2}{Default} 剩下 {RED}{3}{Default} 秒就能拆除C4了!"
+	}
+	"PostDefuseKillTimeMessage"
+	{
+		"chi"	"{GREEN}[{1}] {ORANGE}{2}{Default} 差 {RED}{3}{Default} 秒就能阻止C4被拆除!"
+	}
+	"countdown 0"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 1"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 2"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 3"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 4"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 5"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 6"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 7"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 8"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 9"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒"
+	}
+	"countdown 10"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 11"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 12"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 13"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 14"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 15"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 16"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 17"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 18"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 19"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 20"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 21"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 22"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 23"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 24"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 25"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 26"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 27"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 28"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 29"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 30"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 31"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 32"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 33"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 34"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 35"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 36"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 37"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 38"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 39"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"countdown 40"
+	{
+		"chi"	"炸弹已被安放。\n离引爆还剩<font size='50' color='{COLOR}'>{1}</font>秒。"
+	}
+	"Bomb Planted"
+	{
+		"chi"	"{GREEN}[{1}] {RED}C4已安放!"
+	}
+	"Defuse Started"
+	{
+		"chi"	"{GREEN}[{1}] {BLUE}{2} {Default}开始拆除C4 {ORANGE}({3}{Default})"
+	}
+	"Defuse Aborted"
+	{
+		"chi"	"{GREEN}[{1}] {BLUE}{2} {Default}停止拆除C4!"
+	}
+	"With Kit"
+	{
+		"chi"	"有拆弹器"
+	}
+	"Without Kit"
+	{
+		"chi"	"无拆弹器"
+	}
+	"DefaultChatPrefix"
+	{
+		"chi"	"C4"
+	}
+}

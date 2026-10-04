@@ -6,6 +6,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <cstrike>
+#include <bb_client_translations>
 
 #define PLUGIN_VERSION "3.0"
 #define CHAT_MESSAGE_MAX 256
@@ -37,7 +38,8 @@ Handle g_hTimer_Countdown;
 float g_fDetonateTime;
 float g_fC4Timer;
 float g_fDefuseEndTime;
-char g_sChatPrefix[CHAT_PREFIX_MAX] = "C4MSG";
+char g_sChatPrefix[CHAT_PREFIX_MAX];
+char g_sDefaultChatPrefix[CHAT_PREFIX_MAX];
 int g_iDefusingClient = -1;
 bool g_bCurrentlyDefusing;
 
@@ -52,7 +54,18 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-    LoadTranslations("kento.c4msg.phrases");
+    BB_LoadClientTranslations("kento.c4msg.phrases");
+    char prefixPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, prefixPath, sizeof(prefixPath), "translations/kento.c4msg.phrases.txt");
+    KeyValues prefixPhrases = new KeyValues("Phrases");
+    if (!prefixPhrases.ImportFromFile(prefixPath) || !prefixPhrases.JumpToKey("DefaultChatPrefix"))
+    {
+        delete prefixPhrases;
+        SetFailState("Missing default chat prefix resource");
+    }
+    prefixPhrases.GetString("en", g_sDefaultChatPrefix, sizeof(g_sDefaultChatPrefix));
+    delete prefixPhrases;
+    strcopy(g_sChatPrefix, sizeof(g_sChatPrefix), g_sDefaultChatPrefix);
 
     g_hCvarTimer = FindConVar("mp_c4timer");
     if (g_hCvarTimer == null)
@@ -61,11 +74,11 @@ public void OnPluginStart()
         return;
     }
 
-    g_hCvarPrefix = CreateConVar("sm_c4msg_prefix", "C4MSG", "聊天前缀文本");
-    g_hCvarShowPlanted = CreateConVar("sm_c4msg_show_planted", "1", "是否在炸弹安放时显示消息", _, true, 0.0, true, 1.0);
+    g_hCvarPrefix = CreateConVar("sm_c4msg_prefix", g_sDefaultChatPrefix, "聊天前缀文本");
+    g_hCvarShowPlanted = CreateConVar("sm_c4msg_show_planted", "0", "是否在炸弹安放时显示消息", _, true, 0.0, true, 1.0);
     g_hCvarShowDefused = CreateConVar("sm_c4msg_show_defused", "1", "是否在炸弹被拆除时显示剩余时间消息", _, true, 0.0, true, 1.0);
-    g_hCvarShowDefuseStart = CreateConVar("sm_c4msg_show_defuse_start", "1", "是否在开始拆弹时显示消息", _, true, 0.0, true, 1.0);
-    g_hCvarShowDefuseAbort = CreateConVar("sm_c4msg_show_defuse_abort", "1", "是否在停止拆弹时显示消息", _, true, 0.0, true, 1.0);
+    g_hCvarShowDefuseStart = CreateConVar("sm_c4msg_show_defuse_start", "0", "是否在开始拆弹时显示消息", _, true, 0.0, true, 1.0);
+    g_hCvarShowDefuseAbort = CreateConVar("sm_c4msg_show_defuse_abort", "0", "是否在停止拆弹时显示消息", _, true, 0.0, true, 1.0);
     g_hCvarShowCountdown = CreateConVar("sm_c4msg_show_countdown", "1", "是否显示倒计时提示", _, true, 0.0, true, 1.0);
     g_hCvarCountdownMax = CreateConVar("sm_c4msg_countdown_max", "40", "倒计时显示的最大时间（秒）", _, true, 1.0);
     g_hCvarShowDefuserDied = CreateConVar("sm_c4msg_show_defuser_died", "1", "是否在拆弹者死亡时显示时间差信息", _, true, 0.0, true, 1.0);
@@ -264,7 +277,7 @@ void BombMessage(int seconds)
         if (IsHumanClient(client))
         {
             char message[CHAT_MESSAGE_MAX];
-            Format(message, sizeof(message), "%T", phrase, client, seconds);
+            BB_FormatClient(client, message, sizeof(message), "%T", phrase, client, seconds);
             ReplaceString(message, sizeof(message), "{COLOR}", color, false);
             PrintHintText(client, "%s", message);
         }
@@ -395,48 +408,64 @@ void BombTime_BombExploded()
 
 void BroadcastSimpleC4Message(const char[] phrase)
 {
+
     for (int target = 1; target <= MaxClients; target++)
     {
         if (IsHumanClient(target))
         {
-            CPrintToChat(target, "%T", phrase, target, g_sChatPrefix);
+            char prefix[CHAT_PREFIX_MAX];
+            GetClientC4Prefix(target, prefix, sizeof(prefix));
+            CPrintToChat(target, "%T", phrase, target, prefix);
         }
     }
+
 }
 
 void BroadcastNamedC4Message(const char[] phrase, const char[] clientName)
 {
+
     for (int target = 1; target <= MaxClients; target++)
     {
         if (IsHumanClient(target))
         {
-            CPrintToChat(target, "%T", phrase, target, g_sChatPrefix, clientName);
+            char prefix[CHAT_PREFIX_MAX];
+            GetClientC4Prefix(target, prefix, sizeof(prefix));
+            CPrintToChat(target, "%T", phrase, target, prefix, clientName);
         }
     }
+
 }
 
 void BroadcastDefuseStartedMessage(const char[] clientName, bool hasKit)
 {
+
     for (int target = 1; target <= MaxClients; target++)
     {
         if (IsHumanClient(target))
         {
+            char prefix[CHAT_PREFIX_MAX];
+            GetClientC4Prefix(target, prefix, sizeof(prefix));
             char kitText[KIT_TEXT_MAX];
-            Format(kitText, sizeof(kitText), "%T", hasKit ? "With Kit" : "Without Kit", target);
-            CPrintToChat(target, "%T", "Defuse Started", target, g_sChatPrefix, clientName, kitText);
+            BB_FormatClient(target, kitText, sizeof(kitText), "%T", hasKit ? "With Kit" : "Without Kit", target);
+            CPrintToChat(target, "%T", "Defuse Started", target, prefix, clientName, kitText);
         }
     }
+
 }
 
 void BroadcastC4Message(const char[] phrase, const char[] clientName, const char[] seconds)
 {
+
     for (int target = 1; target <= MaxClients; target++)
     {
         if (IsHumanClient(target))
         {
-            CPrintToChat(target, "%T", phrase, target, g_sChatPrefix, clientName, seconds);
+            char prefix[CHAT_PREFIX_MAX];
+            GetClientC4Prefix(target, prefix, sizeof(prefix));
+            CPrintToChat(target, "%T", phrase, target, prefix, clientName, seconds);
         }
     }
+
 }
 
 void GetCountdownColor(int seconds, char[] color, int maxlen)
@@ -488,11 +517,19 @@ bool IsHumanClient(int client)
 
 stock void CPrintToChat(int client, const char[] format, any ...)
 {
+
     char message[CHAT_MESSAGE_MAX];
+    int previousLanguage;
+    if (!BB_BeginClientTranslation(client, previousLanguage))
+    {
+        return;
+    }
     SetGlobalTransTarget(client);
     VFormat(message, sizeof(message), format, 3);
+    BB_EndClientTranslation(client, previousLanguage);
     Colorize(message, sizeof(message));
     PrintToChat(client, "%s", message);
+
 }
 
 void Colorize(char[] message, int maxlen)
@@ -502,4 +539,15 @@ void Colorize(char[] message, int maxlen)
     ReplaceString(message, maxlen, "{BLUE}", "\x0B", false);
     ReplaceString(message, maxlen, "{RED}", "\x02", false);
     ReplaceString(message, maxlen, "{ORANGE}", "\x10", false);
+}
+void GetClientC4Prefix(int client, char[] prefix, int maxlen)
+{
+    if (StrEqual(g_sChatPrefix, g_sDefaultChatPrefix))
+    {
+        BB_FormatClient(client, prefix, maxlen, "%T", "DefaultChatPrefix", client);
+    }
+    else
+    {
+        strcopy(prefix, maxlen, g_sChatPrefix);
+    }
 }

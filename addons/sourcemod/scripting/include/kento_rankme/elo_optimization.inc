@@ -208,7 +208,7 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 				
 				char message[256];
 				FormatRankMeRevengeGlobalMessage(i, message, sizeof(message), g_aClientName[attacker], g_aClientName[victim], 2);
-				CPrintToChat(i, "%s %s", MSG, message);
+				RankMePrintToChat(i, "%T %s", "DefaultChatPrefix", i, message);
 				CSkipList[i] = false;
 			}
 		}
@@ -249,7 +249,7 @@ void ProcessRevengeAndStreakBonuses(int attacker, int victim)
 
 				char message[256];
 				FormatRankMeKillStreakGlobalMessage(i, message, sizeof(message), g_aClientName[attacker], g_aStats[attacker].SCORE, streakPhrase, bonus);
-				CPrintToChat(i, "%s %s", MSG, message);
+				RankMePrintToChat(i, "%T %s", "DefaultChatPrefix", i, message);
 			}
 		}
 	}

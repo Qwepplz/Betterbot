@@ -1,4 +1,4 @@
-const int MAX_LANG = 40;
+const int MAX_LANG = 2;
 
 Database db = null;
 
@@ -32,10 +32,7 @@ int g_iTeam[MAXPLAYERS+1] = { 0, ... };
 Handle g_FloatTimer[MAXPLAYERS+1] = { INVALID_HANDLE, ... };
 int g_iSteam32[MAXPLAYERS+1] = { 0, ... };
 
-char g_Language[MAX_LANG][32];
-int g_iClientLanguage[MAXPLAYERS+1];
 Menu menuGlovesGroup[MAX_LANG][4];
 Menu menuGloves[MAX_LANG][4][9];
 
 StringMap g_smGlovesGroupIndex;
-StringMap g_smLanguageIndex;

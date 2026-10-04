@@ -28,6 +28,8 @@
 #include <multicolors>
 #include <PTaH>
 #include <eItems>
+#include <ripext>
+#include <bb_client_translations>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -75,19 +77,19 @@ public void OnPluginStart()
 	}
 	// Translations.
 	LoadTranslations("common.phrases");
-	LoadTranslations("csgo_weaponstickers.phrases");
+	BB_LoadClientTranslations("csgo_weaponstickers.phrases");
 
 	// ConVars.
 	CreateConVar("sm_weaponstickers_version", PLUGIN_VERSION, "Plugin Version", FCVAR_NOTIFY|FCVAR_SPONLY|FCVAR_DONTRECORD);
 	g_cvarEnabled = CreateConVar("sm_weaponstickers_enabled", "1", "Enable or disable Plugin.", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	g_cvarUpdateViewModel = CreateConVar("sm_weaponstickers_updateviewmodel", "0", "Specifies whether the view model will be updated when changing stickers (P.S: the player will experience a small rollback).", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	g_cvarReuseTime = CreateConVar("sm_weaponstickers_reusetime", "5", "Specifies how many seconds it will be necessary to wait to update the stickers again.", FCVAR_NOTIFY, true, 0.1);
+	g_cvarUpdateViewModel = CreateConVar("sm_weaponstickers_updateviewmodel", "1", "Specifies whether the view model will be updated when changing stickers (P.S: the player will experience a small rollback).", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_cvarReuseTime = CreateConVar("sm_weaponstickers_reusetime", "3", "Specifies how many seconds it will be necessary to wait to update the stickers again.", FCVAR_NOTIFY, true, 0.1);
 	g_cvarOverrideViewItem = CreateConVar("sm_weaponstickers_overrideview", "1", "Specifies whether the plugin will override the weapon view (p.s: Recommended if !ws plugin is used).", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	g_cvarFlagUse = CreateConVar("sm_weaponstickers_flag", "", "Specifies the required flag (e.g: 'a' for reserved slot).", FCVAR_NOTIFY);
-	g_cvarInactive_days = CreateConVar("sm_weaponstickers_inactive_days", "30", "Number of days before a player (SteamID) is marked as inactive and his data is deleted. (0 or any negative value to disable deleting)", FCVAR_NOTIFY);
+	g_cvarInactive_days = CreateConVar("sm_weaponstickers_inactive_days", "0", "Number of days before a player (SteamID) is marked as inactive and his data is deleted. (0 or any negative value to disable deleting)", FCVAR_NOTIFY);
 	
 	AutoExecConfig(true, "csgo_weaponstickers");
-	CSetPrefix("%t", "Prefiks");
+	CClearPrefix();
 
 	// Forward event to modules.
 	LoadCommands();
@@ -143,6 +145,7 @@ public void eItems_OnItemsSynced()
 
 public void Frame_ItemsSync(any data)
 {
+	LoadLocalizedStickerNames();
 	// Load stickers.
 	for (int i = 0; i < g_stickerSetsCount; i++)
 	{
@@ -331,4 +334,14 @@ void RefreshClientWeapon(int client, int index)
 			}
 		}
 	}
+}
+public void OnPluginEnd()
+{
+	for (int language = 0; language < 2; language++)
+	{
+		delete g_smLocalizedStickerNames[language];
+		delete g_smLocalizedStickerSetNames[language];
+		delete g_smLocalizedStickerWeaponNames[language];
+	}
+	delete g_smMissingStickerNames;
 }
