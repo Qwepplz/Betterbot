@@ -25,184 +25,199 @@ public void OnPluginStart()
 	AddNormalSoundHook(VoiceLineSounds);
 }
 
-public Action:VoiceLineSounds(clients[64], &numClients, String:sample[PLATFORM_MAX_PATH], &client, &channel, &Float:volume, &level, &pitch, &flags)
+public Action VoiceLineSounds(int clients[MAXPLAYERS], int &numClients,
+	char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume,
+	int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-	if(!IsValidClient(client) || !IsPlayerAlive(client))
+	if (!IsValidClient(entity) || !IsPlayerAlive(entity)
+		|| numClients < 0 || numClients > sizeof(clients))
 		return Plugin_Continue;
 
+	if (StrContains(sample, "player\\vo\\", false) == -1)
+		return Plugin_Continue;
+
+	int team = GetClientTeam(entity);
+	if (team != 2 && team != 3)
+		return Plugin_Continue;
+
+	bool changed = false;
 	char model[128];
-	GetClientModel(client, model, sizeof(model));
+	GetClientModel(entity, model, sizeof(model));
 
-	int modelindex = getMasterModel(model);
-
-	if(modelindex == 0)
-		return Plugin_Continue;
-
-	if(StrContains(sample, "player\\vo\\", false) == -1)
-		return Plugin_Continue;
-
-	int iParts;
-	char sParts[36][255];
-	if((iParts = ExplodeString(sample, "\\", sParts, sizeof(sParts), sizeof(sParts[]))) <= 7)
+	char candidate[PLATFORM_MAX_PATH];
+	if (BuildAgentVoiceSample(sample, getMasterModel(model), candidate, sizeof(candidate)))
 	{
-		int i = 0;
-		for(i = 0; i < iParts; ++i)
+		char filePath[PLATFORM_MAX_PATH];
+		int pathStart = StrContains(candidate, "player\\vo\\", false);
+		int fileLength = strlen(candidate) - pathStart + 6;
+		if (fileLength < sizeof(filePath))
 		{
-			if(i == 3)//Voice name path goes here.
+			Format(filePath, sizeof(filePath), "sound/%s", candidate[pathStart]);
+			ReplaceString(filePath, sizeof(filePath), "\\", "/");
+			if (FileExists(filePath, true, "GAME") && PrecacheSound(candidate))
 			{
-				char Output[64];
-				char Tempp[64];
-				strcopy(Tempp, sizeof(Tempp), sParts[i]);
-				strcopy(Output, sizeof(Output), sParts[i]);
-				PostEditSoundPath(Output, Output, 64);
-				ReplaceString(sample, sizeof(sample), Tempp, Output);
-				break;
+				strcopy(sample, sizeof(sample), candidate);
+				changed = true;
 			}
-		}
-		int replaces = 0;
-		switch(modelindex)
-		{
-			case 4:
-			{
-				replaces += ReplaceString(sample, sizeof(sample), "anarchist", "leet_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "balkan", "leet_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "leet", "leet_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "phoenix", "leet_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "separatist", "leet_epic");
-				if (replaces == 0)return Plugin_Continue; // prevent work on epic models already bought
-				char gg[255];
-				PostEditSoundPath(sample, gg, 255);
-				char Temp[255];
-				strcopy(Temp, sizeof(Temp), gg);
-				//PrintToChat(client, "antes %s",Temp);
-				replaces += ReplaceString(Temp, sizeof(Temp), "__no", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "___", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "__", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "negative", "disagree");
-				replaces += ReplaceString(Temp, sizeof(Temp), "request_request_", "request_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "sees_area_sees_area_sees_area_clear", "sees_area_clear");
-				//PrintToChat(client, "despues %s",Temp);
-				PrecacheSound(Temp);
-				EmitSoundToAll(Temp, client, channel, level, flags, volume);
-				return Plugin_Changed;
-			}
-			case 3:
-			{
-				replaces += ReplaceString(sample, sizeof(sample), "anarchist", "balkan_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "balkan", "balkan_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "leet", "balkan_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "phoenix", "balkan_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "separatist", "balkan_epic");
-				char gg[255];
-				PostEditSoundPath(sample, gg, 255);
-				replaces += ReplaceString(sample, sizeof(sample), gg, "");
-
-				char Temp[255];
-				strcopy(Temp, sizeof(Temp), gg);
-				replaces += ReplaceString(Temp, sizeof(Temp), "___", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "__", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "request_request_", "request_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "sees_area_sees_area_sees_area_clear_", "sees_area_clear_");
-				//replaces += ReplaceString(Temp, sizeof(Temp), "+player", "player");
-				if (replaces == 0)return Plugin_Continue;
-
-				PrecacheSound(Temp);
-				EmitSoundToAll(Temp, client, channel, level, flags, volume);
-				return Plugin_Handled;
-			}
-			case 1:
-			{
-				replaces += ReplaceString(sample, sizeof(sample), "fbihrt", "seal_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "gign", "seal_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "idf", "seal_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "sas", "seal_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "swat", "seal_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "seal", "seal_epic");
-				char gg[255];
-				PostEditSoundPath(sample, gg, 255);
-				char Temp[255];
-				strcopy(Temp, sizeof(Temp), gg);
-				replaces += ReplaceString(Temp, sizeof(Temp), "___", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "__", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "request_request_", "request_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "sees_area_sees_area_sees_area_clear_", "sees_area_clear_");
-				if (replaces == 0)return Plugin_Continue;
-
-				PrecacheSound(Temp);
-				EmitSoundToAll(Temp, client, channel, level, flags, volume);
-				return Plugin_Changed;
-			}
-			case 2:
-			{
-
-				replaces += ReplaceString(sample, sizeof(sample), "fbihrt", "fbihrt_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "gign", "fbihrt_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "idf", "fbihrt_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "sas", "fbihrt_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "swat", "fbihrt_epic");
-				replaces += ReplaceString(sample, sizeof(sample), "seal", "fbihrt_epic");
-				char gg[255];
-				PostEditSoundPath(sample, gg, 255);
-				char Temp[255];
-				strcopy(Temp, sizeof(Temp), gg);
-				//PrintToChat(client, "antes %s",Temp);
-				replaces += ReplaceString(Temp, sizeof(Temp), "___", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "__", "_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "request_request_", "request_");
-				replaces += ReplaceString(Temp, sizeof(Temp), "sees_area_sees_area_clear_", "sees_area_clear_");
-				char fire[24];
-				Format(fire, sizeof(fire), "takingfire_0%i", GetRandomInt(1, 7));
-				replaces += ReplaceString(Temp, sizeof(Temp), "takingfire_11", fire);
-				replaces += ReplaceString(Temp, sizeof(Temp), "takingfire_12", fire);
-
-				if (replaces == 0)return Plugin_Continue;
-
-				//PrintToChat(client, "despues %s",Temp);
-
-				PrecacheSound(Temp);
-
-				EmitSoundToAll(Temp, client, channel, level, flags, volume);
-				return Plugin_Changed;
-			}
-			default:
-				return Plugin_Continue;
 		}
 	}
-	return Plugin_Continue;
+
+	int kept = 0;
+	for (int i = 0; i < numClients; i++)
+	{
+		int recipient = clients[i];
+		// Leave existing GOTV recipients to the game's original routing.
+		if (IsValidClient(recipient) && !IsClientSourceTV(recipient)
+			&& GetClientTeam(recipient) != team)
+		{
+			changed = true;
+			continue;
+		}
+		clients[kept++] = recipient;
+	}
+	numClients = kept;
+
+	return changed ? Plugin_Changed : Plugin_Continue;
 }
 
-PostEditSoundPath(String:input[], String:output[], int size)
+bool BuildAgentVoiceSample(const char[] sample, int modelIndex, char[] output, int outputSize)
 {
-	//Many of voice lines are different at the end of the path, sooooooo we have to change them to valid ones.
-	ReplaceString(input, 255, "radiobotreponse", "");
-	ReplaceString(input, 255, "radiobot", "");
-	ReplaceString(input, 255, "positive", "affirmation_");
-	ReplaceString(input, 255, "cheer", "cheer_");
-	ReplaceString(input, 255, "hold", "request_hold_");
-	ReplaceString(input, 255, "affirmative", "affirmation_");
-	ReplaceString(input, 255, "agree", "agree_");
-	ReplaceString(input, 255, "negative", "negative_");
-	ReplaceString(input, 255, "negativeno", "negative_");
-	ReplaceString(input, 255, "onarollbrag", "compliment_");
-	ReplaceString(input, 255, "preventescapebrag", "compliment_");
-	ReplaceString(input, 255, "radiobothold", "request_hold_");
-	ReplaceString(input, 255, "radio_followme", "request_follow_me_");
-	ReplaceString(input, 255, "radio_locknload", "request_follow_me_");
-	ReplaceString(input, 255, "thanks", "thankful_");
-	ReplaceString(input, 255, "radio_enemyspotted", "sees_enemy_");
-	ReplaceString(input, 255, "radio_needbackup", "request_backup_");
-	ReplaceString(input, 255, "followingfriend", "following_friend_");
-	ReplaceString(input, 255, "clearedarea", "sees_area_clear_");
-	ReplaceString(input, 255, "inposition", "at_position_");
-	ReplaceString(input, 255, "spottedloosebomb", "sees_dropped_bomb_");
-	ReplaceString(input, 255, "radiobotreponsepositive", "affirmation_");
-	ReplaceString(input,255, "followme", "request_follow_me_");
-	ReplaceString(input,255, "target", "sees_enemy_");
-	ReplaceString(input,255, "underfire", "takingfire_");
-	ReplaceString(input,255, "followyou", "following_friend_");
-	ReplaceString(input, 255, "clear", "sees_area_clear_");
-	ReplaceString(input, 255, "at_position", "omw_position");
-	return Format(output, size, "%s", input);
+	static const char voices[][] = {"seal_epic", "fbihrt_epic", "balkan_epic", "leet_epic"};
+	if (modelIndex < 1 || modelIndex > sizeof(voices))
+		return false;
+
+	int separators = 0;
+	for (int i = 0; sample[i] != '\0'; i++)
+	{
+		if (sample[i] == '\\')
+			separators++;
+	}
+	if (separators != 3)
+		return false;
+
+	char parts[4][PLATFORM_MAX_PATH];
+	if (ExplodeString(sample, "\\", parts, sizeof(parts), sizeof(parts[])) != 4
+		|| !StrEqual(parts[1], "vo", false))
+		return false;
+
+	if (StrEqual(parts[2], voices[modelIndex - 1]))
+		return false;
+
+	bool knownVoice;
+	if (modelIndex <= 2)
+	{
+		knownVoice = StrEqual(parts[2], "fbihrt") || StrEqual(parts[2], "gign")
+			|| StrEqual(parts[2], "idf") || StrEqual(parts[2], "sas")
+			|| StrEqual(parts[2], "swat") || StrEqual(parts[2], "seal");
+	}
+	else
+	{
+		knownVoice = StrEqual(parts[2], "anarchist") || StrEqual(parts[2], "balkan")
+			|| StrEqual(parts[2], "leet") || StrEqual(parts[2], "phoenix")
+			|| StrEqual(parts[2], "separatist");
+	}
+	if (!knownVoice)
+		return false;
+
+	char line[PLATFORM_MAX_PATH];
+	if (PostEditSoundPath(parts[3], sizeof(parts[]), line, sizeof(line)) < 0)
+		return false;
+
+	if (modelIndex == 4 && StrContains(line, "negative_") == 0)
+		ReplaceString(line, sizeof(line), "negative_", "disagree_");
+
+	if (modelIndex == 2
+		&& (StrEqual(line, "takingfire_11.wav") || StrEqual(line, "takingfire_12.wav")))
+		Format(line, sizeof(line), "takingfire_0%i.wav", GetRandomInt(1, 7));
+
+	int length = strlen(parts[0]) + strlen(parts[1]) + strlen(voices[modelIndex - 1])
+		+ strlen(line) + 3;
+	if (length >= outputSize)
+		return false;
+
+	Format(output, outputSize, "%s\\%s\\%s\\%s", parts[0], parts[1],
+		voices[modelIndex - 1], line);
+	return true;
+}
+
+int PostEditSoundPath(char[] input, int inputSize, char[] output, int outputSize)
+{
+	static const char aliases[][][] =
+	{
+		{"positive", "affirmation_"},
+		{"affirmative", "affirmation_"},
+		{"cheer", "cheer_"},
+		{"hold", "request_hold_"},
+		{"agree", "agree_"},
+		{"negative", "negative_"},
+		{"negativeno", "negative_"},
+		{"onarollbrag", "compliment_"},
+		{"preventescapebrag", "compliment_"},
+		{"radio_followme", "request_follow_me_"},
+		{"radio_locknload", "request_follow_me_"},
+		{"thanks", "thankful_"},
+		{"radio_enemyspotted", "sees_enemy_"},
+		{"radio_needbackup", "request_backup_"},
+		{"followingfriend", "following_friend_"},
+		{"clearedarea", "sees_area_clear_"},
+		{"inposition", "omw_position_"},
+		{"spottedloosebomb", "sees_dropped_bomb_"},
+		{"followme", "request_follow_me_"},
+		{"target", "sees_enemy_"},
+		{"underfire", "takingfire_"},
+		{"followyou", "following_friend_"},
+		{"clear", "sees_area_clear_"},
+		{"at_position", "omw_position_"}
+	};
+
+	int inputLength = strlen(input);
+	if (inputSize <= 0 || outputSize <= 0 || inputLength >= inputSize
+		|| inputLength < 5 || !StrEqual(input[inputLength - 4], ".wav"))
+		return -1;
+
+	int start = 0;
+	if (StrContains(input, "radiobotreponse") == 0)
+		start = strlen("radiobotreponse");
+	else if (StrContains(input, "radiobot") == 0)
+		start = strlen("radiobot");
+
+	int numberStart = inputLength - 4;
+	while (numberStart > start && IsCharNumeric(input[numberStart - 1]))
+		numberStart--;
+
+	int wordEnd = numberStart;
+	while (wordEnd > start && input[wordEnd - 1] == '_')
+		wordEnd--;
+	if (wordEnd <= start)
+		return -1;
+
+	char word[PLATFORM_MAX_PATH];
+	if (wordEnd - start >= sizeof(word))
+		return -1;
+	strcopy(word, wordEnd - start + 1, input[start]);
+
+	for (int i = 0; i < sizeof(aliases); i++)
+	{
+		if (!StrEqual(word, aliases[i][0]))
+			continue;
+
+		int length = strlen(aliases[i][1]) + inputLength - numberStart;
+		if (length >= outputSize)
+			return -1;
+
+		char candidate[PLATFORM_MAX_PATH];
+		if (length >= sizeof(candidate))
+			return -1;
+		Format(candidate, sizeof(candidate), "%s%s", aliases[i][1], input[numberStart]);
+		strcopy(output, outputSize, candidate);
+		return length;
+	}
+
+	int length = inputLength - start;
+	if (length >= outputSize)
+		return -1;
+	strcopy(output, outputSize, input[start]);
+	return length;
 }
 
 int getMasterModel(char[] model)
