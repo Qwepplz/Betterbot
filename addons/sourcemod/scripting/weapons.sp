@@ -67,6 +67,7 @@ public void OnPluginStart() {
   char prefixPath[PLATFORM_MAX_PATH];
   BuildPath(Path_SM, prefixPath, sizeof(prefixPath), "translations/weapons.phrases.txt");
   KeyValues prefixPhrases = new KeyValues("Phrases");
+  prefixPhrases.SetEscapeSequences(true);
   if (!prefixPhrases.ImportFromFile(prefixPath) || !prefixPhrases.JumpToKey("DefaultChatPrefix")) {
     delete prefixPhrases;
     SetFailState("Missing default chat prefix resource");

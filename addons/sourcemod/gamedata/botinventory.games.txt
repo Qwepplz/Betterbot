@@ -8,15 +8,22 @@
 			"CCSPlayer::SetRank" // MedalCategory_t category, MedalRank_t rank
 			{
 				"library"		"server"
-				"windows"		"\x55\x8B\xEC\x81\xC1\xD8\x15\x00\x00"
+				"linux"	"\x55\x89\xE5\x57\x56\x53\x83\xEC\x30\x8B\x45\x0C\x8B\x5D\x08\x6A\x04\x8D\xB4\x83\xF0\x15\x00\x00"
 			}
 		}
 		"Offsets"
 		{
 			"CGameClient::UpdateAcknowledgedFramecount"
 			{
-				"windows"       "17"
 				"linux"         "55"
+			}
+			"CBaseServer::GetClient"
+			{
+				"linux" "7"
+			}
+			"IClient::CGameClientOffset"
+			{
+				"linux" "4"
 			}
 		}
 	}

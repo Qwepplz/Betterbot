@@ -11,6 +11,7 @@
 #include <botmimic>
 #include <PTaH>
 #include <bot_steamids>
+#include <eventptr>
 
 #undef REQUIRE_PLUGIN
 #include <kento_rankme/rankme>
@@ -2015,12 +2016,6 @@ public Action PTaH_WeaponCanUsePreHook(int iClient, int iWeapon, bool &bPickup)
 	return Plugin_Changed;
 }
 
-public MRESReturn BotCOSandSIN(DHookReturn hReturn)
-{
-	hReturn.Value = 0;
-	return MRES_Supercede;
-}
-
 public MRESReturn CCSBot_GetPartPosition(DHookReturn hReturn, DHookParam hParams)
 {
 	if (hParams == null)
@@ -2130,6 +2125,13 @@ public MRESReturn CCSBot_MoveTo(int iClient, DHookParam hParams)
 		return MRES_Ignored;
 
 	return MRES_Supercede;
+}
+
+public MRESReturn CCSBot_SetLookAtLinux(DHookParam hParams)
+{
+	if (hParams == null)
+		return MRES_Ignored;
+	return CCSBot_SetLookAt(GetClientFromAddress(view_as<Address>(hParams.Get(8))), hParams);
 }
 
 public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
@@ -3336,6 +3338,7 @@ public void LoadSDK()
 	PrepSDKCall_SetFromConf(hConf, SDKConf_Signature, "CBotManager::IsLineBlockedBySmoke");
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
 	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
 	if ((g_hIsLineBlockedBySmoke = EndPrepSDKCall()) == null)
 		SetFailState("Failed to create SDKCall: CBotManager::IsLineBlockedBySmoke");
@@ -3387,11 +3390,9 @@ public void LoadDetours()
 		return;
 	}
 
-	SetupDetour(hConf, "CCSBot::SetLookAt", Hook_Pre, CCSBot_SetLookAt);
+	SetupDetour(hConf, "CCSBot::SetLookAt", Hook_Pre, CCSBot_SetLookAtLinux);
 	SetupOptionalDetour(hConf, "CCSBot::MoveTo", Hook_Pre, CCSBot_MoveTo);
 	SetupDetour(hConf, "CCSBot::PickNewAimSpot", Hook_Post, CCSBot_PickNewAimSpot);
-	SetupDetour(hConf, "BotCOS", Hook_Pre, BotCOSandSIN);
-	SetupDetour(hConf, "BotSIN", Hook_Pre, BotCOSandSIN);
 	SetupDetour(hConf, "CCSBot::GetPartPosition", Hook_Pre, CCSBot_GetPartPosition);
 	SetupDetour(hConf, "CCSBot::OnAudibleEvent", Hook_Pre, CCSBot_OnAudibleEvent);
 	SetupDetour(hConf, "CCSBot::CanSeeLooseBomb", Hook_Post, CCSBot_CanSeeLooseBomb);
@@ -3441,7 +3442,7 @@ public void BotThrowGrenade(int iClient, const float fTarget[3])
 
 void BotOnAudibleEvent(int iBot, Event eEvent, int iPlayer, float fRange, PriorityType ePriority, bool bIsHostile, bool bIsFootstep = false, const float fActualOrigin[3] = NULL_VECTOR)
 {
-	SDKCall(g_hOnAudibleEvent, iBot, eEvent, iPlayer, fRange, ePriority, bIsHostile, bIsFootstep, fActualOrigin);
+	SDKCall(g_hOnAudibleEvent, iBot, BB_GetGameEventAddress(eEvent), iPlayer, fRange, ePriority, bIsHostile, bIsFootstep, fActualOrigin);
 }
 
 public int BotGetEnemy(int iClient)
@@ -6106,7 +6107,7 @@ float GetNadeDetonateTime(int iNadeDefIndex)
 
 stock bool LineGoesThroughSmoke(const float fFrom[3], const float fTo[3])
 {
-    return SDKCall(g_hIsLineBlockedBySmoke, g_pTheBots, fFrom, fTo);
+    return SDKCall(g_hIsLineBlockedBySmoke, g_pTheBots, fFrom, fTo, 1.0);
 }
 
 stock bool IsRifleOrHeavy(int iDefIndex)

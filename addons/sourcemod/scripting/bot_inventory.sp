@@ -93,6 +93,8 @@ int g_iComboSlotMask[] =  {
 
 Handle g_hSetRank;
 Handle g_hForceUpdate;
+Handle g_hGetEngineClient;
+int g_iEngineClientOffset;
 
 int g_iNextIDLow = 2048;
 int g_iNextIDHigh = 16384;
@@ -187,6 +189,8 @@ public void OnPluginStart()
 	HookUserMessage(GetUserMessageId("EndOfMatchAllPlayersData"), OnEndOfMatchAllPlayersData, true);
 	
 	GameData hGameData = new GameData("botinventory.games");
+	if (hGameData == null)
+		SetFailState("Failed to find botinventory.games game config");
 	
 	// https://github.com/perilouswithadollarsign/cstrike15_src/blob/29e4c1fda9698d5cebcdaf1a0de4b829fa149bf8/game/server/cstrike15/cs_player.cpp#L16369-L16372
 	// Changes the the rank of the player ( this case use is the coin )
@@ -200,7 +204,16 @@ public void OnPluginStart()
 	if (!(g_hSetRank = EndPrepSDKCall()))
 		SetFailState("Failed to get CCSPlayer::SetRank signature");
 	
-	StartPrepSDKCall(SDKCall_Player);
+	g_iEngineClientOffset = hGameData.GetOffset("IClient::CGameClientOffset");
+	if (g_iEngineClientOffset < 0)
+		SetFailState("Failed to get IClient::CGameClientOffset");
+	StartPrepSDKCall(SDKCall_Server);
+	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseServer::GetClient");
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+	if (!(g_hGetEngineClient = EndPrepSDKCall()))
+		SetFailState("Failed to create CBaseServer::GetClient SDKCall");
+	StartPrepSDKCall(SDKCall_Raw);
 	
 	PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CGameClient::UpdateAcknowledgedFramecount"); // void
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
@@ -210,13 +223,10 @@ public void OnPluginStart()
 	
 	delete hGameData;
 	
-	if (g_bLateLoaded)
-	{
-		if (eItems_AreItemsSynced())
-			eItems_OnItemsSynced();
-		else if (!eItems_AreItemsSyncing())
-			eItems_ReSync();
-	}
+	if (eItems_AreItemsSynced())
+		eItems_OnItemsSynced();
+	else if (g_bLateLoaded && !eItems_AreItemsSyncing())
+		eItems_ReSync();
 }
 
 public void eItems_OnItemsSynced()
@@ -699,7 +709,7 @@ public Action OnTakeDamageAlive(int victim, int &attacker, int &iInflictor, floa
 		g_iStatTrakKills[attacker][iDefIndex]++;
 		pDynamicAttributes.SetOrAddAttributeValue(80, g_iStatTrakKills[attacker][iDefIndex]);
 		
-		SDKCall(g_hForceUpdate, attacker, -1);
+		ForceClientUpdate(attacker);
 	}
 	
 	return Plugin_Continue;
@@ -758,7 +768,7 @@ public Action Timer_MapWeaponEquipped(Handle hTimer, DataPack hPack)
 	SetEntProp(iWeapon, Prop_Send, "m_OriginalOwnerXuidLow", GetBotAccountID(client));
 	SetEntProp(iWeapon, Prop_Send, "m_OriginalOwnerXuidHigh", 17825793);
 	
-	SDKCall(g_hForceUpdate, client, -1);
+	ForceClientUpdate(client);
 	
 	return Plugin_Stop;
 }
@@ -978,8 +988,16 @@ void SetWeaponProps(int client, int iEntity)
 		SetEntPropEnt(iEntity, Prop_Send, "m_hOwnerEntity", client);
 		SetEntPropEnt(iEntity, Prop_Send, "m_hPrevOwner", -1);
 		
-		SDKCall(g_hForceUpdate, client, -1);
+		ForceClientUpdate(client);
 	}
+}
+
+void ForceClientUpdate(int client)
+{
+	Address pClient = view_as<Address>(SDKCall(g_hGetEngineClient, client - 1));
+	if (pClient == Address_Null)
+		ThrowError("Failed to get engine client for %d", client);
+	SDKCall(g_hForceUpdate, pClient - view_as<Address>(g_iEngineClientOffset), -1);
 }
 
 public void GivePlayerGloves(int client)
@@ -1013,7 +1031,7 @@ public void GivePlayerGloves(int client)
 		SetEntPropEnt(client, Prop_Send, "m_hMyWearables", iEntity);
 		SetEntProp(client, Prop_Send, "m_nBody", 1);
 		
-		SDKCall(g_hForceUpdate, client, -1);
+		ForceClientUpdate(client);
 	}
 }
 
