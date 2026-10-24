@@ -41,13 +41,12 @@ public void OnPluginStart()
     HookEvent("player_spawn", Event_PlayerSpawn);
 }
 
-bool IsGet5WeaponReplacementBlockedPhase()
+bool IsGet5WeaponReplacementAllowed()
 {
     if (GetFeatureStatus(FeatureType_Native, "Get5_GetGameState") != FeatureStatus_Available)
         return false;
 
-    Get5State state = Get5_GetGameState();
-    return state == Get5State_KnifeRound || state == Get5State_WaitingForKnifeRoundDecision;
+    return Get5_GetGameState() == Get5State_Live;
 }
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -56,7 +55,7 @@ public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast
     if (!IsValidClient(client) || IsFakeClient(client) || !IsPlayerAlive(client) || GetClientTeam(client) != CS_TEAM_CT)
         return;
 
-    if (IsGet5WeaponReplacementBlockedPhase())
+    if (!IsGet5WeaponReplacementAllowed())
         return;
 
     int weapon = GetPlayerWeaponSlot(client, CS_SLOT_SECONDARY);
@@ -86,6 +85,9 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
     if (!StrEqual(weapon, "m4a1", false))
         return Plugin_Continue;
 
+    if (!IsGet5WeaponReplacementAllowed())
+        return Plugin_Continue;
+
     int primary = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
     if (primary != -1 && IsValidEntity(primary))
         return Plugin_Handled;
@@ -102,6 +104,9 @@ public Action Timer_ReplaceM4A4(Handle timer, DataPack pack)
     int client = GetClientOfUserId(pack.ReadCell());
 
     if (!IsValidClient(client) || IsFakeClient(client) || !IsPlayerAlive(client) || GetClientTeam(client) != CS_TEAM_CT)
+        return Plugin_Stop;
+
+    if (!IsGet5WeaponReplacementAllowed())
         return Plugin_Stop;
 
     if (GetEntProp(client, Prop_Send, "m_bInBuyZone") == 0)
