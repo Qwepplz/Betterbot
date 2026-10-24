@@ -184,6 +184,12 @@
 				//A little bit above the string '%3.2f: Grenade: FINISH_THROW\n'
 				"linux"	"23096"
 			}
+			"CCSBot::SetLookAtInhibitUntil"
+			{
+				// Local offset key: SetLookAt wrapper reads this deadline; Blind updates it.
+				// Verified ELF32 build 8853: server.so 7de235c3, read de19d8, write c1170b.
+				"linux"	"5488"
+			}
 			"CCSBot::m_morale"
 			{
 				//Near the string 'Morale: %s'

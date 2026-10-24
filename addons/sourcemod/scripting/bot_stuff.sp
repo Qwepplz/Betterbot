@@ -38,6 +38,8 @@
 #define BOMB_MOVE_INTERVAL 0.5
 #define SCRIPT_MOVE_INTERVAL 0.35
 #define NADE_SOLVE_TRACE_BUDGET_PER_FRAME 32
+#define NADE_SOLVE_MAX_ACTIVE_JOBS 2
+#define NADE_SOLVE_RETRY_INTERVAL 0.25
 #define NADE_SOLVE_TIME_BUDGET_PER_FRAME 0.0005
 #define NADE_SOLVE_TIMEOUT_BASE 3.0
 #define NADE_SOLVE_TIMEOUT_PER_EXTRA_JOB 1.0
@@ -136,7 +138,7 @@ bool g_bProfileRanksDirty;
 int g_iProfileRank[MAXPLAYERS+1], g_iPlayerColor[MAXPLAYERS+1], g_iTarget[MAXPLAYERS+1], g_iPrevTarget[MAXPLAYERS+1], g_iDoingSmokeNum[MAXPLAYERS+1], g_iActiveWeapon[MAXPLAYERS+1];
 int g_iCurrentRound, g_iRoundsPlayed, g_iCTScore, g_iTScore;
 int g_iProfileRankOffset, g_iPlayerColorOffset;
-int g_iBotTargetSpotOffset, g_iBotNearbyEnemiesOffset, g_iFireWeaponOffset, g_iEnemyVisibleOffset, g_iBotProfileOffset, g_iBotSafeTimeOffset, g_iBotEnemyOffset, g_iBotLookAtSpotStateOffset, g_iBotMoraleOffset, g_iBotTaskOffset, g_iBotDispositionOffset;
+int g_iBotTargetSpotOffset, g_iBotNearbyEnemiesOffset, g_iFireWeaponOffset, g_iEnemyVisibleOffset, g_iBotProfileOffset, g_iBotSafeTimeOffset, g_iBotEnemyOffset, g_iBotLookAtSpotStateOffset, g_iBotLookAtInhibitUntilOffset, g_iBotMoraleOffset, g_iBotTaskOffset, g_iBotDispositionOffset;
 float g_fBotOrigin[MAXPLAYERS+1][3], g_fTargetPos[MAXPLAYERS+1][3], g_fNadeTarget[MAXPLAYERS+1][3];
 float g_fOriginalNoisePos[MAXPLAYERS+1][3];
 float g_fRoundStart, g_fFreezeTimeEnd;
@@ -178,7 +180,8 @@ enum NadeSolveRequestResult
 {
 	NadeRequest_Rejected,
 	NadeRequest_Queued,
-	NadeRequest_Submitted
+	NadeRequest_Submitted,
+	NadeRequest_Busy
 }
 
 enum struct NadeSolveJob
@@ -230,6 +233,10 @@ enum struct NadeSolvePerfStats
 	int failedJobs;
 	int timedOutJobs;
 	int maxQueuedJobs;
+	int schedulerVisits;
+	int nadeFrames;
+	float totalNadeFrameSeconds;
+	float maxNadeFrameSeconds;
 	float totalFrameSeconds;
 	float maxFrameSeconds;
 }
@@ -245,7 +252,10 @@ float g_fLegacyDefaultNadeActionStart[MAXPLAYERS+1];
 float g_fLegacyDefaultNadeLastPos[MAXPLAYERS+1][3];
 float g_fLegacyDefaultNadeLastMoveTime[MAXPLAYERS+1];
 NadeSolveJob g_sNadeSolveJobs[MAXPLAYERS+1];
-int g_iNadeSolveRoundRobinClient = 1;
+int g_iNadeSolveClients[NADE_SOLVE_MAX_ACTIVE_JOBS];
+int g_iNadeSolveRoundRobinSlot;
+float g_fNadeSolveRetryAt[MAXPLAYERS+1];
+int g_iNadeRequestsBusy;
 int g_iNadeSolveActiveCount;
 NadeSolvePerfStats g_sNadeSolvePerf;
 int g_iNadeJobSequence;
@@ -262,6 +272,7 @@ StringMap g_smNadeEndReasons;
 enum struct NadeThrowContext
 {
 	bool active;
+	bool lookDeferred;
 	int throwId;
 	int jobId;
 	int userId;
@@ -745,39 +756,41 @@ public void OnMapStart()
 
 public void OnGameFrame()
 {
+	float fNadeStartedAt = GetEngineTime();
 	UpdateNadeObservation();
 	if (g_iNadeSolveActiveCount <= 0)
+	{
+		RecordNadeFrameCost(fNadeStartedAt);
 		return;
+	}
 
 	int iTraceBudget = NADE_SOLVE_TRACE_BUDGET_PER_FRAME;
 	float fStartedAt = GetEngineTime();
 	float fDeadline = fStartedAt + NADE_SOLVE_TIME_BUDGET_PER_FRAME;
 	bool bTimeBudgetHit = false;
-	int iCursor = g_iNadeSolveRoundRobinClient;
-	int iInactiveClients = 0;
-	bool bValidated[MAXPLAYERS+1];
-	for (int i = 1; i <= MaxClients; i++)
-		bValidated[i] = false;
+	int iCursor = g_iNadeSolveRoundRobinSlot;
+	int iInactiveSlots;
+	int iValidatedJobs[NADE_SOLVE_MAX_ACTIVE_JOBS];
 
-	for (int iTurn = 0; iTurn < MaxClients * NADE_SOLVE_TRACE_BUDGET_PER_FRAME && iTraceBudget > 0; iTurn++)
+	for (int iTurn = 0; iTurn < NADE_SOLVE_MAX_ACTIVE_JOBS * NADE_SOLVE_TRACE_BUDGET_PER_FRAME && iTraceBudget > 0; iTurn++)
 	{
-		int iClient = iCursor;
-		iCursor++;
-		if (iCursor > MaxClients)
-			iCursor = 1;
-
-		if (!IsNadeSolveActive(iClient))
+		int iSlot = iCursor;
+		iCursor = (iCursor + 1) % NADE_SOLVE_MAX_ACTIVE_JOBS;
+		g_sNadeSolvePerf.schedulerVisits++;
+		int iClient = g_iNadeSolveClients[iSlot];
+		if (iClient == 0)
 		{
-			iInactiveClients++;
-			if (iInactiveClients >= MaxClients)
+			iInactiveSlots++;
+			if (iInactiveSlots >= NADE_SOLVE_MAX_ACTIVE_JOBS)
 				break;
 			continue;
 		}
 
-		iInactiveClients = 0;
-		if (!bValidated[iClient])
+		iInactiveSlots = 0;
+		int iJobId = g_sNadeSolveJobs[iClient].jobId;
+		if (iValidatedJobs[iSlot] != iJobId)
 		{
-			bValidated[iClient] = true;
+			iValidatedJobs[iSlot] = iJobId;
 			if (!IsNadeSolveJobRuntimeValid(iClient))
 			{
 				bool bTimedOut = GetGameTime() > g_sNadeSolveJobs[iClient].deadlineTime;
@@ -794,10 +807,11 @@ public void OnGameFrame()
 			break;
 		}
 
-		AdvanceNadeSolveJob(iClient, iTraceBudget);
+		if (g_iNadeSolveClients[iSlot] == iClient && g_sNadeSolveJobs[iClient].jobId == iJobId)
+			AdvanceNadeSolveJob(iClient, iTraceBudget);
 	}
 
-	g_iNadeSolveRoundRobinClient = iCursor;
+	g_iNadeSolveRoundRobinSlot = iCursor;
 
 	int iUsedTraces = NADE_SOLVE_TRACE_BUDGET_PER_FRAME - iTraceBudget;
 	float fElapsed = GetEngineTime() - fStartedAt;
@@ -812,6 +826,16 @@ public void OnGameFrame()
 		g_sNadeSolvePerf.traceBudgetHits++;
 	if (bTimeBudgetHit)
 		g_sNadeSolvePerf.timeBudgetHits++;
+	RecordNadeFrameCost(fNadeStartedAt);
+}
+
+void RecordNadeFrameCost(float fStartedAt)
+{
+	float fElapsed = GetEngineTime() - fStartedAt;
+	g_sNadeSolvePerf.nadeFrames++;
+	g_sNadeSolvePerf.totalNadeFrameSeconds += fElapsed;
+	if (fElapsed > g_sNadeSolvePerf.maxNadeFrameSeconds)
+		g_sNadeSolvePerf.maxNadeFrameSeconds = fElapsed;
 }
 
 void HookPlayerResourceEntity()
@@ -1136,6 +1160,7 @@ void BeginNadeObservation(int iClient, int iWeapon, int iDefIndex, int iJobId, c
 {
 	EndNadeObservation(iClient, "submission_replaced");
 	g_sNadeThrows[iClient].active = true;
+	g_sNadeThrows[iClient].lookDeferred = false;
 	g_sNadeThrows[iClient].throwId = ++g_iNadeThrowSequence;
 	g_sNadeThrows[iClient].jobId = iJobId;
 	g_sNadeThrows[iClient].userId = GetClientUserId(iClient);
@@ -1323,7 +1348,7 @@ void SolveNadeProbe(int iClient)
 	if (iWeapon == -1)
 		return;
 	g_sNadeProbes[iClient].lastAttempt = GetGameTime();
-	NadeSolveRequestResult eResult = ProcessGrenadeThrow(iClient, g_sNadeProbes[iClient].target, iWeapon);
+	NadeSolveRequestResult eResult = ProcessGrenadeThrow(iClient, g_sNadeProbes[iClient].target, iWeapon, true);
 	LogNadeProbe("[NadeProbe] solve userid=%d case_id=%s result=%d job_id=%d", GetClientUserId(iClient), g_sNadeProbes[iClient].caseId, eResult, g_sNadeSolveJobs[iClient].jobId);
 }
 
@@ -1437,12 +1462,60 @@ public Action Command_NadeProbe(int iArgs)
 			|| GetVectorDistance(g_sNadeSolveJobs[iClient].target, g_sNadeProbes[iReferenceClient].target) <= NADE_SOLVE_TARGET_TOLERANCE)
 			return Plugin_Handled;
 		int iWeapon = EntRefToEntIndex(g_sNadeSolveJobs[iClient].grenadeEntRef);
-		NadeSolveRequestResult eResult = ProcessGrenadeThrow(iClient, g_sNadeProbes[iReferenceClient].target, iWeapon);
+		NadeSolveRequestResult eResult = ProcessGrenadeThrow(iClient, g_sNadeProbes[iReferenceClient].target, iWeapon, true);
 		LogNadeProbe("[NadeProbe] retarget userid=%d reference_userid=%d result=%d job_id=%d", iUserId, iReferenceUserId, eResult, g_sNadeSolveJobs[iClient].jobId);
 		return Plugin_Handled;
 	}
 	if (StrEqual(szAction, "solve") && iArgs == 2)
 		SolveNadeProbe(iClient);
+	else if (StrEqual(szAction, "position"))
+	{
+		if (iArgs != 5 || !IsNadeProbeReady(iClient))
+		{
+			PrintToServer("[NadeProbe] position rejected reason=arguments_or_not_ready userid=%d", iUserId);
+			return Plugin_Handled;
+		}
+		float fPosition[3], fFrom[3], fTo[3], fMins[3], fMaxs[3], fGround[3], fNormal[3];
+		char szCoordinate[64];
+		for (int iAxis = 0; iAxis < 3; iAxis++)
+		{
+			int iLength = GetCmdArg(iAxis + 3, szCoordinate, sizeof(szCoordinate));
+			if (iLength >= sizeof(szCoordinate) - 1 || StringToFloatEx(szCoordinate, fPosition[iAxis]) != iLength || iLength == 0
+				|| !(fPosition[iAxis] >= -16384.0 && fPosition[iAxis] <= 16384.0))
+			{
+				PrintToServer("[NadeProbe] position rejected reason=coordinates userid=%d", iUserId);
+				return Plugin_Handled;
+			}
+		}
+		GetClientMins(iClient, fMins);
+		GetClientMaxs(iClient, fMaxs);
+		Array_Copy(fPosition, fFrom, 3);
+		Array_Copy(fPosition, fTo, 3);
+		fFrom[2] += 0.1;
+		fTo[2] -= 2.0;
+		Handle hTrace = TR_TraceHullFilterEx(fFrom, fTo, fMins, fMaxs, MASK_PLAYERSOLID, TraceNadeProbePosition, iClient);
+		bool bSupported = !TR_StartSolid(hTrace) && !TR_AllSolid(hTrace) && TR_DidHit(hTrace);
+		if (bSupported)
+		{
+			TR_GetEndPosition(fGround, hTrace);
+			TR_GetPlaneNormal(hTrace, fNormal);
+			bSupported = FloatAbs(fGround[2] - fPosition[2]) < 0.1 && fNormal[2] >= 0.7;
+		}
+		delete hTrace;
+		if (!bSupported)
+		{
+			PrintToServer("[NadeProbe] position rejected reason=blocked_or_unsupported userid=%d ground_delta=%.3f normal_z=%.3f", iUserId, fGround[2] - fPosition[2], fNormal[2]);
+			return Plugin_Handled;
+		}
+		TeleportEntity(iClient, fPosition, NULL_VECTOR, view_as<float>({0.0, 0.0, 0.0}));
+		GetClientAbsOrigin(iClient, g_sNadeProbes[iClient].origin);
+		g_sNadeProbes[iClient].referenceValid = false;
+		// Let normal AI observe the destination before the next reference.
+		g_sNadeProbes[iClient].lastAttempt = GetGameTime();
+		char szNadeType[16];
+		GetNadeTypeName(g_sNadeProbes[iClient].defIndex, szNadeType, sizeof(szNadeType));
+		LogNadeProbe("[NadeProbe] position userid=%d type=%s case_id=%s origin=%.3f,%.3f,%.3f view=%.3f,%.3f,%.3f", iUserId, szNadeType, g_sNadeProbes[iClient].caseId, g_sNadeProbes[iClient].origin[0], g_sNadeProbes[iClient].origin[1], g_sNadeProbes[iClient].origin[2], g_sNadeProbes[iClient].viewOffset[0], g_sNadeProbes[iClient].viewOffset[1], g_sNadeProbes[iClient].viewOffset[2]);
+	}
 	else if (StrEqual(szAction, "reference") && iArgs == 4 && IsNadeProbeReady(iClient))
 	{
 		char szPitch[24], szYaw[24];
@@ -1643,8 +1716,14 @@ void ClearNadeSolveJob(int iClient, NadeSolveEnd eEnd, const char[] szReason)
 		g_smNadeEndReasons.GetValue(szReason, iCount);
 		g_smNadeEndReasons.SetValue(szReason, iCount + 1);
 	}
-	if (g_sNadeSolveJobs[iClient].phase != NadeSolve_Idle && g_iNadeSolveActiveCount > 0)
-		g_iNadeSolveActiveCount--;
+	for (int iSlot = 0; iSlot < NADE_SOLVE_MAX_ACTIVE_JOBS; iSlot++)
+	{
+		if (g_iNadeSolveClients[iSlot] != iClient)
+			continue;
+		g_iNadeSolveClients[iSlot] = 0;
+		if (g_iNadeSolveActiveCount > 0)
+			g_iNadeSolveActiveCount--;
+	}
 
 	g_sNadeSolveJobs[iClient].phase = NadeSolve_Idle;
 	g_sNadeSolveJobs[iClient].resumePhase = NadeSolve_Idle;
@@ -1686,6 +1765,8 @@ void ClearNadeSolveJob(int iClient, NadeSolveEnd eEnd, const char[] szReason)
 
 void CancelNadeSolveJob(int iClient, const char[] szReason)
 {
+	if (IsNadeSolveActive(iClient) && (StrEqual(szReason, "origin_moved") || StrEqual(szReason, "target_replaced")))
+		g_fNadeSolveRetryAt[iClient] = GetGameTime() + NADE_SOLVE_RETRY_INTERVAL;
 	ClearNadeSolveJob(iClient, StrEqual(szReason, "deadline") ? NadeEnd_TimedOut : NadeEnd_Cancelled, g_szNadeCleanupContext[0] != '\0' ? g_szNadeCleanupContext : szReason);
 	if (iClient >= 1 && iClient <= MaxClients)
 		g_bNadeThrowPending[iClient] = false;
@@ -1697,6 +1778,7 @@ void ResetClientNadeSolve(int iClient, const char[] szReason)
 		return;
 
 	ClearNadeSolveJob(iClient, NadeEnd_Cancelled, szReason);
+	g_fNadeSolveRetryAt[iClient] = 0.0;
 	g_bNadeThrowPending[iClient] = false;
 	for (int iCacheSlot = 0; iCacheSlot < NADE_SOLVE_CACHE_SLOTS; iCacheSlot++)
 	{
@@ -1720,7 +1802,9 @@ void ResetNadeSolveJobs(const char[] szReason)
 		ResetClientNadeSolve(i, szReason);
 
 	g_iNadeSolveActiveCount = 0;
-	g_iNadeSolveRoundRobinClient = 1;
+	for (int iSlot = 0; iSlot < NADE_SOLVE_MAX_ACTIVE_JOBS; iSlot++)
+		g_iNadeSolveClients[iSlot] = 0;
+	g_iNadeSolveRoundRobinSlot = 0;
 }
 
 void ResetNadeSolvePerfStats()
@@ -1751,6 +1835,11 @@ void ResetNadeSolvePerfStats()
 		g_smNadeEndReasons.Clear();
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		LogNadeJob(iClient, "job_carry", "-", "stats_reset");
+	g_iNadeRequestsBusy = 0;
+	g_sNadeSolvePerf.schedulerVisits = 0;
+	g_sNadeSolvePerf.nadeFrames = 0;
+	g_sNadeSolvePerf.totalNadeFrameSeconds = 0.0;
+	g_sNadeSolvePerf.maxNadeFrameSeconds = 0.0;
 	g_sNadeSolvePerf.activeFrames = 0;
 	g_sNadeSolvePerf.traces = 0;
 	g_sNadeSolvePerf.maxTracesPerFrame = 0;
@@ -1785,6 +1874,7 @@ public Action Command_NadePerf(int iArgs)
 	}
 	float fAverageTraces = 0.0;
 	float fAverageSeconds = 0.0;
+	float fAverageNadeSeconds = g_sNadeSolvePerf.nadeFrames > 0 ? g_sNadeSolvePerf.totalNadeFrameSeconds / float(g_sNadeSolvePerf.nadeFrames) : 0.0;
 	if (g_sNadeSolvePerf.activeFrames > 0)
 	{
 		fAverageTraces = float(g_sNadeSolvePerf.traces) / float(g_sNadeSolvePerf.activeFrames);
@@ -1793,7 +1883,7 @@ public Action Command_NadePerf(int iArgs)
 
 	PrintToServer("[NadePerf] active_frames=%d traces=%d avg_traces=%.2f max_traces=%d avg_seconds=%.6f max_seconds=%.6f", g_sNadeSolvePerf.activeFrames, g_sNadeSolvePerf.traces, fAverageTraces, g_sNadeSolvePerf.maxTracesPerFrame, fAverageSeconds, g_sNadeSolvePerf.maxFrameSeconds);
 	PrintToServer("[NadePerf] time_budget_hits=%d trace_budget_hits=%d completed=%d failed=%d timed_out=%d max_queued=%d", g_sNadeSolvePerf.timeBudgetHits, g_sNadeSolvePerf.traceBudgetHits, g_sNadeSolvePerf.completedJobs, g_sNadeSolvePerf.failedJobs, g_sNadeSolvePerf.timedOutJobs, g_sNadeSolvePerf.maxQueuedJobs);
-	LogNadeAccounting("[NadeDiag] event=perf epoch=%d carry_in=%d jobs_started=%d jobs_active=%d jobs_submitted=%d jobs_no_solution=%d jobs_timed_out=%d jobs_cancelled=%d requests_rejected=%d requests_reused=%d requests_started=%d cache_failed=%d cache_submitted=%d detail=%d", g_iNadeEpoch, g_iNadeCarryIn, g_iNadeJobsStarted, g_iNadeSolveActiveCount, g_iNadeJobsEnded[0], g_iNadeJobsEnded[1], g_iNadeJobsEnded[2], g_iNadeJobsEnded[3], g_iNadeRequests[0], g_iNadeRequests[1], g_iNadeRequests[2], g_iNadeRequests[3], g_iNadeRequests[4], g_bNadeDetail);
+	LogNadeAccounting("[NadeDiag] event=perf epoch=%d carry_in=%d jobs_started=%d jobs_active=%d jobs_submitted=%d jobs_no_solution=%d jobs_timed_out=%d jobs_cancelled=%d requests_rejected=%d requests_reused=%d requests_started=%d cache_failed=%d cache_submitted=%d requests_busy=%d solve_capacity=%d scheduler_visits=%d nade_frames=%d nade_frame_avg_seconds=%.6f nade_frame_max_seconds=%.6f active_frames=%d traces=%d max_traces=%d avg_seconds=%.6f max_seconds=%.6f detail=%d", g_iNadeEpoch, g_iNadeCarryIn, g_iNadeJobsStarted, g_iNadeSolveActiveCount, g_iNadeJobsEnded[0], g_iNadeJobsEnded[1], g_iNadeJobsEnded[2], g_iNadeJobsEnded[3], g_iNadeRequests[0], g_iNadeRequests[1], g_iNadeRequests[2], g_iNadeRequests[3], g_iNadeRequests[4], g_iNadeRequestsBusy, NADE_SOLVE_MAX_ACTIVE_JOBS, g_sNadeSolvePerf.schedulerVisits, g_sNadeSolvePerf.nadeFrames, fAverageNadeSeconds, g_sNadeSolvePerf.maxNadeFrameSeconds, g_sNadeSolvePerf.activeFrames, g_sNadeSolvePerf.traces, g_sNadeSolvePerf.maxTracesPerFrame, fAverageSeconds, g_sNadeSolvePerf.maxFrameSeconds, g_bNadeDetail);
 	int iThrowsActive[2];
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
@@ -1952,7 +2042,10 @@ public Action Timer_MoveToBomb(Handle hTimer, any data)
 
 		if (bShouldMoveToBomb && ThrottleBombMove(i, fC4Pos))
 		{
-			SwitchWeapon(i, GetPlayerWeaponSlot(i, CS_SLOT_KNIFE));
+			if (!g_bNadeThrowPending[i] && !g_bThrowGrenade[i])
+				SwitchWeapon(i, GetPlayerWeaponSlot(i, CS_SLOT_KNIFE), "bomb_move");
+			else if (g_bNadeDetail && g_sNadeThrows[i].active && g_sNadeThrows[i].switchRequests++ < 2)
+				LogNadeProbe("[NadeProbe] switch_deferred userid=%d throw_id=%d caller=bomb_move", GetClientUserId(i), g_sNadeThrows[i].throwId);
 			BotMoveTo(i, fC4Pos, FASTEST_ROUTE);
 		}
 	}
@@ -3193,7 +3286,7 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fV
 
 	if ((g_iAliveCountT == 0 || g_iAliveCountCT == 0) && !g_bDontSwitch[iClient])
 	{
-		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
+		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE), "round_wipe");
 
 		if (g_iScriptAction[iClient] != ScriptAction_None)
 			CancelClientScriptAction(iClient, false);
@@ -3294,8 +3387,8 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fV
 	if (IsSafe(iClient))
 	{
 		iButtons &= ~IN_SPEED;
-		if(g_bIsProBot[iClient] && !g_bDontSwitch[iClient] && !BotIsHiding(iClient))
-			SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
+		if (g_bIsProBot[iClient] && !g_bDontSwitch[iClient] && !BotIsHiding(iClient) && !g_bNadeThrowPending[iClient] && !g_bThrowGrenade[iClient])
+			SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE), "safe_move");
 	}
 
 	if (g_bIsProBot[iClient])
@@ -4051,6 +4144,7 @@ public void LoadSDK()
 	g_iBotSafeTimeOffset = SetupOffset(hConf, "CCSBot::m_safeTime");
 	g_iBotEnemyOffset = SetupOffset(hConf, "CCSBot::m_enemy");
 	g_iBotLookAtSpotStateOffset = SetupOffset(hConf, "CCSBot::m_lookAtSpotState");
+	g_iBotLookAtInhibitUntilOffset = SetupOffset(hConf, "CCSBot::SetLookAtInhibitUntil");
 	g_iBotMoraleOffset = SetupOffset(hConf, "CCSBot::m_morale");
 	g_iBotTaskOffset = SetupOffset(hConf, "CCSBot::m_task");
 	g_iBotDispositionOffset = SetupOffset(hConf, "CCSBot::m_disposition");
@@ -4246,6 +4340,17 @@ public void BotThrowGrenade(int iClient, const float fTarget[3])
 		if (iWeapon <= MaxClients || !IsValidEntity(iWeapon) || GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") != iWeapon || GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity") != iClient)
 			EndNadeObservation(iClient, "dispatch_weapon_mismatch");
 	}
+	// ThrowGrenade arms its state before SetLookAt can reject a blinded bot.
+	// Wait without arming it; the existing three-second cleanup still applies.
+	if (GetEntDataFloat(iClient, g_iBotLookAtInhibitUntilOffset) > GetGameTime())
+	{
+		if (g_sNadeThrows[iClient].active && !g_sNadeThrows[iClient].lookDeferred)
+		{
+			g_sNadeThrows[iClient].lookDeferred = true;
+			LogNadeDispatchState(iClient, "look_blocked");
+		}
+		return;
+	}
 	if (g_sNadeThrows[iClient].active)
 	{
 		g_sNadeThrows[iClient].dispatches++;
@@ -4256,6 +4361,8 @@ public void BotThrowGrenade(int iClient, const float fTarget[3])
 		}
 	}
 	SDKCall(g_hBotThrowGrenade, iClient, fTarget);
+	if (g_bNadeDetail && g_sNadeThrows[iClient].active && (g_sNadeThrows[iClient].dispatches == 1 || g_sNadeThrows[iClient].dispatches % 32 == 0))
+		LogNadeDispatchState(iClient, "after_dispatch");
 }
 
 void LogNadeDispatchState(int iClient, const char[] szStage)
@@ -4269,7 +4376,18 @@ void LogNadeDispatchState(int iClient, const char[] szStage)
 	GetClientEyeAngles(iClient, fAngles);
 	bool bHasPin = HasEntProp(iWeapon, Prop_Send, "m_bPinPulled");
 	bool bHasThrowTime = HasEntProp(iWeapon, Prop_Send, "m_fThrowTime");
-	LogNadeProbe("[NadeProbe] dispatch_state userid=%d throw_id=%d stage=%s angles=%.3f,%.3f,%.3f lookpoint=%.3f,%.3f,%.3f pin=%d throw_time=%.6f now=%.6f", GetClientUserId(iClient), g_sNadeThrows[iClient].throwId, szStage, fAngles[0], fAngles[1], fAngles[2], g_fNadeTarget[iClient][0], g_fNadeTarget[iClient][1], g_fNadeTarget[iClient][2], bHasPin ? GetEntProp(iWeapon, Prop_Send, "m_bPinPulled") : -1, bHasThrowTime ? GetEntPropFloat(iWeapon, Prop_Send, "m_fThrowTime") : -1.0, GetGameTime());
+	int iLookState = GetEntData(iClient, g_iBotLookAtSpotStateOffset);
+	int iPriority = -1, iThrowState = -1;
+	float fNativeLook[3], fLookGateUntil = -1.0;
+	bool bKnownLayout = g_iBotLookAtSpotStateOffset == 0x5a38;
+	if (bKnownLayout)
+	{
+		GetEntDataVector(iClient, g_iBotLookAtSpotStateOffset + 4, fNativeLook);
+		iPriority = GetEntData(iClient, g_iBotLookAtSpotStateOffset + 0x10);
+		iThrowState = GetEntData(iClient, g_iBotLookAtSpotStateOffset + 0x144);
+		fLookGateUntil = GetEntDataFloat(iClient, g_iBotLookAtInhibitUntilOffset);
+	}
+	LogNadeProbe("[NadeProbe] dispatch_state userid=%d throw_id=%d stage=%s angles=%.3f,%.3f,%.3f lookpoint=%.3f,%.3f,%.3f pin=%d throw_time=%.6f now=%.6f look_state=%d native_layout=%d native_look=%.3f,%.3f,%.3f priority=%d throw_state=%d look_gate_until=%.6f next_attack=%.6f flash_duration=%.6f", GetClientUserId(iClient), g_sNadeThrows[iClient].throwId, szStage, fAngles[0], fAngles[1], fAngles[2], g_fNadeTarget[iClient][0], g_fNadeTarget[iClient][1], g_fNadeTarget[iClient][2], bHasPin ? GetEntProp(iWeapon, Prop_Send, "m_bPinPulled") : -1, bHasThrowTime ? GetEntPropFloat(iWeapon, Prop_Send, "m_fThrowTime") : -1.0, GetGameTime(), iLookState, bKnownLayout, fNativeLook[0], fNativeLook[1], fNativeLook[2], iPriority, iThrowState, fLookGateUntil, GetEntPropFloat(iClient, Prop_Send, "m_flNextAttack"), HasEntProp(iClient, Prop_Send, "m_flFlashDuration") ? GetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration") : -1.0);
 }
 
 void BotOnAudibleEvent(int iBot, Event eEvent, int iPlayer, float fRange, PriorityType ePriority, bool bIsHostile, bool bIsFootstep = false, const float fActualOrigin[3] = NULL_VECTOR)
@@ -4292,12 +4410,12 @@ public void AddMoney(int iClient, int iAmount, bool bTrackChange, bool bItemBoug
 	SDKCall(g_hAddMoney, iClient, iAmount, bTrackChange, bItemBought, szItemName);
 }
 
-void SwitchWeapon(int iClient, int iWeapon)
+void SwitchWeapon(int iClient, int iWeapon, const char[] szCaller)
 {
 	bool bLog = g_sNadeThrows[iClient].active && g_bNadeThrowPending[iClient] && g_sNadeThrows[iClient].switchRequests++ < 2;
 	SDKCall(g_hSwitchWeaponCall, iClient, iWeapon, 0);
 	if (bLog)
-		LogNadeProbe("[NadeProbe] switch_request userid=%d throw_id=%d requested_weapon=%d active_after=%d dispatches=%d requested_defindex=%d pro=%d safe=%d dont_switch=%d", GetClientUserId(iClient), g_sNadeThrows[iClient].throwId, iWeapon, GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon"), g_sNadeThrows[iClient].dispatches, iWeapon > MaxClients && IsValidEntity(iWeapon) ? GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") : -1, g_bIsProBot[iClient], IsSafe(iClient), g_bDontSwitch[iClient]);
+		LogNadeProbe("[NadeProbe] switch_request userid=%d throw_id=%d requested_weapon=%d active_after=%d dispatches=%d requested_defindex=%d pro=%d safe=%d dont_switch=%d caller=%s", GetClientUserId(iClient), g_sNadeThrows[iClient].throwId, iWeapon, GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon"), g_sNadeThrows[iClient].dispatches, iWeapon > MaxClients && IsValidEntity(iWeapon) ? GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") : -1, g_bIsProBot[iClient], IsSafe(iClient), g_bDontSwitch[iClient], szCaller);
 }
 
 bool BotTryToRetreat(int iClient, float fMaxRange = 400.0, float fDuration = -1.0)
@@ -5618,7 +5736,7 @@ bool HandleStrategyBot(int iClient, bool bEnemyVisible)
 
 	if (ThrottleScriptMove(iClient, sRole.fPos, fNow))
 	{
-		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
+		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE), "strategy_move");
 		BotMoveTo(iClient, sRole.fPos, FASTEST_ROUTE);
 	}
 
@@ -6105,7 +6223,7 @@ public void BeginQuickSwitch(int iUserId)
     if (!IsValidClient(iClient))
         return;
 
-    SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
+    SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE), "quick_switch");
     RequestFrame(FinishQuickSwitch, iUserId);
 }
 
@@ -6116,7 +6234,7 @@ public void FinishQuickSwitch(int iUserId)
 	if (!IsValidClient(iClient))
 		return;
 
-	SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY));
+	SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY), "quick_switch_finish");
 }
 
 public Action Timer_AvoidSelfFlash(Handle hTimer, any iUserId)
@@ -6173,6 +6291,8 @@ public Action Timer_DontForceThrow(Handle hTimer, DataPack hData)
 			int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
 			LogNadeProbe("[NadeProbe] wait_end userid=%d throw_id=%d active_weapon=%d submitted_weapon=%d dispatches=%d pending=%d throwing=%d save=%d", iUserId, g_sNadeThrows[iClient].throwId, iWeapon > MaxClients && IsValidEntity(iWeapon) ? EntIndexToEntRef(iWeapon) : INVALID_ENT_REFERENCE, g_sNadeThrows[iClient].weaponRef, g_sNadeThrows[iClient].dispatches, g_bNadeThrowPending[iClient], g_bThrowGrenade[iClient], g_bSaveActiveCache[iClient]);
 		}
+		if (g_sNadeThrows[iClient].active && g_sNadeThrows[iClient].dispatches == 0)
+			EndNadeObservation(iClient, g_sNadeThrows[iClient].lookDeferred ? "look_inhibited" : "dispatch_not_ready");
 		g_bNadeThrowPending[iClient] = false;
 		g_bThrowGrenade[iClient] = false;
 		BotEquipBestWeapon(iClient, true);
@@ -6296,6 +6416,11 @@ stock bool IsPointVisible(float fStart[3], float fEnd[3])
     return TR_GetFraction() >= 0.9;
 }
 
+public bool TraceNadeProbePosition(int iEntity, int iMask, any iClient)
+{
+	return iEntity != iClient;
+}
+
 public bool TraceEntityFilterStuff(int iEntity, int iMask)
 {
     return iEntity > MaxClients;
@@ -6355,6 +6480,8 @@ bool IsNadeSolveCommonStateAllowed(int iClient)
 		return RejectNadeSolveState(iClient, "get5_blocked");
 	if (BotMimic_IsPlayerMimicing(iClient))
 		return RejectNadeSolveState(iClient, "botmimic");
+	if (GetEntDataFloat(iClient, g_iBotLookAtInhibitUntilOffset) > GetGameTime())
+		return RejectNadeSolveState(iClient, "look_inhibited");
 
 	if (g_bThrowGrenade[iClient])
 		return RejectNadeSolveState(iClient, "throwing");
@@ -6460,9 +6587,23 @@ float GetNadeSolveTimeout(int iActiveCount)
 		: NADE_SOLVE_TIMEOUT_MAX;
 }
 
-void StartNadeSolveJob(int iClient, int iGrenadeEnt, int iNadeDefIndex, const float fOrigin[3], const float fEyePosition[3], const float fTarget[3], float fNow)
+bool StartNadeSolveJob(int iClient, int iGrenadeEnt, int iNadeDefIndex, const float fOrigin[3], const float fEyePosition[3], const float fTarget[3], float fNow)
 {
+	if (IsNadeSolveActive(iClient) || g_iNadeSolveActiveCount >= NADE_SOLVE_MAX_ACTIVE_JOBS)
+		return false;
+	int iFreeSlot = -1;
+	for (int iSlot = 0; iSlot < NADE_SOLVE_MAX_ACTIVE_JOBS; iSlot++)
+	{
+		if (g_iNadeSolveClients[iSlot] == 0)
+		{
+			iFreeSlot = iSlot;
+			break;
+		}
+	}
+	if (iFreeSlot == -1)
+		return false;
 	ClearNadeSolveJob(iClient, NadeEnd_Cancelled, "replaced_at_start");
+	g_iNadeSolveClients[iFreeSlot] = iClient;
 
 	g_sNadeSolveJobs[iClient].phase = NadeSolve_Coarse;
 	g_sNadeSolveJobs[iClient].jobId = ++g_iNadeJobSequence;
@@ -6499,6 +6640,7 @@ void StartNadeSolveJob(int iClient, int iGrenadeEnt, int iNadeDefIndex, const fl
 	SubtractVectors(fTarget, fEyePosition, fDelta);
 	g_sNadeSolveJobs[iClient].yaw = ArcTangent2(fDelta[1], fDelta[0]) * 180.0 / FLOAT_PI;
 	LogNadeJob(iClient, "job_begin");
+	return true;
 }
 
 bool IsNadeSolveJobValid(int iClient)
@@ -6775,7 +6917,7 @@ bool SubmitNadeThrow(int iClient, int iGrenadeEnt, const float fLookAt[3], int i
 	Array_Copy(fLookAt, g_fNadeTarget[iClient], 3);
 	g_bNadeThrowPending[iClient] = true;
 	BeginNadeObservation(iClient, iGrenadeEnt, iNadeDefIndex, iJobId, szSource, fTarget);
-	SwitchWeapon(iClient, iGrenadeEnt);
+	SwitchWeapon(iClient, iGrenadeEnt, "nade_submit");
 	DataPack hData = new DataPack();
 	hData.WriteCell(GetClientUserId(iClient));
 	hData.WriteCell(g_sNadeThrows[iClient].throwId);
@@ -6965,7 +7107,7 @@ void AdvanceNadeSolveJob(int iClient, int &iTraceBudget)
 		FinishNadeCandidate(iClient);
 }
 
-stock NadeSolveRequestResult ProcessGrenadeThrow(int iClient, float fTarget[3], int iGrenadeEnt = -1)
+stock NadeSolveRequestResult ProcessGrenadeThrow(int iClient, float fTarget[3], int iGrenadeEnt = -1, bool bProbeRequest = false)
 {
 	float fNow = GetGameTime();
 	if (IsNadeSolveActive(iClient) && !IsNadeSolveJobValid(iClient))
@@ -6973,6 +7115,14 @@ stock NadeSolveRequestResult ProcessGrenadeThrow(int iClient, float fTarget[3], 
 
 	if (!IsNadeSolveRequestAllowed(iClient))
 	{
+		g_iNadeRequests[0]++;
+		return NadeRequest_Rejected;
+	}
+
+	if (g_sNadeProbes[iClient].userId != 0 && !bProbeRequest)
+	{
+		if (g_bNadeDetail)
+			LogNadeProbe("[NadeProbe] ignored_natural_request userid=%d case_id=%s", GetClientUserId(iClient), g_sNadeProbes[iClient].caseId);
 		g_iNadeRequests[0]++;
 		return NadeRequest_Rejected;
 	}
@@ -7037,7 +7187,13 @@ stock NadeSolveRequestResult ProcessGrenadeThrow(int iClient, float fTarget[3], 
 		return NadeRequest_Rejected;
 	}
 
-	StartNadeSolveJob(iClient, iGrenadeSlot, iNadeDefIndex, fOrigin, fEyePosition, fGroundTarget, fNow);
+	if (fNow < g_fNadeSolveRetryAt[iClient] || !StartNadeSolveJob(iClient, iGrenadeSlot, iNadeDefIndex, fOrigin, fEyePosition, fGroundTarget, fNow))
+	{
+		if (g_iNadeSolveActiveCount >= NADE_SOLVE_MAX_ACTIVE_JOBS)
+			g_fNadeSolveRetryAt[iClient] = fNow + NADE_SOLVE_RETRY_INTERVAL;
+		g_iNadeRequestsBusy++;
+		return NadeRequest_Busy;
+	}
 	g_iNadeRequests[2]++;
 	return NadeRequest_Queued;
 }
