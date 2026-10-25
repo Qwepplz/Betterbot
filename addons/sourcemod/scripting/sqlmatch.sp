@@ -48,7 +48,7 @@ void ConnectDatabase()
 {
 	char szBuffer[1024];
 
-	if ((g_hDatabase = SQL_Connect("sql_matches", true, szBuffer, sizeof(szBuffer))) == null)
+	if ((g_hDatabase = SQL_Connect("sql_matches", false, szBuffer, sizeof(szBuffer))) == null)
 	{
 		SetFailState("[SQLMatch] Database connection failed: %s", szBuffer);
 	}
@@ -68,9 +68,12 @@ void ConnectDatabase()
 		" PRIMARY KEY (match_id), UNIQUE KEY match_id (match_id));"
 	);
 
+	SQL_LockDatabase(g_hDatabase);
+
 	if (!SQL_FastQuery(g_hDatabase, szBuffer))
 	{
 		SQL_GetError(g_hDatabase, szBuffer, sizeof(szBuffer));
+		SQL_UnlockDatabase(g_hDatabase);
 		SetFailState("[SQLMatch] Failed to create scoretotal table: %s", szBuffer);
 	}
 
@@ -93,8 +96,11 @@ void ConnectDatabase()
 	if (!SQL_FastQuery(g_hDatabase, szBuffer))
 	{
 		SQL_GetError(g_hDatabase, szBuffer, sizeof(szBuffer));
+		SQL_UnlockDatabase(g_hDatabase);
 		SetFailState("[SQLMatch] Failed to create matches table: %s", szBuffer);
 	}
+
+	SQL_UnlockDatabase(g_hDatabase);
 }
 
 public void OnClientPostAdminCheck(int iClient)
