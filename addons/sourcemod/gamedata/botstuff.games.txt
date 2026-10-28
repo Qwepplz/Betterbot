@@ -4,6 +4,12 @@
 	{
 		"Signatures"
 		{
+			"BotReaction::BurstFollowup"
+			{
+				// Linux build 8853, server.so SHA-256 7de235c3: burst follow-up function.
+				"library" "server"
+				"linux" "\x55\x89\xE5\x57\x56\x53\x83\xEC\x68\x8B\x5D\x08\x53\xE8\x2A\x2A\x2A\x2A\x83\xC4\x10\x85\xC0\x0F\x84\x2A\x2A\x2A\x2A\x89\xC6\x8B\x83\x74\x09\x00\x00\x85\xC0"
+			}
 			"CCSBot::MoveTo"
 			{
 				// 'Checking out where our friend was killed' > 2
@@ -225,6 +231,13 @@
 		}
 		"Functions"
 		{
+			"BotReaction::BurstFollowup"
+			{
+				"signature" "BotReaction::BurstFollowup"
+				"callconv" "thiscall"
+				"return" "void"
+				"this" "entity"
+			}
 			"CCSBot::SetLookAt"
 			{
 				"signature" "CCSBot::SetLookAtInternal"

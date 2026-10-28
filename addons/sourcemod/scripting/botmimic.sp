@@ -23,6 +23,8 @@
 
 #pragma newdecls required
 
+native int BB_FilterBotReactionButtons(int client, int buttons);
+
 #define PLUGIN_VERSION "2.1"
 
 #define BM_MAGIC 0xdeadbeef
@@ -162,6 +164,7 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	MarkNativeAsOptional("BB_FilterBotReactionButtons");
 	RegPluginLibrary("botmimic");
 	CreateNative("BotMimic_StartRecording", StartRecording);
 	CreateNative("BotMimic_PauseRecording", PauseRecording);
@@ -665,6 +668,9 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	
 	g_iBotMimicTick[client]++;
 	
+	if (GetFeatureStatus(FeatureType_Native, "BB_FilterBotReactionButtons") == FeatureStatus_Available)
+		buttons = BB_FilterBotReactionButtons(client, buttons);
+
 	return Plugin_Changed;
 }
 

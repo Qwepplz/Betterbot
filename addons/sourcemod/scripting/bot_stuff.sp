@@ -12,6 +12,7 @@
 #include <PTaH>
 #include <bot_steamids>
 #include <eventptr>
+#include <bot_reaction>
 
 #undef REQUIRE_PLUGIN
 #include <kento_rankme/rankme>
@@ -115,6 +116,9 @@ enum
 static const int g_iAllNades[] = {DEFIDX_HE, DEFIDX_MOLOTOV, DEFIDX_INCENDIARY, DEFIDX_FLASH, DEFIDX_SMOKE};
 static const int g_iDenialNades[] = {DEFIDX_MOLOTOV, DEFIDX_INCENDIARY, DEFIDX_HE};
 
+BotReactionState g_sBotReaction[MAXPLAYERS+1];
+int g_iReactionNextCycle, g_iReactionCycleId[MAXPLAYERS+1], g_iReactionCmdNum[MAXPLAYERS+1], g_iReactionPreButtons[MAXPLAYERS+1];
+bool g_bReactionReadyLogged[MAXPLAYERS+1];
 char g_szCrosshairCode[MAXPLAYERS+1][35], g_szPreviousBuy[MAXPLAYERS+1][128];
 bool g_bIsBombScenario, g_bIsHostageScenario, g_bFreezetimeEnd, g_bBombPlanted, g_bRoundDecided, g_bHalftimeSwitch, g_bIsCompetitive;
 int g_iLooseBombDropper = -1;
@@ -343,6 +347,7 @@ ConVar g_cvMolotovMaxSlope;
 ConVar g_cvRetakeSaveDebug;
 ConVar g_cvForceSave;
 ConVar g_cvAttackDebug;
+ConVar g_cvReactionDebug;
 Handle g_hBotMoveTo;
 Handle g_hLookupBone;
 Handle g_hGetBonePosition;
@@ -566,6 +571,17 @@ public Plugin myinfo =
 	url = "http://steamcommunity.com/id/manico001"
 };
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	CreateNative("BB_FilterBotReactionButtons", Native_FilterBotReactionButtons);
+	return APLRes_Success;
+}
+
+public any Native_FilterBotReactionButtons(Handle plugin, int numParams)
+{
+	return FilterBotReactionButtons(GetNativeCell(1), GetNativeCell(2));
+}
+
 public void OnPluginStart()
 {
     g_cvGameMode = FindConVar("game_mode");
@@ -582,6 +598,7 @@ public void OnPluginStart()
     g_cvRetakeSaveDebug = CreateConVar("bb_retake_save_debug", "0", "Log save state. 0=off, 1=save-active clients, 2=all live bots plus LookAt details.", _, true, 0.0, true, 2.0);
     g_cvForceSave = CreateConVar("bb_force_save", "0", "Force all bots into save behavior regardless of conditions.", _, true, 0.0, true, 1.0);
     g_cvAttackDebug = CreateConVar("bb_attack_debug", "0", "Log planted-bomb CT IN_ATTACK lifecycle. 0=off, 1=on.", _, true, 0.0, true, 1.0);
+    g_cvReactionDebug = CreateConVar("bb_reaction_debug", "0", "Log bot reaction cycles and weapon fire. 0=off, 1=on.", _, true, 0.0, true, 1.0);
 
     g_bIsCompetitive = (g_cvGameMode.IntValue == 1 && g_cvGameType.IntValue == 0);
 
@@ -751,6 +768,7 @@ public Action Command_ValidateBots(int iClient, int iArgs)
 
 public void OnMapStart()
 {
+	ResetAllBotReactions("map_start");
 	InitializeMapRuntime();
 }
 
@@ -2214,6 +2232,7 @@ void SafeDeleteTimer(Handle &hTimer)
 
 public void OnMapEnd()
 {
+	ResetAllBotReactions("map_end");
 	EndNadeProbes("map_end");
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		EndNadeObservation(iClient, "map_end");
@@ -2234,6 +2253,7 @@ public void OnMapEnd()
 
 public void OnPluginEnd()
 {
+	ResetAllBotReactions("plugin_end");
 	EndNadeProbes("plugin_end");
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 		EndNadeObservation(iClient, "plugin_end");
@@ -2242,6 +2262,7 @@ public void OnPluginEnd()
 
 public void OnClientPutInServer(int iClient)
 {
+	ResetBotReaction(iClient, "put_in_server");
 	if (!IsFakeClient(iClient))
 		EndNadeProbes("human_joined");
 	if (!IsValidClient(iClient))
@@ -2395,6 +2416,7 @@ public void OnRoundPreStart(Event eEvent, const char[] szName, bool bDontBroadca
 
 public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
+	ResetAllBotReactions("round_start");
 	EndNadeProbes("round_start");
 	strcopy(g_szNadeCleanupContext, sizeof(g_szNadeCleanupContext), "round_start");
 	ClearActiveStrategy(true);
@@ -2478,6 +2500,7 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 
 public void OnRoundEnd(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
+	ResetAllBotReactions("round_end");
 	EndNadeProbes("round_end");
 	strcopy(g_szNadeCleanupContext, sizeof(g_szNadeCleanupContext), "round_end");
 	g_bRoundDecided = true;
@@ -2642,6 +2665,8 @@ public void OnBombBeginPlant(Event eEvent, const char[] szName, bool bDontBroadc
 public void OnPlayerDeath(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(eEvent.GetInt("userid"));
+	if (iClient > 0 && iClient <= MaxClients)
+		ResetBotReaction(iClient, "death");
 	EndNadeProbe(iClient, "death");
 	if (IsValidClient(iClient))
 	{
@@ -2703,6 +2728,15 @@ public void OnWeaponFire(Event eEvent, const char[] szName, bool bDontBroadcast)
 
 	char szWeaponName[32];
 	eEvent.GetString("weapon", szWeaponName, sizeof(szWeaponName));
+
+	if (g_cvReactionDebug.BoolValue && !IsClientReplay(iClient))
+	{
+		int iDefIndex = GetReactionEventWeaponDefIndex(szWeaponName);
+		LogReactionEvent(iClient, "weapon_fire", "event", iDefIndex, -1, szWeaponName);
+		if (g_sBotReaction[iClient].ownerSerial == GetClientSerial(iClient)
+			&& BotReactionWaiting(g_sBotReaction[iClient], GetGameTime()) && IsReactionFirearm(iDefIndex))
+			LogReactionEvent(iClient, "early_fire", "weapon_fire", iDefIndex, -1, szWeaponName);
+	}
 
 	if (IsValidClient(g_iTarget[iClient]) && StrEqual(szWeaponName, "weapon_deagle"))
 	{
@@ -3178,8 +3212,196 @@ public MRESReturn CCSBot_PickNewAimSpot(int iClient, DHookParam hParams)
     return MRES_Ignored;
 }
 
+int GetReactionActiveWeaponDefIndex(int iClient)
+{
+	if (!IsValidClient(iClient))
+		return -1;
+
+	int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+	if (iWeapon <= MaxClients || !IsValidEntity(iWeapon) || !HasEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex"))
+		return -1;
+
+	return GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex");
+}
+
+bool IsReactionFirearm(int iDefIndex)
+{
+	if (iDefIndex < 0 || eItems_GetWeaponNumByDefIndex(iDefIndex) == -1)
+		return false;
+
+	int iSlot = eItems_GetWeaponSlotByDefIndex(iDefIndex);
+	return iSlot == CS_SLOT_PRIMARY || iSlot == CS_SLOT_SECONDARY;
+}
+
+int GetReactionEventWeaponDefIndex(const char[] szWeaponName)
+{
+	if (szWeaponName[0] == '\0')
+		return -1;
+
+	char szClassName[48];
+	if (StrContains(szWeaponName, "weapon_", false) == 0)
+		strcopy(szClassName, sizeof(szClassName), szWeaponName);
+	else
+		Format(szClassName, sizeof(szClassName), "weapon_%s", szWeaponName);
+
+	return eItems_GetWeaponDefIndexByClassName(szClassName);
+}
+
+void LogReactionEvent(int iClient, const char[] szEvent, const char[] szReason, int iDefIndex, int iButtons, const char[] szWeaponName = "-")
+{
+	if (g_cvReactionDebug == null || !g_cvReactionDebug.BoolValue)
+		return;
+
+	int iOwnerSerial = g_sBotReaction[iClient].ownerSerial;
+	if (iOwnerSerial == 0 && IsValidClient(iClient))
+		iOwnerSerial = GetClientSerial(iClient);
+
+	LogMessage("[BotReaction] event=%s reason=%s cycle_id=%d client=%d owner_serial=%d enemy_serial=%d cmdnum=%d firstSeenAt=%.6f delay=%.6f readyAt=%.6f now=%.6f defindex=%d pre_buttons=%d buttons=%d weapon=%s",
+		szEvent, szReason, g_iReactionCycleId[iClient], iClient, iOwnerSerial, g_sBotReaction[iClient].enemySerial,
+		g_iReactionCmdNum[iClient], g_sBotReaction[iClient].firstSeenAt,
+		g_sBotReaction[iClient].readyAt - g_sBotReaction[iClient].firstSeenAt, g_sBotReaction[iClient].readyAt,
+		GetGameTime(), iDefIndex, g_iReactionPreButtons[iClient], iButtons, szWeaponName);
+}
+
+void ResetBotReaction(int iClient, const char[] szReason)
+{
+	if (!g_sBotReaction[iClient].active)
+		return;
+
+	if (g_cvReactionDebug != null && g_cvReactionDebug.BoolValue)
+		LogReactionEvent(iClient, "cancel", szReason, GetReactionActiveWeaponDefIndex(iClient), -1);
+
+	BotReactionReset(g_sBotReaction[iClient]);
+	g_iReactionCycleId[iClient] = 0;
+	g_bReactionReadyLogged[iClient] = false;
+}
+
+void ResetAllBotReactions(const char[] szReason)
+{
+	for (int iClient = 1; iClient <= MaxClients; iClient++)
+		ResetBotReaction(iClient, szReason);
+}
+
+public void OnPlayerRunCmdPre(int iClient, int iButtons, int iImpulse, const float fVel[3], const float fAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2])
+{
+	if (iClient >= 1 && iClient <= MaxClients && g_cvReactionDebug.BoolValue)
+	{
+		g_iReactionCmdNum[iClient] = iCmdNum;
+		g_iReactionPreButtons[iClient] = iButtons;
+	}
+	UpdateBotReaction(iClient);
+}
+
+void UpdateBotReaction(int iClient)
+{
+	if (iClient < 1 || iClient > MaxClients)
+		return;
+
+	if (!IsValidClient(iClient) || !IsFakeClient(iClient) || IsClientReplay(iClient) || !IsPlayerAlive(iClient))
+	{
+		ResetBotReaction(iClient, "invalid_owner");
+		return;
+	}
+
+	int iTeam = GetClientTeam(iClient);
+	if ((iTeam != CS_TEAM_T && iTeam != CS_TEAM_CT) || GameRules_GetProp("m_bFreezePeriod") != 0)
+	{
+		ResetBotReaction(iClient, "freeze_or_team");
+		return;
+	}
+
+	int iEnemy = BotGetEnemy(iClient);
+	if (!IsValidClient(iEnemy) || IsClientReplay(iEnemy) || !IsPlayerAlive(iEnemy))
+	{
+		ResetBotReaction(iClient, "invalid_enemy");
+		return;
+	}
+
+	int iEnemyTeam = GetClientTeam(iEnemy);
+	if ((iEnemyTeam != CS_TEAM_T && iEnemyTeam != CS_TEAM_CT) || iEnemyTeam == iTeam)
+	{
+		ResetBotReaction(iClient, "enemy_team");
+		return;
+	}
+	if (GetEntData(iClient, g_iEnemyVisibleOffset, 1) == 0)
+	{
+		ResetBotReaction(iClient, "not_visible");
+		return;
+	}
+
+	int iOwnerSerial = GetClientSerial(iClient);
+	int iEnemySerial = GetClientSerial(iEnemy);
+	if (BotReactionNeedsStart(g_sBotReaction[iClient], iOwnerSerial, iEnemySerial))
+	{
+		ResetBotReaction(iClient, "identity_change");
+		if (g_iReactionNextCycle == 2147483647)
+			g_iReactionNextCycle = 0;
+		g_iReactionCycleId[iClient] = ++g_iReactionNextCycle;
+		BotReactionBegin(g_sBotReaction[iClient], iOwnerSerial, iEnemySerial, GetGameTime(), BotReactionSampleDelay());
+		if (g_cvReactionDebug.BoolValue)
+			LogReactionEvent(iClient, "begin", "visible", GetReactionActiveWeaponDefIndex(iClient), g_iReactionPreButtons[iClient]);
+	}
+}
+
+int FilterBotReactionButtons(int iClient, int iButtons)
+{
+	if (iClient < 1 || iClient > MaxClients || !IsValidClient(iClient) || !IsFakeClient(iClient) || IsClientReplay(iClient) || !IsPlayerAlive(iClient))
+		return iButtons;
+
+	if (g_sBotReaction[iClient].ownerSerial != GetClientSerial(iClient) || !BotReactionWaiting(g_sBotReaction[iClient], GetGameTime()))
+		return iButtons;
+
+	int iDefIndex = GetReactionActiveWeaponDefIndex(iClient);
+	return BotReactionFilterMask(iButtons, true, IsReactionFirearm(iDefIndex), iDefIndex == DEFIDX_REVOLVER);
+}
+
+public MRESReturn BotReaction_ContinueBurst(int iWeapon)
+{
+	if (iWeapon <= MaxClients || !IsValidEntity(iWeapon) || !HasEntProp(iWeapon, Prop_Send, "m_hOwnerEntity"))
+		return MRES_Ignored;
+
+	int iClient = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+	if (!IsValidClient(iClient) || GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon") != iWeapon)
+		return MRES_Ignored;
+
+	return FilterBotReactionButtons(iClient, IN_ATTACK) == 0 ? MRES_Supercede : MRES_Ignored;
+}
+
+public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse, const float fVel[3], const float fAngles[3], int iWeapon, int iSubtype, int iCmdNum, int iTickCount, int iSeed, const int iMouse[2])
+{
+	if (!g_cvReactionDebug.BoolValue || iClient < 1 || iClient > MaxClients || !IsValidClient(iClient)
+		|| !g_sBotReaction[iClient].active || g_sBotReaction[iClient].ownerSerial != GetClientSerial(iClient))
+		return;
+
+	bool bWaiting = BotReactionWaiting(g_sBotReaction[iClient], GetGameTime());
+	int iDefIndex = GetReactionActiveWeaponDefIndex(iClient);
+	if (!bWaiting && !g_bReactionReadyLogged[iClient])
+	{
+		g_bReactionReadyLogged[iClient] = true;
+		LogReactionEvent(iClient, "ready", "deadline", iDefIndex, iButtons);
+	}
+	else if (bWaiting && BotReactionFilterMask(iButtons, true, IsReactionFirearm(iDefIndex), iDefIndex == DEFIDX_REVOLVER) != iButtons)
+	{
+		LogReactionEvent(iClient, "early_button", "post", iDefIndex, iButtons);
+	}
+}
+
 public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fVel[3], float fAngles[3], int &iWeapon, int &iSubtype, int &iCmdNum, int &iTickCount, int &iSeed, int iMouse[2])
 {
+	Action eResult = ProcessBotPlayerRunCmd(iClient, iButtons, iImpulse, fVel, fAngles, iWeapon, iSubtype, iCmdNum, iTickCount, iSeed, iMouse);
+	int iFilteredButtons = FilterBotReactionButtons(iClient, iButtons);
+	if (iFilteredButtons != iButtons)
+	{
+		iButtons = iFilteredButtons;
+		if (eResult == Plugin_Continue)
+			return Plugin_Changed;
+	}
+	return eResult;
+}
+
+Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fVel[3], float fAngles[3], int &iWeapon, int &iSubtype, int &iCmdNum, int &iTickCount, int &iSeed, int iMouse[2])
+{
+	#pragma unused iMouse
 	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
 		return Plugin_Continue;
 	ApplyNadeProbePose(iClient, iButtons, fVel);
@@ -3581,6 +3803,7 @@ public void OnPlayerSpawn(Event eEvent, const char[] szName, bool bDontBroadcast
     if (!IsValidClient(iClient))
         return;
 
+	ResetBotReaction(iClient, "spawn");
     SetPlayerTeammateColor(iClient);
 
     if (!IsFakeClient(iClient))
@@ -3620,6 +3843,7 @@ public void OnPlayerTeam(Event eEvent, const char[] szName, bool bDontBroadcast)
 	if (!IsValidClient(iClient))
 		return;
 
+	ResetBotReaction(iClient, "team_changed");
 	ResetClientNadeSolve(iClient, "team_changed");
 	CreateTimer(0.2, Timer_RefreshPlayerResourceData, GetClientUserId(iClient), TIMER_FLAG_NO_MAPCHANGE);
 }
@@ -3640,6 +3864,7 @@ public void BotMimic_OnPlayerStopsMimicing(int iClient, char[] szName, char[] sz
 
 public void OnClientDisconnect(int iClient)
 {
+	ResetBotReaction(iClient, "disconnect");
 	EndNadeProbe(iClient, "disconnect");
 	EndNadeObservation(iClient, "disconnect");
 	strcopy(g_szNadeCleanupContext, sizeof(g_szNadeCleanupContext), "disconnect");
@@ -4280,6 +4505,7 @@ public void LoadDetours()
 	SetupDetour(hConf, "CCSBot::GetPartPosition", Hook_Pre, CCSBot_GetPartPosition);
 	SetupDetour(hConf, "CCSBot::OnAudibleEvent", Hook_Pre, CCSBot_OnAudibleEvent);
 	SetupDetour(hConf, "CCSBot::CanSeeLooseBomb", Hook_Post, CCSBot_CanSeeLooseBomb);
+	SetupDetour(hConf, "BotReaction::BurstFollowup", Hook_Pre, BotReaction_ContinueBurst);
 
 	delete hConf;
 }
