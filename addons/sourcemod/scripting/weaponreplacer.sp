@@ -21,6 +21,9 @@ enum Get5State
 
 native Get5State Get5_GetGameState();
 
+ConVar g_WeaponReplacementBuyTimeCvar;
+int g_WeaponReplacementRoundSerial;
+
 public Plugin myinfo =
 {
     name = "Weapon Replacer",
@@ -38,7 +41,14 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+    g_WeaponReplacementBuyTimeCvar = FindConVar("mp_buytime");
     HookEvent("player_spawn", Event_PlayerSpawn);
+    HookEvent("round_start", Event_WeaponReplacementRoundStart, EventHookMode_PostNoCopy);
+}
+
+public void Event_WeaponReplacementRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    g_WeaponReplacementRoundSerial++;
 }
 
 bool IsGet5WeaponReplacementAllowed()
@@ -47,6 +57,18 @@ bool IsGet5WeaponReplacementAllowed()
         return false;
 
     return Get5_GetGameState() == Get5State_Live;
+}
+
+bool IsM4PurchaseWindowOpen()
+{
+    if (g_WeaponReplacementBuyTimeCvar == null)
+        return false;
+
+    if (GameRules_GetProp("m_bFreezePeriod") != 0)
+        return true;
+
+    float elapsed = GetGameTime() - GameRules_GetPropFloat("m_fRoundStartTime");
+    return elapsed >= 0.0 && elapsed < g_WeaponReplacementBuyTimeCvar.FloatValue;
 }
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -85,7 +107,7 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
     if (!StrEqual(weapon, "m4a1", false))
         return Plugin_Continue;
 
-    if (!IsGet5WeaponReplacementAllowed())
+    if (!IsGet5WeaponReplacementAllowed() || !IsM4PurchaseWindowOpen())
         return Plugin_Continue;
 
     int primary = GetPlayerWeaponSlot(client, CS_SLOT_PRIMARY);
@@ -95,6 +117,7 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
     DataPack pack;
     CreateDataTimer(0.1, Timer_ReplaceM4A4, pack, TIMER_FLAG_NO_MAPCHANGE);
     pack.WriteCell(GetClientUserId(client));
+    pack.WriteCell(g_WeaponReplacementRoundSerial);
     return Plugin_Handled;
 }
 
@@ -102,11 +125,15 @@ public Action Timer_ReplaceM4A4(Handle timer, DataPack pack)
 {
     pack.Reset();
     int client = GetClientOfUserId(pack.ReadCell());
+    int roundSerial = pack.ReadCell();
 
     if (!IsValidClient(client) || IsFakeClient(client) || !IsPlayerAlive(client) || GetClientTeam(client) != CS_TEAM_CT)
         return Plugin_Stop;
 
-    if (!IsGet5WeaponReplacementAllowed())
+    if (roundSerial != g_WeaponReplacementRoundSerial)
+        return Plugin_Stop;
+
+    if (!IsGet5WeaponReplacementAllowed() || !IsM4PurchaseWindowOpen())
         return Plugin_Stop;
 
     if (GetEntProp(client, Prop_Send, "m_bInBuyZone") == 0)
