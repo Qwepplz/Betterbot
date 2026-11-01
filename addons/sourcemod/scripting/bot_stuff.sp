@@ -456,7 +456,8 @@ char g_szStrategyConfigMap[PLATFORM_MAX_PATH];
 
 static const char g_szTopBotNames[][] =
 {
-    "sh1ro", "ZywOo", "ropz", "donk", "m0NESY"
+    "ZywOo", "donk", "ropz", "m0NESY", "sh1ro",
+    "molodoy", "flameZ", "frozen", "KSCERATO", "Spinx"
 };
 
 static char g_szBoneNames[][] =  {
@@ -701,11 +702,8 @@ public Action Command_Team(int iArgs)
         }
     }
 
-    if (szLogo[0] != '\0')
-    {
-        int iLogoSlot = strcmp(szSide, "ct", false) == 0 ? 1 : 2;
-        ServerCommand("mp_teamlogo_%d %s", iLogoSlot, szLogo);
-    }
+    int iLogoSlot = strcmp(szSide, "ct", false) == 0 ? 1 : 2;
+    ServerCommand("mp_teamlogo_%d \"%s\"", iLogoSlot, szLogo);
 
     return Plugin_Handled;
 }

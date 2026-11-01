@@ -28,6 +28,7 @@ int g_iAccountID[MAXPLAYERS+1];
 char g_szSteamID64[MAXPLAYERS+1][MAX_COMMUNITYID_LENGTH]; 
 StringMap g_smBotSteamIDs;
 StringMap g_smBotCrosshairs;
+StringMap g_smBotNameAliases;
 
 public Plugin myinfo = 
 {
@@ -66,8 +67,10 @@ void LoadBotInfo()
 {
 	delete g_smBotSteamIDs;
 	delete g_smBotCrosshairs;
+	delete g_smBotNameAliases;
 	g_smBotSteamIDs = new StringMap();
 	g_smBotCrosshairs = new StringMap();
+	g_smBotNameAliases = new StringMap();
 
 	char szPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, szPath, sizeof(szPath), "data/bot_info.json");
@@ -156,12 +159,12 @@ public int Native_GetBotCrosshairCode(Handle plugins, int numParams)
 		return 0;
 	}
 
-	char szBotName[MAX_NAME_LENGTH], szNameLower[MAX_NAME_LENGTH], szCrosshair[35];
+	char szBotName[MAX_NAME_LENGTH], szCanonicalName[MAX_NAME_LENGTH], szCrosshair[35];
 	GetClientName(client, szBotName, sizeof(szBotName));
-	strcopy(szNameLower, sizeof(szNameLower), szBotName);
-	String_ToLower(szNameLower, szNameLower, sizeof(szNameLower));
+	if (!ResolveBotDatabaseName(szBotName, szCanonicalName, sizeof(szCanonicalName)))
+		return 0;
 
-	if (!g_smBotCrosshairs.GetString(szNameLower, szCrosshair, sizeof(szCrosshair)))
+	if (!g_smBotCrosshairs.GetString(szCanonicalName, szCrosshair, sizeof(szCrosshair)))
 		return 0;
 
 	return SetNativeString(2, szCrosshair, GetNativeCell(3)) == SP_ERROR_NONE;
@@ -176,24 +179,16 @@ public int Native_IsBotInDatabase(Handle plugins, int numParams)
 		return 0;
 	}
 
-	char szBotName[MAX_NAME_LENGTH], szNameLower[MAX_NAME_LENGTH];
+	char szBotName[MAX_NAME_LENGTH], szCanonicalName[MAX_NAME_LENGTH];
 	GetClientName(client, szBotName, sizeof(szBotName));
-	strcopy(szNameLower, sizeof(szNameLower), szBotName);
-	String_ToLower(szNameLower, szNameLower, sizeof(szNameLower));
-
-	int iDummy;
-	return g_smBotSteamIDs.GetValue(szNameLower, iDummy);
+	return ResolveBotDatabaseName(szBotName, szCanonicalName, sizeof(szCanonicalName));
 }
 
 public int Native_IsNameInBotDatabase(Handle plugins, int numParams)
 {
-	char szName[MAX_NAME_LENGTH], szNameLower[MAX_NAME_LENGTH];
+	char szName[MAX_NAME_LENGTH], szCanonicalName[MAX_NAME_LENGTH];
 	GetNativeString(1, szName, sizeof(szName));
-	strcopy(szNameLower, sizeof(szNameLower), szName);
-	String_ToLower(szNameLower, szNameLower, sizeof(szNameLower));
-
-	int iDummy;
-	return g_smBotSteamIDs.GetValue(szNameLower, iDummy);
+	return ResolveBotDatabaseName(szName, szCanonicalName, sizeof(szCanonicalName));
 }
 
 public void OnClientSettingsChanged(int client)
@@ -285,13 +280,30 @@ public void OnClientDisconnect(int client)
 	g_szSteamID64[client][0] = '\0';
 }
 
+bool ResolveBotDatabaseName(const char[] szName, char[] szCanonicalName, int iMaxLen)
+{
+	szCanonicalName[0] = '\0';
+
+	int iDummy;
+	if (g_smBotSteamIDs.GetValue(szName, iDummy))
+	{
+		strcopy(szCanonicalName, iMaxLen, szName);
+		return true;
+	}
+
+	char szNameLower[MAX_NAME_LENGTH];
+	String_ToLower(szName, szNameLower, sizeof(szNameLower));
+	return g_smBotNameAliases.GetString(szNameLower, szCanonicalName, iMaxLen)
+		&& szCanonicalName[0] != '\0';
+}
+
 bool GetAccountID(const char[] szName, int &iAccountID)
 {
-	char szNameLower[MAX_NAME_LENGTH];
-	strcopy(szNameLower, sizeof(szNameLower), szName);
-	String_ToLower(szNameLower, szNameLower, sizeof(szNameLower));
+	char szCanonicalName[MAX_NAME_LENGTH];
+	if (!ResolveBotDatabaseName(szName, szCanonicalName, sizeof(szCanonicalName)))
+		return false;
 
-	return g_smBotSteamIDs.GetValue(szNameLower, iAccountID);
+	return g_smBotSteamIDs.GetValue(szCanonicalName, iAccountID);
 }
 
 void StoreBotInfo(const char[] szName, int iSteamID, const char[] szCrosshair)
@@ -299,12 +311,23 @@ void StoreBotInfo(const char[] szName, int iSteamID, const char[] szCrosshair)
 	if (szName[0] == '\0' || iSteamID <= 0)
 		return;
 
-	char szNameLower[MAX_NAME_LENGTH];
-	strcopy(szNameLower, sizeof(szNameLower), szName);
-	String_ToLower(szNameLower, szNameLower, sizeof(szNameLower));
+	if (!g_smBotSteamIDs.SetValue(szName, iSteamID, false))
+	{
+		LogError("Duplicate bot name in configuration: %s", szName);
+		return;
+	}
+	g_smBotCrosshairs.SetString(szName, szCrosshair);
 
-	g_smBotSteamIDs.SetValue(szNameLower, iSteamID);
-	g_smBotCrosshairs.SetString(szNameLower, szCrosshair);
+	char szNameLower[MAX_NAME_LENGTH], szCanonicalName[MAX_NAME_LENGTH];
+	String_ToLower(szName, szNameLower, sizeof(szNameLower));
+	if (!g_smBotNameAliases.GetString(szNameLower, szCanonicalName, sizeof(szCanonicalName)))
+	{
+		g_smBotNameAliases.SetString(szNameLower, szName);
+	}
+	else if (!StrEqual(szCanonicalName, szName))
+	{
+		g_smBotNameAliases.SetString(szNameLower, "");
+	}
 }
 
 bool ExtractJsonObjectKey(const char[] szLine, char[] szKey, int iSize)
