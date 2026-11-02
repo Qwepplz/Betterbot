@@ -844,7 +844,8 @@
         "35": 451,
         "36": 736,
         "37": 917,
-        "38": 424
+        "38": 424,
+        "39": 1390
       }
     },
     {
@@ -21536,6 +21537,19 @@
         "max": "1.000000"
       },
       "item_name": "No Brain"
+    },
+    {
+      "def_index": 1390,
+      "name": "cu_awp_printstream",
+      "rarity": {
+        "id": 5,
+        "name": "Legendary"
+      },
+      "wear_remap": {
+        "min": "0.000000",
+        "max": "0.800000"
+      },
+      "item_name": "Printstream"
     }
   ],
   "gloves": [

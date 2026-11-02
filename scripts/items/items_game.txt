@@ -230215,6 +230215,30 @@
 			"wear_remap_min"		"0.000000"
 			"wear_remap_max"		"1.000000"
 		}
+		"1390"
+		{
+			"name"		"cu_awp_printstream"
+			"description_string"		"#PaintKit_cu_printstream"
+			"description_tag"		"#PaintKit_cu_printstream_Tag"
+			"style"		"7"
+			"pattern"		"awp_printstream"
+			"use_normal"		"1"
+			"normal"		"awp_printstream_normal"
+			"pattern_scale"		"1.000000"
+			"phongexponent"		"200"
+			"phongintensity"		"225"
+			"ignore_weapon_size_scale"		"1"
+			"only_first_material"		"1"
+			"pattern_offset_x_start"		"0.000000"
+			"pattern_offset_x_end"		"0.000000"
+			"pattern_offset_y_start"		"0.000000"
+			"pattern_offset_y_end"		"0.000000"
+			"pattern_rotate_start"		"0.000000"
+			"pattern_rotate_end"		"0.000000"
+			"wear_remap_min"		"0.000000"
+			"wear_remap_max"		"0.800000"
+			"pearlescent"		"120.000000"
+		}
 	}
 	"paint_kits_rarity"
 	{
@@ -230315,6 +230339,7 @@
 		"cu_glock_esmeralda"		"rare"
 		"cu_glock_cakepooper"		"legendary"
 		"cu_glock_nobrain"		"legendary"
+		"cu_awp_printstream"		"legendary"
 
 	}
 }
