@@ -3,362 +3,362 @@
 	"MOUZ"
 	{
 		"players"	"torzsi,Spinx,xertioN,PR,xelex"
-		"logo"	"mouz"
+		"logo"	"c_mouz"
 	}
 	"Vitality"
 	{
 		"players"	"apEX,ropz,ZywOo,flameZ,mezii"
-		"logo"	"vita"
+		"logo"	"c_vita"
 	}
 	"FURIA"
 	{
 		"players"	"FalleN,yuurih,YEKINDAR,KSCERATO,molodoy"
-		"logo"	"furi"
+		"logo"	"c_furi"
 	}
 	"Aurora"
 	{
 		"players"	"XANTARES,woxic,Jimpphat,kyxsan,Wicadia"
-		"logo"	"aur"
+		"logo"	"c_aur"
 	}
 	"Spirit"
 	{
 		"players"	"sh1ro,magixx,tN1R,zont1x,donk"
-		"logo"	"spir"
+		"logo"	"c_spir"
 	}
 	"BETBOOM"
 	{
 		"players"	"Boombl4,zorte,S1ren,d1Ledez,Magnojez"
-		"logo"	"bet"
+		"logo"	"c_bet"
 	}
 	"Falcons"
 	{
 		"players"	"karrigan,NiKo,TeSeS,m0NESY,kyousuke"
-		"logo"	"fal"
+		"logo"	"c_fal"
 	}
 	"FUT"
 	{
 		"players"	"SunPayus,xfl0ud,dem0n,Krabeni,dziugss"
-		"logo"	"fut"
+		"logo"	"c_fut"
 	}
 	"Legacy"
 	{
 		"players"	"arT,dumau,latto,try,ksloks"
-		"logo"	"leg"
+		"logo"	"c_leg"
 	}
 	"Nemiga"
 	{
 		"players"	"KaiR0N-,Xant3r,robo,khaN,syph0"
-		"logo"	"nem"
+		"logo"	"c_nem"
 	}
 	"G2"
 	{
 		"players"	"huNter-,NertZ,r1nkle,HeavyGod,MATYS"
-		"logo"	"g2"
+		"logo"	"c_g2"
 	}
 	"Natus Vincere"
 	{
 		"players"	"Aleksib,iM,b1t,w0nderful,makazze"
-		"logo"	"navi"
+		"logo"	"c_navi"
 	}
 	"Astralis"
 	{
 		"players"	"phzy,siuhy,Staehr,ryu,cmtry"
-		"logo"	"astr"
+		"logo"	"c_astr"
 	}
 	"Ninjas in Pyjamas"
 	{
 		"players"	"stavn,sjuush,Krimbo,adamb,xKacpersky"
-		"logo"	"nip"
+		"logo"	"c_nip"
 	}
 	"PARIVISION"
 	{
 		"players"	"HObbit,FL1T,Jame,xiELO,zweih"
-		"logo"	"pari"
+		"logo"	"c_pari"
 	}
 	"The MongolZ"
 	{
 		"players"	"nin9,bLitz,Techno,910,cobrazera"
-		"logo"	"mongo"
+		"logo"	"c_mongo"
 	}
 	"MIBR"
 	{
 		"players"	"LNZ,nqz,insani,venomzera,tomaszin"
-		"logo"	"mibr"
+		"logo"	"c_mibr"
 	}
 	"1win"
 	{
 		"players"	"Ax1Le,nafany,BELCHONOKK,fame,ArtFr0st"
-		"logo"	"1w"
+		"logo"	"c_1w"
 	}
 	"HEROIC"
 	{
 		"players"	"Brollan,nilo,susp,MartinezSa,Chr1zN"
-		"logo"	"heroi"
+		"logo"	"c_heroi"
 	}
 	"FaZe"
 	{
 		"players"	"frozen,Twistzz,Neityu,jcobbb,JBOEN"
-		"logo"	"faze"
+		"logo"	"c_faze"
 	}
 	"Liquid"
 	{
 		"players"	"NAF,EliGE,malbsMd,JT,Jorko"
-		"logo"	"liq"
+		"logo"	"c_liq"
 	}
 	"Eternal Fire"
 	{
 		"players"	"MisteM,regali,soulfly,Kvem,jottAAA"
-		"logo"	"eter"
+		"logo"	"c_eter"
 	}
 	"9z"
 	{
 		"players"	"max,dgt,meyern,luchov,HUASOPEEK"
-		"logo"	"nine"
+		"logo"	"c_nine"
 	}
 	"M80"
 	{
 		"players"	"slaxz-,Swisher,s1n,JBa,Lake"
-		"logo"	"m80"
+		"logo"	"c_m80"
 	}
 	"HOTU"
 	{
 		"players"	"n0rb3r7,kade0,mizu,dwushka,frontales"
-		"logo"	"hotu"
+		"logo"	"c_hotu"
 	}
 	"fnatic"
 	{
 		"players"	"fEAR,jambo,jackasmo,cairne,mazay"
-		"logo"	"fntc"
+		"logo"	"c_fntc"
 	}
 	"100 Thieves"
 	{
 		"players"	"device,rain,Gizmy,sirah,poiii"
-		"logo"	"100t"
+		"logo"	"c_100t"
 	}
 	"B8"
 	{
 		"players"	"alex666,npl,kensizor,esenthial,s1zzi"
-		"logo"	"b8"
+		"logo"	"c_b8"
 	}
 	"JiJieHao"
 	{
 		"players"	"m1N1,sinnopsyy,Bibu,CacaNito,0SAMAS"
-		"logo"	"jjh"
+		"logo"	"c_jjh"
 	}
 	"Inner Circle"
 	{
 		"players"	"cptkurtka023,headtr1ck,zeRRoFIX,onic,Dawy"
-		"logo"	"ice"
+		"logo"	"c_ice"
 	}
 	"DENDELE"
 	{
 		"players"	"gafolo,koala,maxxkor,rdnzao,doc"
-		"logo"	"dend"
+		"logo"	"c_dend"
 	}
 	"Virtus.pro"
 	{
 		"players"	"mir,b1st,F0R3VER,AquaRS,tO0RO"
-		"logo"	"vp"
+		"logo"	"c_vp"
 	}
 	"BIG"
 	{
 		"players"	"tabseN,JDC,faveN,blameF,gr1ks"
-		"logo"	"big"
+		"logo"	"c_big"
 	}
 	"Imperial"
 	{
 		"players"	"chelo,VINI,decenty,noway,saadzin"
-		"logo"	"imper"
+		"logo"	"c_imper"
 	}
 	"SINNERS"
 	{
 		"players"	"beastik,SHOCK,MoDo,kisserek,stressarN"
-		"logo"	"sinn"
+		"logo"	"c_sinn"
 	}
 	"K27"
 	{
 		"players"	"clax,X5G7V,xeedo,kashl1d,qw1nk1"
-		"logo"	"k27"
+		"logo"	"c_k27"
 	}
 	"GamerLegion"
 	{
 		"players"	"REZ,shalfey,Tauson,FL4MUS,hypex"
-		"logo"	"gl"
+		"logo"	"c_gl"
 	}
 	"Luminosity"
 	{
 		"players"	"Rainwaker,afro,lux,yxngstxr,AZUWU"
-		"logo"	"lumi"
+		"logo"	"c_lumi"
 	}
 	"magic"
 	{
 		"players"	"MaSvAl,lattykk,sFade8,AW,tenzy"
-		"logo"	"magic"
+		"logo"	"c_magic"
 	}
 	"Wildcard"
 	{
 		"players"	"nEMANHA,Cxzi,reck,HexT,fr3nd"
-		"logo"	"wc"
+		"logo"	"c_wc"
 	}
 	"Nemesis"
 	{
 		"players"	"SELLTER,r3salt,mag1k3Y,tex1y,Sdaim"
-		"logo"	"tn"
+		"logo"	"c_tn"
 	}
 	"BBL"
 	{
 		"players"	"IceBerg,MistR,salazar,leakz,NickyB"
-		"logo"	"bbl"
+		"logo"	"c_bbl"
 	}
 	"Envy"
 	{
 		"players"	"Maka,Lucky,misutaaa,Kursy,Graviti"
-		"logo"	"envy"
+		"logo"	"c_envy"
 	}
 	"Sangal"
 	{
 		"players"	"adamS,bnox,puuha,R4DYX,Joey"
-		"logo"	"sang"
+		"logo"	"c_sang"
 	}
 	"NRG"
 	{
 		"players"	"nitr0,Sonic,hallzerk,Grim,Jeorge"
-		"logo"	"nr"
+		"logo"	"c_nr"
 	}
 	"BC.Game"
 	{
 		"players"	"s1mple,Magisk,asap,Senzu,mzinho"
-		"logo"	"bc"
+		"logo"	"c_bc"
 	}
 	"FOKUS"
 	{
 		"players"	"ztr,Banjo,podi,jocab,Matheos"
-		"logo"	"fokus"
+		"logo"	"c_fokus"
 	}
 	"Alliance"
 	{
 		"players"	"twist,eraa,bobeksde,upE,avid"
-		"logo"	"alli"
+		"logo"	"c_alli"
 	}
 	"FlyQuest"
 	{
 		"players"	"jks,aliStair,INS,Vexite,nettik"
-		"logo"	"flyq"
+		"logo"	"c_flyq"
 	}
 	"PRIVATE"
 	{
 		"players"	"1eeR,H4SAN4TOR,sowalio,sh1nejezzz,z1k4"
-		"logo"	"priv"
+		"logo"	"c_priv"
 	}
 	"paiN"
 	{
 		"players"	"biguzera,saffee,snow,Tatu,Rkzinho"
-		"logo"	"pain"
+		"logo"	"c_pain"
 	}
 	"BESTIA"
 	{
 		"players"	"drop,kauez,cass1n,buda,timo"
-		"logo"	"best"
+		"logo"	"c_best"
 	}
 	"TYLOO"
 	{
 		"players"	"JamYoung,Jee,Mercury,Moseyuh,Zero"
-		"logo"	"tyl"
+		"logo"	"c_tyl"
 	}
 	"Lynn Vision"
 	{
 		"players"	"Westmelon,z4KR,Starry,EmiliaQAQ,C4LLM3SU3"
-		"logo"	"lynn"
+		"logo"	"c_lynn"
 	}
 	"Fluxo"
 	{
 		"players"	"exit,dav1deuS,zevy,kye,Ltz"
-		"logo"	"flux"
+		"logo"	"c_flux"
 	}
 	"Chinggis Warriors"
 	{
 		"players"	"sk0R,ROUX,cool4st,fury5k,tikuak"
-		"logo"	"ching"
+		"logo"	"c_ching"
 	}
 	"Betclic"
 	{
 		"players"	"Demho,Prism,ex1st,ultimate,Qlocuu"
-		"logo"	"bae"
+		"logo"	"c_bae"
 	}
 	"Metizport"
 	{
 		"players"	"stanislaw,Plopski,F1KU,forsyy,MaiL09"
-		"logo"	"metiz"
+		"logo"	"c_metiz"
 	}
 	"Nuclear TigeRES"
 	{
 		"players"	"senka,Djon8,flouzer,ayuki,tronic"
-		"logo"	"nt"
+		"logo"	"c_nt"
 	}
 	"Phantom"
 	{
 		"players"	"TMB,nicoodoz,KEi,Kylar,Kunai"
-		"logo"	"phan"
+		"logo"	"c_phan"
 	}
 	"EYEBALLERS"
 	{
 		"players"	"JW,KRIMZ,maxster,Ro1f,dex"
-		"logo"	"eye"
+		"logo"	"c_eye"
 	}
 	"SAW"
 	{
 		"players"	"MUTiRiS,NOPEEj,story,ewjerkz,krazy"
-		"logo"	"saw"
+		"logo"	"c_saw"
 	}
 	"UNiTY"
 	{
 		"players"	"Dytor,KWERTZZ,2high,M1key,Sn0w"
-		"logo"	"unit"
+		"logo"	"c_unit"
 	}
 	"Nexus"
 	{
 		"players"	"shield,fNk,s0und,Nexius,HOLY"
-		"logo"	"nex"
+		"logo"	"c_nex"
 	}
 	"PURE"
 	{
 		"players"	"keen,aNdu,POLO,Polbandana,tein"
-		"logo"	"pure"
+		"logo"	"c_pure"
 	}
 	"5star"
 	{
 		"players"	"NEUZ,rate,clouden,ariucle,hoolig4n"
-		"logo"	"5star"
+		"logo"	"c_5star"
 	}
 	"BRUTE"
 	{
 		"players"	"ZEDKO,nbqq,aidKiT,tAk,hfah"
-		"logo"	"brut"
+		"logo"	"c_brut"
 	}
 	"WBT"
 	{
 		"players"	"Psycho,Smash,s4ltovsk1yy,DemQQ,tyr1k"
-		"logo"	"wbt"
+		"logo"	"c_wbt"
 	}
 	"INFINITE"
 	{
 		"players"	"ScrunK,Blytz,kyuubii,volt,sl3nd"
-		"logo"	"infi"
+		"logo"	"c_infi"
 	}
 	"NEXVOID"
 	{
 		"players"	"erkaSt,xerolte,MiQ,AccuracyTG,Zesta"
-		"logo"	"nexv"
+		"logo"	"c_nexv"
 	}
 	"QUAZAR"
 	{
 		"players"	"Porya,gehji,Ne1XXX,newt,kaiori"
-		"logo"	"qua"
+		"logo"	"c_qua"
 	}
 	"Acend"
 	{
 		"players"	"SPELLAN,SHiPZ,REDSTAR,AwaykeN,Skrimo"
-		"logo"	"acend"
+		"logo"	"c_acend"
 	}
 	"ex-Zero Tenacity"
 	{
@@ -368,42 +368,42 @@
 	"NAVI Junior"
 	{
 		"players"	"MahaR,FAZERY,skizzyee,yoki,kodak"
-		"logo"	"navij"
+		"logo"	"c_navij"
 	}
 	"Black Phoenix"
 	{
 		"players"	"4X1s,karnez,topo,MRcreed,Salazar"
-		"logo"	"bpho"
+		"logo"	"c_bpho"
 	}
 	"ShindeN"
 	{
 		"players"	"tom1jed,abizz,ivz,naz,guty"
-		"logo"	"shin"
+		"logo"	"c_shin"
 	}
 	"BARCA"
 	{
 		"players"	"zmb,pancc,Alisson,happ,divine"
-		"logo"	"barca"
+		"logo"	"c_barca"
 	}
 	"RBLS"
 	{
 		"players"	"stadodo,arrozdoce,Icarus,Shr,aragornN"
-		"logo"	"reb"
+		"logo"	"c_reb"
 	}
 	"BASEMENT BOYS"
 	{
 		"players"	"kr1vda,OWNER,kAlash,Tr0ublE,maggent"
-		"logo"	"bsboy"
+		"logo"	"c_bsboy"
 	}
 	"UPGRADE"
 	{
 		"players"	"synyx,SquEzxc,pleynnn,tw1sterzaza,DAN9ARMATURA"
-		"logo"	"upg"
+		"logo"	"c_upg"
 	}
 	"Galorys"
 	{
 		"players"	"PKL,destiny,detr0ittJ,gbb,tomate"
-		"logo"	"galo"
+		"logo"	"c_galo"
 	}
 	"ex-INOX"
 	{
@@ -413,41 +413,41 @@
 	"Spirit Academy"
 	{
 		"players"	"VILBy,Kiryasoo,Netrix,s1nside,k0gaSs"
-		"logo"	"spira"
+		"logo"	"c_spira"
 	}
 	"Omega"
 	{
 		"players"	"def1zer,adai,Aldikon,Botpa1,dan4o"
-		"logo"	"omega"
+		"logo"	"c_omega"
 	}
 	"Without a Roof"
 	{
 		"players"	"autimatic,Stewie2K,Brehze,CeRq,FaNg"
-		"logo"	"war"
+		"logo"	"c_war"
 	}
 	"Alter Ego"
 	{
 		"players"	"PokemoN,shadiy,adeX,laxiee,Bloody"
-		"logo"	"alter"
+		"logo"	"c_alter"
 	}
 	"Bounty Hunters"
 	{
 		"players"	"ponter,KAISER,zock,urban0,pepe"
-		"logo"	"bhe"
+		"logo"	"c_bhe"
 	}
 	"BAKS"
 	{
 		"players"	"glowiing,Norwi,danistzz,whisper,turbo"
-		"logo"	"baks"
+		"logo"	"c_baks"
 	}
 	"ASTRAL"
 	{
 		"players"	"gxx-,swiz,RaY5ive,Neqy,meowpop"
-		"logo"	"astra"
+		"logo"	"c_astra"
 	}
 	"9INE"
 	{
 		"players"	"raalz,kraghen,b1elany,flayy,rim3"
-		"logo"	"nein"
+		"logo"	"c_nein"
 	}
 }
