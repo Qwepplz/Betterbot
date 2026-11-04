@@ -64,12 +64,6 @@
 				"library" 	"server"
 				"linux"	"\x55\x89\xE5\x57\x56\x53\x83\xEC\x5C\xA1\x2A\x2A\x2A\x2A\x8B\x7D\x08\x89\x45\xA4"
 			}
-			"CCSBot::ThrowGrenade"
-			{
-				// Has '%3.2f: Grenade: START_THROW\n' string
-				"library" 	"server"
-				"linux"	"\x55\x89\xE5\x57\x56\x53\x83\xEC\x38\x8B\x5D\x08\x8B\x7D\x0C\x53"
-			}
 			"CCSBot::Upkeep"
 			{
 				// Scope aim sway suppression to Upkeep; Linux FastCos/FastSin also serve movement.
@@ -189,12 +183,6 @@
 			{
 				//A little bit above the string '%3.2f: Grenade: FINISH_THROW\n'
 				"linux"	"23096"
-			}
-			"CCSBot::SetLookAtInhibitUntil"
-			{
-				// Local offset key: SetLookAt wrapper reads this deadline; Blind updates it.
-				// Verified ELF32 build 8853: server.so 7de235c3, read de19d8, write c1170b.
-				"linux"	"5488"
 			}
 			"CCSBot::m_morale"
 			{
@@ -325,44 +313,6 @@
 						"type" "cbaseentity"
 					}
 					"part"
-					{
-						"type" "int"
-					}
-				}
-			}
-			"CCSBot::OnAudibleEvent"
-			{
-				"signature" "CCSBot::OnAudibleEvent"
-				"callconv" "thiscall"
-				"return" "void"
-				"this" "entity"
-				"arguments"
-				{
-					"event"
-					{
-						"type" "int"
-					}
-					"player"
-					{
-						"type" "cbaseentity"
-					}
-					"range"
-					{
-						"type" "float"
-					}
-					"priority"
-					{
-						"type" "int"
-					}
-					"isHostile"
-					{
-						"type" "bool"
-					}
-					"isFootstep"
-					{
-						"type" "bool"
-					}
-					"actualOrigin"
 					{
 						"type" "int"
 					}
