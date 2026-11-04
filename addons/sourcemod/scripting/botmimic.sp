@@ -60,10 +60,6 @@ enum struct FrameInfo {
     int additionalFields; // see ADDITIONAL_FIELD_* defines
 }
 
-#define AT_ORIGIN 0
-#define AT_ANGLES 1
-#define AT_VELOCITY 2
-#define AT_FLAGS 3
 enum struct AdditionalTeleport {
 	float atOrigin[3];
 	float atAngles[3];
@@ -96,29 +92,11 @@ enum struct BookmarkWhileMimicing {
 	int BWM_index; // The index into the FH_bookmarks array in the fileheader for the corresponding bookmark (to get the name)
 }
 
-// Where did he start recording. The bot is teleported to this position on replay.
+// Initial position and angles cached for playback.
 float g_fInitialPosition[MAXPLAYERS+1][3];
 float g_fInitialAngles[MAXPLAYERS+1][3];
 
-// Array of frames
-ArrayList g_hRecording[MAXPLAYERS+1];
-ArrayList g_hRecordingAdditionalTeleport[MAXPLAYERS+1];
-ArrayList g_hRecordingBookmarks[MAXPLAYERS+1];
 int g_iCurrentAdditionalTeleportIndex[MAXPLAYERS+1];
-// Is the recording currently paused?
-bool g_bRecordingPaused[MAXPLAYERS+1];
-bool g_bSaveFullSnapshot[MAXPLAYERS+1];
-// How many calls to OnPlayerRunCmd were recorded?
-int g_iRecordedTicks[MAXPLAYERS+1];
-// What's the last active weapon
-int g_iRecordPreviousWeapon[MAXPLAYERS+1];
-// Count ticks till we save the position again
-int g_iOriginSnapshotInterval[MAXPLAYERS+1];
-// The name of this recording
-char g_sRecordName[MAXPLAYERS+1][MAX_RECORD_NAME_LENGTH];
-char g_sRecordPath[MAXPLAYERS+1][PLATFORM_MAX_PATH];
-char g_sRecordCategory[MAXPLAYERS+1][PLATFORM_MAX_PATH];
-char g_sRecordSubDir[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 
 StringMap g_hLoadedRecords;
 StringMap g_hLoadedRecordsAdditionalTeleport;
@@ -134,12 +112,6 @@ bool g_bBotSwitchedWeapon[MAXPLAYERS+1];
 bool g_bValidTeleportCall[MAXPLAYERS+1];
 BookmarkWhileMimicing g_iBotMimicNextBookmarkTick[MAXPLAYERS+1];
 
-GlobalForward g_hfwdOnStartRecording;
-GlobalForward g_hfwdOnRecordingPauseStateChanged;
-GlobalForward g_hfwdOnRecordingBookmarkSaved;
-GlobalForward g_hfwdOnStopRecording;
-GlobalForward g_hfwdOnRecordSaved;
-GlobalForward g_hfwdOnRecordDeleted;
 GlobalForward g_hfwdOnPlayerStartsMimicing;
 GlobalForward g_hfwdOnPlayerStopsMimicing;
 GlobalForward g_hfwdOnPlayerMimicLoops;
@@ -151,7 +123,6 @@ Handle g_hSetOrigin;
 Handle g_hSetVelocity;
 Handle g_hSwitchWeaponCall;
 
-ConVar g_hCVOriginSnapshotInterval;
 
 public Plugin myinfo = 
 {
@@ -166,14 +137,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 {
 	MarkNativeAsOptional("BB_FilterBotReactionButtons");
 	RegPluginLibrary("botmimic");
-	CreateNative("BotMimic_StartRecording", StartRecording);
-	CreateNative("BotMimic_PauseRecording", PauseRecording);
-	CreateNative("BotMimic_ResumeRecording", ResumeRecording);
-	CreateNative("BotMimic_IsRecordingPaused", IsRecordingPaused);
-	CreateNative("BotMimic_StopRecording", StopRecording);
-	CreateNative("BotMimic_SaveBookmark", SaveBookmark);
-	CreateNative("BotMimic_DeleteRecord", DeleteRecord);
-	CreateNative("BotMimic_IsPlayerRecording", IsPlayerRecording);
 	CreateNative("BotMimic_IsPlayerMimicing", IsPlayerMimicing);
 	CreateNative("BotMimic_GetRecordPlayerMimics", GetRecordPlayerMimics);
 	CreateNative("BotMimic_PlayRecordFromFile", PlayRecordFromFile);
@@ -182,18 +145,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("BotMimic_GoToBookmark", GoToBookmark);
 	CreateNative("BotMimic_StopPlayerMimic", StopPlayerMimic);
 	CreateNative("BotMimic_GetFileHeaders", GetFileHeaders);
-	CreateNative("BotMimic_ChangeRecordName", ChangeRecordName);
 	CreateNative("BotMimic_GetLoadedRecordCategoryList", GetLoadedRecordCategoryList);
 	CreateNative("BotMimic_GetLoadedRecordList", GetLoadedRecordList);
 	CreateNative("BotMimic_GetFileCategory", GetFileCategory);
 	CreateNative("BotMimic_GetRecordBookmarks", GetRecordBookmarks);
 	
-	g_hfwdOnStartRecording = new GlobalForward("BotMimic_OnStartRecording", ET_Hook, Param_Cell, Param_String, Param_String, Param_String, Param_String);
-	g_hfwdOnRecordingPauseStateChanged = new GlobalForward("BotMimic_OnRecordingPauseStateChanged", ET_Ignore, Param_Cell, Param_Cell);
-	g_hfwdOnRecordingBookmarkSaved = new GlobalForward("BotMimic_OnRecordingBookmarkSaved", ET_Ignore, Param_Cell, Param_String);
-	g_hfwdOnStopRecording = new GlobalForward("BotMimic_OnStopRecording", ET_Hook, Param_Cell, Param_String, Param_String, Param_String, Param_String, Param_CellByRef);
-	g_hfwdOnRecordSaved = new GlobalForward("BotMimic_OnRecordSaved", ET_Ignore, Param_Cell, Param_String, Param_String, Param_String, Param_String);
-	g_hfwdOnRecordDeleted = new GlobalForward("BotMimic_OnRecordDeleted", ET_Ignore, Param_String, Param_String, Param_String);
 	g_hfwdOnPlayerStartsMimicing = new GlobalForward("BotMimic_OnPlayerStartsMimicing", ET_Hook, Param_Cell, Param_String, Param_String, Param_String);
 	g_hfwdOnPlayerStopsMimicing = new GlobalForward("BotMimic_OnPlayerStopsMimicing", ET_Ignore, Param_Cell, Param_String, Param_String, Param_String);
 	g_hfwdOnPlayerMimicLoops = new GlobalForward("BotMimic_OnPlayerMimicLoops", ET_Ignore, Param_Cell);
@@ -210,12 +166,6 @@ public void OnPluginStart()
 		hVersion.SetString(PLUGIN_VERSION);
 		hVersion.AddChangeHook(ConVar_VersionChanged);
 	}
-	
-	// Save the position of clients every 10000 ticks
-	// This is to avoid bots getting stuck in walls due to slightly lower jumps, if they don't touch the ground.
-	g_hCVOriginSnapshotInterval = CreateConVar("sm_botmimic_snapshotinterval", "10000", "Save the position of clients every x ticks. This is to avoid bots getting stuck in walls during a long playback and lots of jumps.", _, true, 0.0);
-	
-	AutoExecConfig();
 	
 	// Maps path to .rec -> record enum
 	g_hLoadedRecords = new StringMap();
@@ -373,125 +323,8 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
-	if(g_hRecording[client] != null)
-		BotMimic_StopRecording(client);
-	
 	if(g_hBotMimicsRecord[client] != null)
 		BotMimic_StopPlayerMimic(client);
-}
-
-public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
-{
-	// Client isn't recording or recording is paused.
-	if(g_hRecording[client] == null || g_bRecordingPaused[client])
-		return;
-
-	FrameInfo iFrame;
-	iFrame.playerButtons = buttons;
-	iFrame.playerImpulse = impulse;
-	
-	iFrame.predictedVelocity = vel;
-	iFrame.newWeapon = CSWeapon_NONE;
-	iFrame.playerSubtype = subtype;
-	iFrame.playerSeed = seed;
-	Array_Copy(angles, iFrame.predictedAngles, 2);
-	
-	float vVel[3], vOrigin[3];
-	
-	BotMimic_GetAbsOrigin(client, vOrigin);
-	iFrame.origin = vOrigin;
-	BotMimic_GetAbsVelocity(client, vVel);
-	iFrame.actualVelocity = vVel;
-	
-	// Save the origin, angles and velocity in this frame.
-	if(g_bSaveFullSnapshot[client])
-	{
-		AdditionalTeleport iAT;
-		float fBuffer[3];
-		GetClientAbsOrigin(client, fBuffer);
-		Array_Copy(fBuffer, iAT.atOrigin, 3);
-		GetClientEyeAngles(client, fBuffer);
-		Array_Copy(fBuffer, iAT.atAngles, 3);
-		BotMimic_GetAbsVelocity(client, fBuffer);
-		Array_Copy(fBuffer, iAT.atVelocity, 3);
-		
-		iAT.atFlags = ADDITIONAL_FIELD_TELEPORTED_ORIGIN|ADDITIONAL_FIELD_TELEPORTED_ANGLES|ADDITIONAL_FIELD_TELEPORTED_VELOCITY;
-		g_hRecordingAdditionalTeleport[client].PushArray(iAT, sizeof(AdditionalTeleport));
-		g_bSaveFullSnapshot[client] = false;
-	}
-	else
-	{
-		// Save the current position 
-		int iInterval = g_hCVOriginSnapshotInterval.IntValue;
-		if(iInterval > 0 && g_iOriginSnapshotInterval[client] > iInterval)
-		{
-			AdditionalTeleport iAT;
-			float fOrigin[3];
-			GetClientAbsOrigin(client, fOrigin);
-			Array_Copy(fOrigin, iAT.atOrigin, 3);
-			iAT.atFlags |= ADDITIONAL_FIELD_TELEPORTED_ORIGIN;
-			g_hRecordingAdditionalTeleport[client].PushArray(iAT, sizeof(AdditionalTeleport));
-			g_iOriginSnapshotInterval[client] = 0;
-		}
-	}
-	
-	g_iOriginSnapshotInterval[client]++;
-	
-	// Check for additional Teleports
-	if(g_hRecordingAdditionalTeleport[client].Length > g_iCurrentAdditionalTeleportIndex[client])
-	{
-		AdditionalTeleport iAT;
-		g_hRecordingAdditionalTeleport[client].GetArray(g_iCurrentAdditionalTeleportIndex[client], iAT, sizeof(AdditionalTeleport));
-		// Remember, we were teleported this frame!
-		iFrame.additionalFields |= iAT.atFlags;
-		g_iCurrentAdditionalTeleportIndex[client]++;
-	}
-	
-	int iNewWeapon = -1;
-	
-	// Did he change his weapon?
-	if(weapon)
-	{
-		iNewWeapon = weapon;
-	}
-	// Picked up a new one?
-	else
-	{
-		int iWeapon = BotMimic_GetActiveWeapon(client);
-		
-		// He's holding a weapon and
-		if(iWeapon != -1 && 
-		// we just started recording. Always save the first weapon!
-		   (g_iRecordedTicks[client] == 0 ||
-		// This is a new weapon, he didn't held before.
-		   g_iRecordPreviousWeapon[client] != iWeapon))
-		{
-			iNewWeapon = iWeapon;
-		}
-	}
-	
-	if(iNewWeapon != -1)
-	{
-		// Save it
-		if(IsValidEntity(iNewWeapon) && IsValidEdict(iNewWeapon))
-		{
-			g_iRecordPreviousWeapon[client] = iNewWeapon;
-			
-			char sClassName[64];
-			GetEdictClassname(iNewWeapon, sClassName, sizeof(sClassName));
-			ReplaceString(sClassName, sizeof(sClassName), "weapon_", "", false);
-			
-			char sWeaponAlias[64];
-			CS_GetTranslatedWeaponAlias(sClassName, sWeaponAlias, sizeof(sWeaponAlias));
-			CSWeaponID weaponId = CS_AliasToWeaponID(sWeaponAlias);
-			
-			iFrame.newWeapon = weaponId;
-		}
-	}
-	
-	g_hRecording[client].PushArray(iFrame, sizeof(FrameInfo));
-	
-	g_iRecordedTicks[client]++;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
@@ -694,11 +527,7 @@ public void Event_OnPlayerDeath(Event event, const char[] name, bool dontBroadca
 	if(!IsValidClient(client))
 		return;
 	
-	// This one has been recording currently
-	if(g_hRecording[client] != null)
-		BotMimic_StopRecording(client, true);
-	// This bot has been playing one
-	else if(g_hBotMimicsRecord[client] != null)
+	if(g_hBotMimicsRecord[client] != null)
 		BotMimic_StopPlayerMimic(client);
 }
 
@@ -733,505 +562,12 @@ public MRESReturn DHooks_OnTeleport(int client, Handle hParams)
 		return MRES_Ignored;
 	}
 	
-	// Don't care if he's not recording.
-	if(g_hRecording[client] == null)
-		return MRES_Ignored;
-	
-	float fOrigin[3], angles[3], velocity[3];
-	bool bOriginNull = DHookIsNullParam(hParams, 1);
-	bool bAnglesNull = DHookIsNullParam(hParams, 2);
-	bool bVelocityNull = DHookIsNullParam(hParams, 3);
-	
-	if(!bOriginNull)
-		DHookGetParamVector(hParams, 1, fOrigin);
-	
-	if(!bAnglesNull)
-	{
-		for(int i=0;i<3;i++)
-			angles[i] = DHookGetParamObjectPtrVar(hParams, 2, i*4, ObjectValueType_Float);
-	}
-	
-	if(!bVelocityNull)
-		DHookGetParamVector(hParams, 3, velocity);
-	
-	if(bOriginNull && bAnglesNull && bVelocityNull)
-		return MRES_Ignored;
-	
-	AdditionalTeleport iAT;
-	Array_Copy(fOrigin, iAT.atOrigin, 3);
-	Array_Copy(angles, iAT.atAngles, 3);
-	Array_Copy(velocity, iAT.atVelocity, 3);
-	
-	// Remember, 
-	if(!bOriginNull)
-		iAT.atFlags |= ADDITIONAL_FIELD_TELEPORTED_ORIGIN;
-	if(!bAnglesNull)
-		iAT.atFlags |= ADDITIONAL_FIELD_TELEPORTED_ANGLES;
-	if(!bVelocityNull)
-		iAT.atFlags |= ADDITIONAL_FIELD_TELEPORTED_VELOCITY;
-	
-	g_hRecordingAdditionalTeleport[client].PushArray(iAT, sizeof(AdditionalTeleport));
-	
 	return MRES_Ignored;
 }
 
 /**
  * Natives
  */
-public int StartRecording(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return -1;
-	}
-	
-	if(g_hRecording[client] != null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is already recording.");
-		return -1;
-	}
-	
-	if(g_hBotMimicsRecord[client] != null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is currently mimicing another record.");
-		return -1;
-	}
-	
-	g_hRecording[client] = new ArrayList(sizeof(FrameInfo));
-	g_hRecordingAdditionalTeleport[client] = new ArrayList(sizeof(AdditionalTeleport));
-	g_hRecordingBookmarks[client] = new ArrayList(sizeof(Bookmarks));
-	GetClientAbsOrigin(client, g_fInitialPosition[client]);
-	GetClientEyeAngles(client, g_fInitialAngles[client]);
-	g_iRecordedTicks[client] = 0;
-	g_iOriginSnapshotInterval[client] = 0;
-	
-	GetNativeString(2, g_sRecordName[client], MAX_RECORD_NAME_LENGTH);
-	GetNativeString(3, g_sRecordCategory[client], PLATFORM_MAX_PATH);
-	GetNativeString(4, g_sRecordSubDir[client], PLATFORM_MAX_PATH);
-	
-	if(g_sRecordCategory[client][0] == '\0')
-		strcopy(g_sRecordCategory[client], sizeof(g_sRecordCategory[]), DEFAULT_CATEGORY);
-	
-	// Path:
-	// data/botmimic/%CATEGORY%/map_name/%SUBDIR%/record.rec
-	// subdir can be omitted, default category is "default"
-	
-	// All demos reside in the default path (data/botmimic)
-	BuildPath(Path_SM, g_sRecordPath[client], PLATFORM_MAX_PATH, "%s%s", DEFAULT_RECORD_FOLDER, g_sRecordCategory[client]);
-	
-	// Remove trailing slashes
-	if(g_sRecordPath[client][strlen(g_sRecordPath[client])-1] == '\\' ||
-		g_sRecordPath[client][strlen(g_sRecordPath[client])-1] == '/')
-		g_sRecordPath[client][strlen(g_sRecordPath[client])-1] = '\0';
-	
-	Action result;
-	Call_StartForward(g_hfwdOnStartRecording);
-	Call_PushCell(client);
-	Call_PushString(g_sRecordName[client]);
-	Call_PushString(g_sRecordCategory[client]);
-	Call_PushString(g_sRecordSubDir[client]);
-	Call_PushString(g_sRecordPath[client]);
-	Call_Finish(result);
-	
-	if(result >= Plugin_Handled)
-		BotMimic_StopRecording(client, false);
-		
-	return 1;
-}
-
-public int PauseRecording(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return -1;
-	}
-	
-	if(g_hRecording[client] == null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is not recording.");
-		return -1;
-	}
-	
-	if(g_bRecordingPaused[client])
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Recording is already paused.");
-		return -1;
-	}
-	
-	g_bRecordingPaused[client] = true;
-	
-	Call_StartForward(g_hfwdOnRecordingPauseStateChanged);
-	Call_PushCell(client);
-	Call_PushCell(true);
-	Call_Finish();
-	
-	return 1;
-}
-
-public int ResumeRecording(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return -1;
-	}
-	
-	if(g_hRecording[client] == null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is not recording.");
-		return -1;
-	}
-	
-	if(!g_bRecordingPaused[client])
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Recording is not paused.");
-		return -1;
-	}
-	
-	// Save the new full position, angles and velocity.
-	g_bSaveFullSnapshot[client] = true;
-	
-	g_bRecordingPaused[client] = false;
-	
-	Call_StartForward(g_hfwdOnRecordingPauseStateChanged);
-	Call_PushCell(client);
-	Call_PushCell(false);
-	Call_Finish();
-	
-	return 1;
-}
-
-public int IsRecordingPaused(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return false;
-	}
-	
-	if(g_hRecording[client] == null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is not recording.");
-		return false;
-	}
-	
-	return g_bRecordingPaused[client];
-}
-
-public int StopRecording(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return -1;
-	}
-	
-	// Not recording..
-	if(g_hRecording[client] == null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is not recording.");
-		return -1;
-	}
-	
-	bool save = GetNativeCell(2);
-	
-	Action result;
-	Call_StartForward(g_hfwdOnStopRecording);
-	Call_PushCell(client);
-	Call_PushString(g_sRecordName[client]);
-	Call_PushString(g_sRecordCategory[client]);
-	Call_PushString(g_sRecordSubDir[client]);
-	Call_PushString(g_sRecordPath[client]);
-	Call_PushCellRef(save);
-	Call_Finish(result);
-	
-	// Don't stop recording?
-	if(result >= Plugin_Handled)
-		return -1;
-	
-	if(save)
-	{
-		int iEndTime = GetTime();
-		
-		char sMapName[64], sPath[PLATFORM_MAX_PATH];
-		GetCurrentMap(sMapName, sizeof(sMapName));
-		
-		// Check if the default record folder exists?
-		BuildPath(Path_SM, sPath, sizeof(sPath), DEFAULT_RECORD_FOLDER);
-		// Remove trailing slashes
-		if(sPath[strlen(sPath)-1] == '\\' || sPath[strlen(sPath)-1] == '/')
-			sPath[strlen(sPath)-1] = '\0';
-		
-		if(!CheckCreateDirectory(sPath, 511))
-			return -1;
-		
-		// Check if the category folder exists?
-		BuildPath(Path_SM, sPath, sizeof(sPath), "%s%s", DEFAULT_RECORD_FOLDER, g_sRecordCategory[client]);
-		if(!CheckCreateDirectory(sPath, 511))
-			return -1;
-		
-		// Check, if there is a folder for this map already
-		Format(sPath, sizeof(sPath), "%s/%s", g_sRecordPath[client], sMapName);
-		if(!CheckCreateDirectory(sPath, 511))
-			return -1;
-		
-		// Check if the subdirectory exists
-		if(g_sRecordSubDir[client][0] != '\0')
-		{
-			Format(sPath, sizeof(sPath), "%s/%s", sPath, g_sRecordSubDir[client]);
-			if(!CheckCreateDirectory(sPath, 511))
-				return -1;
-		}
-		
-		Format(sPath, sizeof(sPath), "%s/%d.rec", sPath, iEndTime);
-		
-		// Add to our loaded record list
-		FileHeader iHeader;
-		iHeader.FH_binaryFormatVersion = BINARY_FORMAT_VERSION;
-		iHeader.FH_recordEndTime = iEndTime;
-		iHeader.FH_tickCount = g_hRecording[client].Length;
-		strcopy(iHeader.FH_recordName, MAX_RECORD_NAME_LENGTH, g_sRecordName[client]);
-		Array_Copy(g_fInitialPosition[client], iHeader.FH_initialPosition, 3);
-		Array_Copy(g_fInitialAngles[client], iHeader.FH_initialAngles, 3);
-		iHeader.FH_frames = g_hRecording[client];
-		
-		if (g_hRecordingBookmarks[client].Length > 0)
-		{
-			iHeader.FH_bookmarkCount = g_hRecordingBookmarks[client].Length;
-			iHeader.FH_bookmarks = g_hRecordingBookmarks[client];
-		}
-		else
-		{
-			delete g_hRecordingBookmarks[client];
-		}
-		
-		if(g_hRecordingAdditionalTeleport[client].Length > 0)
-		{
-			g_hLoadedRecordsAdditionalTeleport.SetValue(sPath, g_hRecordingAdditionalTeleport[client]);
-		}
-		else
-		{
-			delete g_hRecordingAdditionalTeleport[client];
-		}
-		
-		WriteRecordToDisk(sPath, iHeader);
-		
-		g_hLoadedRecords.SetArray(sPath, iHeader, sizeof(FileHeader));
-		g_hLoadedRecordsCategory.SetString(sPath, g_sRecordCategory[client]);
-		g_hSortedRecordList.PushString(sPath);
-		if(g_hSortedCategoryList.FindString(g_sRecordCategory[client]) == -1)
-			g_hSortedCategoryList.PushString(g_sRecordCategory[client]);
-		SortRecordList();
-		
-		Call_StartForward(g_hfwdOnRecordSaved);
-		Call_PushCell(client);
-		Call_PushString(g_sRecordName[client]);
-		Call_PushString(g_sRecordCategory[client]);
-		Call_PushString(g_sRecordSubDir[client]);
-		Call_PushString(sPath);
-		Call_Finish();
-	}
-	else
-	{
-		delete g_hRecording[client];
-		delete g_hRecordingAdditionalTeleport[client];
-		delete g_hRecordingBookmarks[client];
-	}
-	
-	g_hRecording[client] = null;
-	g_hRecordingAdditionalTeleport[client] = null;
-	g_hRecordingBookmarks[client] = null;
-	g_iRecordedTicks[client] = 0;
-	g_iRecordPreviousWeapon[client] = 0;
-	g_sRecordName[client][0] = 0;
-	g_sRecordPath[client][0] = 0;
-	g_sRecordCategory[client][0] = 0;
-	g_sRecordSubDir[client][0] = 0;
-	g_iCurrentAdditionalTeleportIndex[client] = 0;
-	g_iOriginSnapshotInterval[client] = 0;
-	g_bRecordingPaused[client] = false;
-	g_bSaveFullSnapshot[client] = false;
-	
-	return 1;
-}
-
-public int SaveBookmark(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return -1;
-	}
-	
-	// Not recording..
-	if(g_hRecording[client] == null)
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Player is not recording.");
-		return -1;
-	}
-	
-	char sBookmarkName[MAX_BOOKMARK_NAME_LENGTH];
-	GetNativeString(2, sBookmarkName, sizeof(sBookmarkName));
-	
-	// First check if there already is a bookmark with this name
-	Bookmarks iBookmark;
-	int iSize = g_hRecordingBookmarks[client].Length;
-	for(int i=0;i<iSize;i++)
-	{
-		g_hRecordingBookmarks[client].GetArray(i, iBookmark, sizeof(Bookmarks));
-		if(StrEqual(iBookmark.BKM_name, sBookmarkName, false))
-		{
-			ThrowNativeError(SP_ERROR_NATIVE, "There already is a bookmark named \"%s\".", sBookmarkName);
-			return -1;
-		}
-	}
-	
-	// Save the current state so it can be restored when jumping to that frame.
-	AdditionalTeleport iAT;
-	float fBuffer[3];
-	GetClientAbsOrigin(client, fBuffer);
-	Array_Copy(fBuffer, iAT.atOrigin, 3);
-	GetClientEyeAngles(client, fBuffer);
-	Array_Copy(fBuffer, iAT.atAngles, 3);
-	BotMimic_GetAbsVelocity(client, fBuffer);
-	Array_Copy(fBuffer, iAT.atVelocity, 3);
-	
-	iAT.atFlags = ADDITIONAL_FIELD_TELEPORTED_ORIGIN|ADDITIONAL_FIELD_TELEPORTED_ANGLES|ADDITIONAL_FIELD_TELEPORTED_VELOCITY;
-	
-	FrameInfo iFrame;
-	g_hRecording[client].GetArray(g_iRecordedTicks[client]-1, iFrame, sizeof(FrameInfo));
-	// There already is some Teleport call saved this frame :(
-	if((iFrame.additionalFields & iAT.atFlags) != 0)
-	{
-		// Purge it and replace it with this one as we might have more information.
-		g_hRecordingAdditionalTeleport[client].SetArray(g_iCurrentAdditionalTeleportIndex[client]-1, iAT, sizeof(AdditionalTeleport));
-	}
-	else
-	{
-		g_hRecordingAdditionalTeleport[client].PushArray(iAT, sizeof(AdditionalTeleport));
-		g_iCurrentAdditionalTeleportIndex[client]++;
-	}
-	// Remember, we were teleported this frame!
-	iFrame.additionalFields |= iAT.atFlags;
-	
-	int iWeapon = BotMimic_GetActiveWeapon(client);
-	if(iWeapon != INVALID_ENT_REFERENCE && iFrame.newWeapon == CSWeapon_NONE && IsValidEntity(iWeapon))
-	{
-		char sClassName[64];
-		GetEntityClassname(iWeapon, sClassName, sizeof(sClassName));
-		ReplaceString(sClassName, sizeof(sClassName), "weapon_", "", false);
-		
-		char sWeaponAlias[64];
-		CS_GetTranslatedWeaponAlias(sClassName, sWeaponAlias, sizeof(sWeaponAlias));
-		CSWeaponID weaponId = CS_AliasToWeaponID(sWeaponAlias);
-		iFrame.newWeapon = weaponId;
-	}
-	
-	g_hRecording[client].SetArray(g_iRecordedTicks[client]-1, iFrame, sizeof(FrameInfo));
-	
-	// Save the bookmark
-	iBookmark.BKM_frame = g_iRecordedTicks[client]-1;
-	iBookmark.BKM_additionalTeleportTick = g_iCurrentAdditionalTeleportIndex[client]-1;
-	strcopy(iBookmark.BKM_name, MAX_BOOKMARK_NAME_LENGTH, sBookmarkName);
-	g_hRecordingBookmarks[client].PushArray(iBookmark, sizeof(Bookmarks));
-	
-	// Inform other plugins, that there's been a bookmark saved.
-	Call_StartForward(g_hfwdOnRecordingBookmarkSaved);
-	Call_PushCell(client);
-	Call_PushString(sBookmarkName);
-	Call_Finish();
-	
-	return 1;
-}
-
-public int DeleteRecord(Handle plugin, int numParams)
-{
-	int iLen;
-	GetNativeStringLength(1, iLen);
-	char[] sPath = new char[iLen+1];
-	GetNativeString(1, sPath, iLen+1);
-	
-	// Do we have this record loaded?
-	FileHeader iFileHeader;
-	if(!g_hLoadedRecords.GetArray(sPath, iFileHeader, sizeof(FileHeader)))
-	{
-		if(!FileExists(sPath))
-			return -1;
-		
-		// Try to load it to make sure it's a record file we're deleting here!
-		BMError error = LoadRecordFromFile(sPath, DEFAULT_CATEGORY, iFileHeader, true, false);
-		if(error == BM_FileNotFound || error == BM_BadFile)
-			return -1;
-	}
-	
-	int iCount;
-	if(iFileHeader.FH_frames != null)
-	{
-		for(int i=1;i<=MaxClients;i++)
-		{
-			// Stop the bots from mimicing this one
-			if(g_hBotMimicsRecord[i] == iFileHeader.FH_frames)
-			{
-				BotMimic_StopPlayerMimic(i);
-				iCount++;
-			}
-		}
-		
-		// Discard the frames
-		delete iFileHeader.FH_frames;
-	}
-	
-	if(iFileHeader.FH_bookmarks != null)
-	{
-		delete iFileHeader.FH_bookmarks;
-	}
-	
-	char sCategory[64];
-	g_hLoadedRecordsCategory.GetString(sPath, sCategory, sizeof(sCategory));
-	
-	g_hLoadedRecords.Remove(sPath);
-	g_hLoadedRecordsCategory.Remove(sPath);
-	g_hSortedRecordList.Erase(g_hSortedRecordList.FindString(sPath));
-	ArrayList hAT;
-	if(g_hLoadedRecordsAdditionalTeleport.GetValue(sPath, hAT))
-		delete hAT;
-	g_hLoadedRecordsAdditionalTeleport.Remove(sPath);
-	
-	// Delete the file
-	if(FileExists(sPath))
-	{
-		DeleteFile(sPath);
-	}
-	
-	Call_StartForward(g_hfwdOnRecordDeleted);
-	Call_PushString(iFileHeader.FH_recordName);
-	Call_PushString(sCategory);
-	Call_PushString(sPath);
-	Call_Finish();
-	
-	return iCount;
-}
-
-public int IsPlayerRecording(Handle plugin, int numParams)
-{
-	int client = GetNativeCell(1);
-	if(client < 1 || client > MaxClients || !IsClientInGame(client))
-	{
-		ThrowNativeError(SP_ERROR_NATIVE, "Bad player index %d", client);
-		return false;
-	}
-	
-	return g_hRecording[client] != null;
-}
-
 public int IsPlayerMimicing(Handle plugin, int numParams)
 {
 	int client = GetNativeCell(1);
@@ -1491,46 +827,6 @@ public int GetFileHeaders(Handle plugin, int numParams)
 	return view_as<int>(BM_NoError);
 }
 
-public int ChangeRecordName(Handle plugin, int numParams)
-{
-	int iLen;
-	GetNativeStringLength(1, iLen);
-	char[] sPath = new char[iLen+1];
-	GetNativeString(1, sPath, iLen+1);
-	
-	if(!FileExists(sPath))
-	{
-		return view_as<int>(BM_FileNotFound);
-	}
-	
-	char sCategory[64];
-	if(!g_hLoadedRecordsCategory.GetString(sPath, sCategory, sizeof(sCategory)))
-		strcopy(sCategory, sizeof(sCategory), DEFAULT_CATEGORY);
-	
-	FileHeader iFileHeader;
-	if(!g_hLoadedRecords.GetArray(sPath, iFileHeader, sizeof(FileHeader)))
-	{
-		BMError error = LoadRecordFromFile(sPath, sCategory, iFileHeader, false, false);
-		if(error != BM_NoError)
-			return view_as<int>(error);
-	}
-	
-	// Load the whole record first or we'd lose the frames!
-	if(iFileHeader.FH_frames == null)
-		LoadRecordFromFile(sPath, sCategory, iFileHeader, false, true);
-	
-	GetNativeStringLength(2, iLen);
-	char[] sName = new char[iLen+1];
-	GetNativeString(2, sName, iLen+1);
-	
-	strcopy(iFileHeader.FH_recordName, MAX_RECORD_NAME_LENGTH, sName);
-	g_hLoadedRecords.SetArray(sPath, iFileHeader, sizeof(FileHeader));
-	
-	WriteRecordToDisk(sPath, iFileHeader);
-	
-	return view_as<int>(BM_NoError);
-}
-
 public int GetLoadedRecordCategoryList(Handle plugin, int numParams)
 {
 	return view_as<int>(g_hSortedCategoryList);
@@ -1645,71 +941,6 @@ void ParseRecordsInDirectory(const char[] sPath, const char[] sCategory, bool su
 		
 	}
 	delete hDir;
-}
-
-void WriteRecordToDisk(const char[] sPath, FileHeader iFileHeader)
-{
-	File hFile = OpenFile(sPath, "wb");
-	if(hFile == null)
-	{
-		LogError("Can't open the record file for writing! (%s)", sPath);
-		return;
-	}
-	
-	hFile.WriteInt32(BM_MAGIC);
-	hFile.WriteInt8(iFileHeader.FH_binaryFormatVersion);
-	hFile.WriteInt32(iFileHeader.FH_recordEndTime);
-	hFile.WriteInt8(strlen(iFileHeader.FH_recordName));
-	hFile.WriteString(iFileHeader.FH_recordName, false);
-	
-	hFile.Write(iFileHeader.FH_initialPosition, 3, 4);
-	hFile.Write(iFileHeader.FH_initialAngles, 2, 4);
-	
-	ArrayList hAdditionalTeleport;
-	int iATIndex;
-	g_hLoadedRecordsAdditionalTeleport.GetValue(sPath, hAdditionalTeleport);
-	
-	int iTickCount = iFileHeader.FH_tickCount;
-	hFile.WriteInt32(iTickCount);
-	
-	int iBookmarkCount = iFileHeader.FH_bookmarkCount;
-	hFile.WriteInt32(iBookmarkCount);
-	
-	// Write all bookmarks
-	ArrayList hBookmarks = iFileHeader.FH_bookmarks;
-	
-	Bookmarks iBookmark;
-	for(int i=0;i<iBookmarkCount;i++)
-	{
-		hBookmarks.GetArray(i, iBookmark, sizeof(Bookmarks));
-		
-		hFile.WriteInt32(iBookmark.BKM_frame);
-		hFile.WriteInt32(iBookmark.BKM_additionalTeleportTick);
-		hFile.WriteString(iBookmark.BKM_name, true);
-	}
-	
-	FrameInfo iFrame;
-	for(int i=0;i<iTickCount;i++)
-	{
-		iFileHeader.FH_frames.GetArray(i, iFrame, sizeof(FrameInfo));
-		hFile.Write(iFrame, sizeof(FrameInfo), 4);
-		
-		// Handle the optional Teleport call
-		if(hAdditionalTeleport != null && iFrame.additionalFields & (ADDITIONAL_FIELD_TELEPORTED_ORIGIN|ADDITIONAL_FIELD_TELEPORTED_ANGLES|ADDITIONAL_FIELD_TELEPORTED_VELOCITY))
-		{
-			AdditionalTeleport iAT;
-			hAdditionalTeleport.GetArray(iATIndex, iAT, sizeof(AdditionalTeleport));
-			if(iFrame.additionalFields & ADDITIONAL_FIELD_TELEPORTED_ORIGIN)
-				hFile.Write(iAT.atOrigin, 3, 4);
-			if(iFrame.additionalFields & ADDITIONAL_FIELD_TELEPORTED_ANGLES)
-				hFile.Write(iAT.atAngles, 3, 4);
-			if(iFrame.additionalFields & ADDITIONAL_FIELD_TELEPORTED_VELOCITY)
-				hFile.Write(iAT.atVelocity, 3, 4);
-			iATIndex++;
-		}
-	}
-	
-	delete hFile;
 }
 
 BMError LoadRecordFromFile(const char[] path, const char[] sCategory, FileHeader headerInfo, bool onlyHeader, bool forceReload)
@@ -1884,12 +1115,6 @@ public int SortFuncADT_ByEndTime(int index1, int index2, Handle arrayHndl, Handl
 
 BMError PlayRecord(int client, const char[] path)
 {
-	// He's currently recording. Don't start to play some record on him at the same time.
-	if(g_hRecording[client] != null)
-	{
-		return BM_BadClient;
-	}
-	
 	FileHeader iFileHeader;
 	g_hLoadedRecords.GetArray(path, iFileHeader, sizeof(FileHeader));
 	
@@ -1976,20 +1201,6 @@ void UpdateNextBookmarkTick(int client)
 	g_iBotMimicNextBookmarkTick[client].BWM_index = iCurrentIndex;
 }
 
-stock bool CheckCreateDirectory(const char[] sPath, int mode)
-{
-	if(!DirExists(sPath))
-	{
-		CreateDirectory(sPath, mode);
-		if(!DirExists(sPath))
-		{
-			LogError("Can't create a new directory. Please create one manually! (%s)", sPath);
-			return false;
-		}
-	}
-	return true;
-}
-
 void BlockBotDisruptiveAltFire(int client, int &buttons)
 {
 	if (!(buttons & IN_ATTACK2))
@@ -2007,21 +1218,6 @@ void BlockBotDisruptiveAltFire(int client, int &buttons)
 			buttons &= ~IN_ATTACK2;
 		}
 	}
-}
-
-void BotMimic_GetAbsOrigin(int entity, float origin[3])
-{
-	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
-}
-
-void BotMimic_GetAbsVelocity(int entity, float velocity[3])
-{
-	GetEntPropVector(entity, Prop_Data, "m_vecAbsVelocity", velocity);
-}
-
-int BotMimic_GetActiveWeapon(int client)
-{
-	return GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 }
 
 bool BotMimic_ClientHasWeapon(int client, const char[] classname)

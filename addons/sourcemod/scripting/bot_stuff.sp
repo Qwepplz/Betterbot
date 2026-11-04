@@ -37,7 +37,6 @@
 #define RETAKE_SAVE_REACH_TIMEOUT 6.0
 #define RETAKE_SAVE_PROGRESS_THRESHOLD 64.0
 #define BOMB_MOVE_INTERVAL 0.5
-#define SCRIPT_MOVE_INTERVAL 0.35
 #define CT_SAVE_COMMIT_MIN_BOMB_DISTANCE 1200.0
 #define CT_SAVE_COMMIT_DEFUSE_CANCEL_DISTANCE 500.0
 
@@ -101,12 +100,11 @@ enum
 	DEFIDX_INCENDIARY = 48
 };
 
-
 BotReactionState g_sBotReaction[MAXPLAYERS+1];
 int g_iReactionNextCycle, g_iReactionCycleId[MAXPLAYERS+1], g_iReactionCmdNum[MAXPLAYERS+1], g_iReactionPreButtons[MAXPLAYERS+1];
 bool g_bReactionReadyLogged[MAXPLAYERS+1];
 char g_szCrosshairCode[MAXPLAYERS+1][35], g_szPreviousBuy[MAXPLAYERS+1][128];
-bool g_bIsBombScenario, g_bIsHostageScenario, g_bFreezetimeEnd, g_bBombPlanted, g_bRoundDecided, g_bHalftimeSwitch, g_bIsCompetitive;
+bool g_bIsBombScenario, g_bIsHostageScenario, g_bFreezetimeEnd, g_bBombPlanted, g_bHalftimeSwitch, g_bIsCompetitive;
 int g_iLooseBombDropper = -1;
 bool g_bForceT, g_bForceCT;
 bool g_bUseCZ75[MAXPLAYERS+1], g_bUseUSP[MAXPLAYERS+1], g_bUseM4A1S[MAXPLAYERS+1], g_bDontSwitch[MAXPLAYERS+1], g_bDropWeapon[MAXPLAYERS+1], g_bHasGottenDrop[MAXPLAYERS+1], g_bCheapDrop[MAXPLAYERS+1], g_bBuyingCheapDrop[MAXPLAYERS+1];
@@ -125,7 +123,7 @@ bool g_bCTSaveLocked;
 float g_fCTSaveConditionSince;
 bool g_bSaveActiveCache[MAXPLAYERS+1];
 bool g_bProfileRanksDirty;
-int g_iProfileRank[MAXPLAYERS+1], g_iPlayerColor[MAXPLAYERS+1], g_iTarget[MAXPLAYERS+1], g_iPrevTarget[MAXPLAYERS+1], g_iDoingSmokeNum[MAXPLAYERS+1], g_iActiveWeapon[MAXPLAYERS+1];
+int g_iProfileRank[MAXPLAYERS+1], g_iPlayerColor[MAXPLAYERS+1], g_iTarget[MAXPLAYERS+1], g_iPrevTarget[MAXPLAYERS+1], g_iActiveWeapon[MAXPLAYERS+1];
 int g_iCurrentRound, g_iRoundsPlayed, g_iCTScore, g_iTScore;
 int g_iProfileRankOffset, g_iPlayerColorOffset;
 int g_iBotTargetSpotOffset, g_iBotNearbyEnemiesOffset, g_iFireWeaponOffset, g_iEnemyVisibleOffset, g_iBotProfileOffset, g_iBotSafeTimeOffset, g_iBotEnemyOffset, g_iBotLookAtSpotStateOffset, g_iBotMoraleOffset, g_iBotTaskOffset, g_iBotDispositionOffset;
@@ -137,31 +135,6 @@ float g_fBombPos[3];
 float g_fBombsitePositions[16][3];
 int g_iBombsiteCount;
 StringMap g_smHumanTeammateColors;
-enum ScriptAction
-{
-	ScriptAction_None = 0,
-	ScriptAction_Nade,
-	ScriptAction_PostPlantNade,
-	ScriptAction_Peek,
-	ScriptAction_Angle,
-	ScriptAction_Fake
-}
-
-ScriptAction g_iScriptAction[MAXPLAYERS+1];
-int g_iScriptActionIndex[MAXPLAYERS+1];
-float g_fScriptActionStart[MAXPLAYERS+1];
-float g_fScriptActionLastPos[MAXPLAYERS+1][3];
-float g_fScriptActionLastMoveTime[MAXPLAYERS+1];
-float g_fScriptNextMoveAt[MAXPLAYERS+1];
-float g_fLegacyDefaultNadeActionStart[MAXPLAYERS+1];
-float g_fLegacyDefaultNadeLastPos[MAXPLAYERS+1][3];
-float g_fLegacyDefaultNadeLastMoveTime[MAXPLAYERS+1];
-
-bool g_bPeekAssigned[MAXPLAYERS+1];
-bool g_bTeamPeekUsedRound[4];
-bool g_bTeamPeekRollResolved[4];
-bool g_bTeamPeekRollPassed[4];
-bool g_bAngleAssigned[MAXPLAYERS+1];
 ConVar g_cvGameMode;
 ConVar g_cvGameType;
 ConVar g_cvRecoilScale;
@@ -200,85 +173,8 @@ int g_iAliveCountT, g_iAliveCountCT;
 int g_iAvgMoneyT, g_iAvgMoneyCT;
 float g_fLastNavUpdate[MAXPLAYERS+1][3];
 float g_fWeaponPickupCooldown[MAXPLAYERS+1];
-float g_fNadeLineupCooldown[MAXPLAYERS+1];
 float g_fRetakeSaveDebugTime[MAXPLAYERS+1];
 float g_fAttackDebugTime[MAXPLAYERS+1];
-#define LEGACY_DEFAULT_NADE_STUCK_TIMEOUT 5.0
-#define LEGACY_DEFAULT_NADE_RETRY_COOLDOWN 25.0
-#define SCRIPT_LINEUP_FAILURE_COOLDOWN 5.0
-#define SCRIPT_PEEK_OPENING_WINDOW 35.0
-#define SCRIPT_PEEK_CHANCE 35.0
-#define SCRIPT_PEEK_ACTION_TIMEOUT 12.0
-#define SCRIPT_PEEK_START_DISTANCE 40.0
-#define SCRIPT_PEEK_START_SPEED 25.0
-#define SCRIPT_PEEK_FREEZE_ROUNDS 2
-#define SCRIPT_ANGLE_LIVE_START 15.0
-#define SCRIPT_ANGLE_LIVE_END 45.0
-#define SCRIPT_ANGLE_LIVE_CANCEL 60.0
-#define SCRIPT_ANGLE_ACTION_TIMEOUT 25.0
-#define SCRIPT_ANGLE_TEAM_ACTIVE_CAP 2
-#define STRATEGY_START_DISTANCE 45.0
-#define STRATEGY_START_SPEED 20.0
-
-enum struct NadeLineup
-{
-	float fPos[3];
-	float fLook[3];
-	int iDefIndex;
-	char szReplay[128];
-	float fTimestamp;
-	int iTeam;
-}
-
-enum struct ScriptLineup
-{
-	float fPos[3];
-	float fLook[3];
-	int iDefIndex;
-	char szReplay[128];
-	float fTimestamp;
-	float fClaimTime;
-	float fFailureUntil;
-	int iClaimClient;
-	int iFreezeUntilRound;
-	int iTeam;
-}
-
-enum struct StrategyConfig
-{
-	float fChance;
-	int iMinPlayers;
-	float fTimeout;
-	int iRoleStart;
-	int iRoleCount;
-}
-
-enum struct StrategyRole
-{
-	float fPos[3];
-	float fLook[3];
-	char szReplay[128];
-	int iUtility1DefIndex;
-	int iUtility1Amount;
-	int iUtility2DefIndex;
-	int iUtility2Amount;
-	int iClient;
-}
-
-ArrayList g_aNades;
-ArrayList g_aPistolNades;
-ArrayList g_aPostPlantNades;
-ArrayList g_aPeeks;
-ArrayList g_aAngles;
-ArrayList g_aStrategies;
-ArrayList g_aStrategyRoles;
-bool g_bStrategyStarted;
-int g_iActiveStrategy = -1;
-int g_iStrategyConfigMode = -1;
-float g_fStrategyAssignTime;
-int g_iClientStrategyRole[MAXPLAYERS + 1] = {-1, ...};
-char g_szStrategyConfigMap[PLATFORM_MAX_PATH];
-
 static const char g_szTopBotNames[][] =
 {
     "ZywOo", "donk", "ropz", "m0NESY", "sh1ro",
@@ -613,15 +509,6 @@ void InitializeMapRuntime()
     {
         LogError("Failed to find m_iCompTeammateColor offset");
     }
-
-    char szMap[PLATFORM_MAX_PATH];
-    GetCurrentMap(szMap, sizeof(szMap));
-    GetMapDisplayName(szMap, szMap, sizeof(szMap));
-    ParseMapNades(szMap);
-	ParseScriptLineups("configs/bot_nades_pistol.txt", "Nades", szMap, g_aPistolNades);
-	ParseScriptLineups("configs/bot_nades_postplant.txt", "Nades", szMap, g_aPostPlantNades);
-	ParseScriptLineups("configs/bot_peeks.txt", "Peeks", szMap, g_aPeeks);
-	ParseScriptLineups("configs/bot_angles.txt", "Angles", szMap, g_aAngles);
 
     g_bIsBombScenario = false;
     g_iBombsiteCount = 0;
@@ -1047,9 +934,6 @@ public void OnClientPutInServer(int iClient)
 	if (!IsValidClient(iClient))
 		return;
 
-	ClearClientScriptAction(iClient);
-	g_bPeekAssigned[iClient] = false;
-	g_bAngleAssigned[iClient] = false;
 	InitializeClientProfileData(iClient);
 	CreateTimer(0.2, Timer_RefreshPlayerResourceData, GetClientUserId(iClient), TIMER_FLAG_NO_MAPCHANGE);
 }
@@ -1196,24 +1080,16 @@ public void OnRoundPreStart(Event eEvent, const char[] szName, bool bDontBroadca
 public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	ResetAllBotReactions("round_start");
-	ClearActiveStrategy(true);
-	ResetScriptLineupRuntimeState();
 
 	g_bFreezetimeEnd = false;
 	g_bBombPlanted = false;
-	g_bRoundDecided = false;
 	g_fRoundStart = GetGameTime();
 	g_bHalftimeSwitch = false;
-	g_bTeamPeekUsedRound[CS_TEAM_T] = false;
-	g_bTeamPeekUsedRound[CS_TEAM_CT] = false;
-	g_bTeamPeekRollResolved[CS_TEAM_T] = false;
-	g_bTeamPeekRollResolved[CS_TEAM_CT] = false;
-	g_bTeamPeekRollPassed[CS_TEAM_T] = false;
-	g_bTeamPeekRollPassed[CS_TEAM_CT] = false;
+
 	g_bCTSaveLocked = false;
 	g_fCTSaveConditionSince = 0.0;
 	g_iLooseBombDropper = -1;
-	ParseRoundStrategies();
+
 	UpdateAliveTeamCounts();
 
 	bool bIsScenario = g_bIsBombScenario || g_bIsHostageScenario;
@@ -1225,14 +1101,11 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 		if (!IsValidClient(i) || !IsFakeClient(i))
 			continue;
 
-		ClearClientScriptAction(i);
 		g_bSaveLocked[i] = false;
 		g_fSaveConditionSince[i] = 0.0;
 		ResetClientSaveTarget(i);
 		ResetClientBombMove(i);
 		g_fSaveLookAtDebugTime[i] = 0.0;
-		g_bPeekAssigned[i] = false;
-		g_bAngleAssigned[i] = false;
 
 		if (!IsPlayerAlive(i))
 			continue;
@@ -1245,8 +1118,6 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 
 		g_iTarget[i] = -1;
 		g_iPrevTarget[i] = -1;
-		g_iDoingSmokeNum[i] = -1;
-		ResetClientLegacyDefaultNadeTracking(i);
 
 		g_fShootTimestamp[i] = 0.0;
 		g_fAttackDebugTime[i] = 0.0;
@@ -1274,8 +1145,6 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 public void OnRoundEnd(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	ResetAllBotReactions("round_end");
-	g_bRoundDecided = true;
-	ClearActiveStrategy(true);
 
 	if (g_hDropWeaponsTimer != null)
 	{
@@ -1293,8 +1162,6 @@ public void OnRoundEnd(Event eEvent, const char[] szName, bool bDontBroadcast)
 		ResetClientSaveTarget(i);
 		ResetClientBombMove(i);
 
-		if (IsValidClient(i) && IsFakeClient(i))
-			CancelClientActiveLineupActions(i, false);
 	}
 
     int iEnt = -1;
@@ -1319,14 +1186,11 @@ public void OnFreezetimeEnd(Event eEvent, const char[] szName, bool bDontBroadca
 	g_fFreezeTimeEnd = GetGameTime();
 	UpdateAliveTeamCounts();
 
-	if (g_aStrategies != null && g_aStrategies.Length > 0)
-		TrySelectStrategy();
 }
 
 public void OnBombPlanted(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	g_bBombPlanted = true;
-	ClearActiveStrategy(true);
 
 	int iPlantedC4 = FindEntityByClassname(-1, "planted_c4");
 	if (IsValidEntity(iPlantedC4))
@@ -1335,8 +1199,6 @@ public void OnBombPlanted(Event eEvent, const char[] szName, bool bDontBroadcast
 	for (int i = 1; i <= MaxClients; i++)
 	{
 		ResetClientBombMove(i);
-		if (IsValidClient(i) && IsFakeClient(i))
-			CancelClientActiveLineupActions(i, false);
 	}
 }
 
@@ -1363,13 +1225,7 @@ public void OnBombExploded(Event eEvent, const char[] szName, bool bDontBroadcas
 void OnBombResolved()
 {
 	g_bBombPlanted = false;
-	g_bRoundDecided = true;
 
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsValidClient(i) && IsFakeClient(i))
-			CancelClientActiveLineupActions(i, false);
-	}
 }
 
 public void OnPlayerJump(Event eEvent, const char[] szName, bool bDontBroadcast)
@@ -1419,12 +1275,6 @@ public void OnPlayerDeath(Event eEvent, const char[] szName, bool bDontBroadcast
 		ResetClientSaveTarget(iClient);
 		ResetClientBombMove(iClient);
 
-		if (IsFakeClient(iClient))
-		{
-			CancelClientActiveLineupActions(iClient, false);
-			if (g_iClientStrategyRole[iClient] != -1)
-				ClearActiveStrategy(true);
-		}
 	}
 
 	UpdateAliveTeamCounts();
@@ -1829,8 +1679,6 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 			DHookSetParam(hParams, 7, true);
 		if (BotMimic_IsPlayerMimicing(iClient))
 		{
-			if (g_iDoingSmokeNum[iClient] != -1)
-				SetNadeTimestamp(g_iDoingSmokeNum[iClient], GetGameTime());
 
 			BotMimic_StopPlayerMimic(iClient);
 		}
@@ -2103,10 +1951,7 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 	{
 		if (BotMimic_IsPlayerMimicing(iClient))
 			BotMimic_StopPlayerMimic(iClient);
-		if (g_iScriptAction[iClient] != ScriptAction_None)
-			CancelClientScriptAction(iClient, false);
-		g_iDoingSmokeNum[iClient] = -1;
-		ResetClientLegacyDefaultNadeTracking(iClient);
+
 	}
 
 	g_iActiveWeapon[iClient] = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
@@ -2161,9 +2006,6 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 		LogRetakeSaveDebug(iClient);
 	}
 
-	if (HandleStrategyBot(iClient, !!GetEntData(iClient, g_iEnemyVisibleOffset)))
-		return Plugin_Continue;
-
 	int iPrimary = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
 	if (IsValidEntity(iPrimary) && fNow >= g_fSniperRetreatCooldown[iClient])
 	{
@@ -2183,47 +2025,9 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 	{
 		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
 
-		if (g_iScriptAction[iClient] != ScriptAction_None)
-			CancelClientScriptAction(iClient, false);
-		else if (BotMimic_IsPlayerMimicing(iClient))
+		if (BotMimic_IsPlayerMimicing(iClient))
 			BotMimic_StopPlayerMimic(iClient);
 
-		ResetNadeTimestamps();
-		g_iDoingSmokeNum[iClient] = -1;
-		ResetClientLegacyDefaultNadeTracking(iClient);
-	}
-
-	if (!bShouldSaveInsteadOfRetake && g_iDoingSmokeNum[iClient] == -1 && fNow >= g_fNadeLineupCooldown[iClient] && !IsBotMimicBlockedPhase())
-	{
-		bool bAssignedScriptLineup = false;
-		if (IsClientScriptIdle(iClient))
-		{
-			if (g_bBombPlanted)
-			{
-				if (IsPostPlantScriptLineupAllowed(iClient))
-					bAssignedScriptLineup = TryAssignScriptLineup(iClient, g_aPostPlantNades, ScriptAction_PostPlantNade, true);
-			}
-			else
-			{
-				if (IsRegulationPistolRound())
-					bAssignedScriptLineup = TryAssignScriptLineup(iClient, g_aPistolNades, ScriptAction_Nade, true);
-
-				if (!bAssignedScriptLineup)
-					bAssignedScriptLineup = TryAssignTeamPeekScriptLineup(GetClientTeam(iClient), fNow);
-
-				if (!bAssignedScriptLineup && IsAngleScriptLineupAllowed(iClient, fNow))
-					bAssignedScriptLineup = TryAssignScriptLineup(iClient, g_aAngles, ScriptAction_Angle, false);
-			}
-		}
-
-		if (!bAssignedScriptLineup && g_iScriptAction[iClient] == ScriptAction_None)
-		{
-			int iLegacyNade = GetNearestGrenade(iClient);
-			if (iLegacyNade != -1)
-				StartClientLegacyDefaultNadeAction(iClient, iLegacyNade, fNow);
-		}
-
-		g_fNadeLineupCooldown[iClient] = fNow + 1.0;
 	}
 
 	if (GetDisposition(iClient) == SELF_DEFENSE && !bShouldSaveInsteadOfRetake)
@@ -2238,40 +2042,6 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 		if (iAreaFlags & NAV_MESH_RUN)
 			iButtons &= ~IN_SPEED;
 	}
-
-	if (!bShouldSaveInsteadOfRetake && g_iDoingSmokeNum[iClient] != -1 && !BotMimic_IsPlayerMimicing(iClient))
-	{
-		NadeLineup sNade;
-		g_aNades.GetArray(g_iDoingSmokeNum[iClient], sNade);
-		SetNadeTimestamp(g_iDoingSmokeNum[iClient], fNow);
-		float fDisToNade = GetVectorDistance(g_fBotOrigin[iClient], sNade.fPos);
-
-		if ((fNow - g_fLegacyDefaultNadeActionStart[iClient]) > LEGACY_DEFAULT_NADE_STUCK_TIMEOUT)
-		{
-			FailClientLegacyDefaultNadeAction(iClient, "timed out", fNow);
-			return Plugin_Changed;
-		}
-
-		if (fDisToNade >= 25.0 && IsLegacyDefaultNadeMovementStale(iClient, fNow))
-		{
-			FailClientLegacyDefaultNadeAction(iClient, "movement stale", fNow);
-			return Plugin_Changed;
-		}
-
-		if (ThrottleScriptMove(iClient, sNade.fPos, fNow))
-			BotMoveTo(iClient, sNade.fPos, FASTEST_ROUTE);
-		if (fDisToNade < 25.0)
-		{
-			BotSetLookAt(iClient, "Use entity", sNade.fLook, PRIORITY_HIGH, 2.0, false, 3.0, false);
-			if (view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT && fSpeed == 0.0 && (GetEntityFlags(iClient) & FL_ONGROUND))
-				BotMimic_PlayRecordFromFile(iClient, sNade.szReplay);
-		}
-	}
-
-	ProcessScriptLineupAction(iClient, ScriptAction_Nade, g_aPistolNades, fSpeed, fNow);
-	ProcessScriptLineupAction(iClient, ScriptAction_PostPlantNade, g_aPostPlantNades, fSpeed, fNow);
-	ProcessScriptLineupAction(iClient, ScriptAction_Peek, g_aPeeks, fSpeed, fNow);
-	ProcessScriptLineupAction(iClient, ScriptAction_Angle, g_aAngles, fSpeed, fNow);
 
 	if (IsSafe(iClient))
 	{
@@ -2370,8 +2140,6 @@ void ProcessCombat(int iClient, int &iButtons, float fVel[3], float fAngles[3], 
 
 	if (BotMimic_IsPlayerMimicing(iClient))
 	{
-		if (g_iDoingSmokeNum[iClient] != -1)
-			SetNadeTimestamp(g_iDoingSmokeNum[iClient], fNow);
 
 		BotMimic_StopPlayerMimic(iClient);
 	}
@@ -2492,13 +2260,6 @@ public void OnPlayerTeam(Event eEvent, const char[] szName, bool bDontBroadcast)
 	CreateTimer(0.2, Timer_RefreshPlayerResourceData, GetClientUserId(iClient), TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public void BotMimic_OnPlayerStopsMimicing(int iClient, char[] szName, char[] szCategory, char[] szPath)
-{
-    g_iDoingSmokeNum[iClient] = -1;
-	ResetClientLegacyDefaultNadeTracking(iClient);
-    ClearClientScriptAction(iClient);
-}
-
 public void OnClientDisconnect(int iClient)
 {
 	ResetBotReaction(iClient, "disconnect");
@@ -2516,11 +2277,7 @@ public void OnClientDisconnect(int iClient)
 	g_bUncrouch[iClient] = false;
 	g_iTarget[iClient] = -1;
 	g_iPrevTarget[iClient] = -1;
-	g_iDoingSmokeNum[iClient] = -1;
-	ResetClientLegacyDefaultNadeTracking(iClient);
-	ClearClientScriptAction(iClient);
-	g_bPeekAssigned[iClient] = false;
-	g_bAngleAssigned[iClient] = false;
+
 	g_iActiveWeapon[iClient] = -1;
 	g_fLookAngleMaxAccel[iClient] = 0.0;
 	g_fReactionTime[iClient] = 0.0;
@@ -2529,459 +2286,11 @@ public void OnClientDisconnect(int iClient)
 	g_fCrouchTimestamp[iClient] = 0.0;
 	g_fSniperRetreatCooldown[iClient] = 0.0;
 	g_fWeaponPickupCooldown[iClient] = 0.0;
-	g_fNadeLineupCooldown[iClient] = 0.0;
+
 	g_pCurrArea[iClient] = INVALID_NAV_AREA;
 	ResetClientSaveTarget(iClient);
 	ResetClientBombMove(iClient);
 	g_szCrosshairCode[iClient][0] = '\0';
-}
-
-void ParseMapNades(const char[] szMap)
-{
-	delete g_aNades;
-	g_aNades = new ArrayList(sizeof(NadeLineup));
-
-	char szPath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, szPath, sizeof(szPath), "configs/bot_nades.txt");
-
-	if (!FileExists(szPath))
-	{
-		PrintToServer("Configuration file %s is not found.", szPath);
-		return;
-	}
-
-	KeyValues hKv = new KeyValues("Nades");
-	if (!hKv.ImportFromFile(szPath))
-	{
-		delete hKv;
-		PrintToServer("Unable to parse Key Values file %s.", szPath);
-		return;
-	}
-
-	if (!hKv.JumpToKey(szMap))
-	{
-		delete hKv;
-		PrintToServer("No nades found for %s.", szMap);
-		return;
-	}
-
-	if (!hKv.GotoFirstSubKey())
-	{
-		delete hKv;
-		PrintToServer("Nades are not configured right for %s.", szMap);
-		return;
-	}
-
-	do
-	{
-		NadeLineup sNade;
-		char szEntry[128];
-		char szTeam[4];
-
-		hKv.GetSectionName(szEntry, sizeof(szEntry));
-
-		if (!ReadLegacyNadeVectorField(hKv, szMap, szEntry, "position", sNade.fPos))
-			continue;
-
-		if (!ReadLegacyNadeVectorField(hKv, szMap, szEntry, "lookat", sNade.fLook))
-			continue;
-
-		sNade.iDefIndex = hKv.GetNum("nadedefindex");
-		hKv.GetString("replay", sNade.szReplay, sizeof(sNade.szReplay));
-		sNade.fTimestamp = hKv.GetFloat("timestamp");
-
-		sNade.iTeam = CS_TEAM_NONE;
-		hKv.GetString("team", szTeam, sizeof(szTeam));
-		if (strcmp(szTeam, "CT", false) == 0)
-			sNade.iTeam = CS_TEAM_CT;
-		else if (strcmp(szTeam, "T", false) == 0)
-			sNade.iTeam = CS_TEAM_T;
-
-		g_aNades.PushArray(sNade);
-	}
-	while (hKv.GotoNextKey());
-
-	delete hKv;
-}
-
-bool ReadLegacyNadeVectorField(KeyValues hKv, const char[] szMap, const char[] szEntry, const char[] szField, float fVector[3])
-{
-	char szValue[128];
-	hKv.GetString(szField, szValue, sizeof(szValue));
-
-	if (!ParseScriptVector(szValue, fVector))
-	{
-		PrintToServer("Warning: skipping legacy nade config=configs/bot_nades.txt map=%s entry=%s field=%s value=\"%s\" reason=malformed vector.", szMap, szEntry, szField, szValue);
-		return false;
-	}
-
-	return true;
-}
-
-void ParseScriptLineups(const char[] szConfig, const char[] szRoot, const char[] szMap, ArrayList &aLineups)
-{
-	delete aLineups;
-	aLineups = new ArrayList(sizeof(ScriptLineup));
-
-	char szPath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, szPath, sizeof(szPath), szConfig);
-
-	if (!FileExists(szPath))
-	{
-		PrintToServer("Warning: script lineup config %s (%s) is not found for root %s map %s.", szConfig, szPath, szRoot, szMap);
-		return;
-	}
-
-	KeyValues hKv = new KeyValues(szRoot);
-	if (!hKv.ImportFromFile(szPath))
-	{
-		delete hKv;
-		PrintToServer("Warning: unable to parse script lineup config %s for root %s map %s.", szConfig, szRoot, szMap);
-		return;
-	}
-
-	if (!hKv.JumpToKey(szMap))
-	{
-		delete hKv;
-		PrintToServer("Warning: script lineup config %s root %s has no map %s.", szConfig, szRoot, szMap);
-		return;
-	}
-
-	if (!hKv.GotoFirstSubKey())
-	{
-		delete hKv;
-		PrintToServer("Warning: script lineup config %s root %s map %s has no entries.", szConfig, szRoot, szMap);
-		return;
-	}
-
-	do
-	{
-		ScriptLineup sLineup;
-		char szEntry[128];
-		char szTeam[16];
-
-		hKv.GetSectionName(szEntry, sizeof(szEntry));
-
-		if (!ReadScriptVectorField(hKv, szConfig, szMap, szEntry, "position", sLineup.fPos))
-			continue;
-
-		if (!ReadScriptVectorField(hKv, szConfig, szMap, szEntry, "lookat", sLineup.fLook))
-			continue;
-
-		sLineup.iDefIndex = hKv.GetNum("nadedefindex");
-		hKv.GetString("replay", sLineup.szReplay, sizeof(sLineup.szReplay));
-		if (sLineup.szReplay[0] == '\0')
-		{
-			PrintScriptLineupWarning(szConfig, szMap, szEntry, "replay", sLineup.szReplay, "missing replay");
-			continue;
-		}
-
-		if (!ScriptReplayExists(sLineup.szReplay))
-		{
-			PrintScriptLineupWarning(szConfig, szMap, szEntry, "replay", sLineup.szReplay, "replay file not found");
-			continue;
-		}
-
-		if (!ReadScriptFloatField(hKv, szConfig, szMap, szEntry, "timestamp", sLineup.fTimestamp))
-			continue;
-
-		sLineup.fClaimTime = 0.0;
-		sLineup.fFailureUntil = 0.0;
-		sLineup.iClaimClient = 0;
-		sLineup.iFreezeUntilRound = 0;
-		sLineup.iTeam = CS_TEAM_NONE;
-
-		hKv.GetString("team", szTeam, sizeof(szTeam));
-		if (strcmp(szTeam, "CT", false) == 0)
-			sLineup.iTeam = CS_TEAM_CT;
-		else if (strcmp(szTeam, "T", false) == 0)
-			sLineup.iTeam = CS_TEAM_T;
-		else
-		{
-			PrintScriptLineupWarning(szConfig, szMap, szEntry, "team", szTeam, "missing or invalid team");
-			continue;
-		}
-
-		aLineups.PushArray(sLineup);
-	}
-	while (hKv.GotoNextKey());
-
-	delete hKv;
-}
-
-void ParseRoundStrategies()
-{
-	char szMap[PLATFORM_MAX_PATH];
-	GetCurrentMap(szMap, sizeof(szMap));
-	GetMapDisplayName(szMap, szMap, sizeof(szMap));
-
-	int iMode = IsRegulationPistolRound() ? 1 : 0;
-	if (g_iStrategyConfigMode == iMode && strcmp(g_szStrategyConfigMap, szMap, false) == 0 && g_aStrategies != null && g_aStrategyRoles != null)
-		return;
-
-	delete g_aStrategies;
-	delete g_aStrategyRoles;
-	g_aStrategies = new ArrayList(sizeof(StrategyConfig));
-	g_aStrategyRoles = new ArrayList(sizeof(StrategyRole));
-	g_iStrategyConfigMode = iMode;
-	strcopy(g_szStrategyConfigMap, sizeof(g_szStrategyConfigMap), szMap);
-
-	if (iMode == 1)
-		ParseMapStrategies("configs/bot_strategies_pistol.txt", "pistolstrats", szMap);
-	else
-		ParseMapStrategies("configs/bot_strategies.txt", "Strategies", szMap);
-}
-
-void ParseMapStrategies(const char[] szConfig, const char[] szRoot, const char[] szMap)
-{
-	char szPath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, szPath, sizeof(szPath), szConfig);
-
-	if (!FileExists(szPath))
-		return;
-
-	KeyValues hKv = new KeyValues(szRoot);
-	if (!hKv.ImportFromFile(szPath) || !hKv.JumpToKey(szMap) || !hKv.GotoFirstSubKey())
-	{
-		delete hKv;
-		return;
-	}
-
-	do
-	{
-		StrategyConfig sStrategy;
-		char szStrategyName[64];
-		char szTeam[16];
-
-		hKv.GetSectionName(szStrategyName, sizeof(szStrategyName));
-		hKv.GetString("team", szTeam, sizeof(szTeam), "T");
-		if (strcmp(szTeam, "T", false) != 0)
-			continue;
-
-		sStrategy.fChance = hKv.GetFloat("chance", 0.0);
-		sStrategy.iMinPlayers = hKv.GetNum("minplayers", 1);
-		sStrategy.fTimeout = hKv.GetFloat("timeout", 12.0);
-		sStrategy.iRoleStart = g_aStrategyRoles.Length;
-		sStrategy.iRoleCount = 0;
-
-		if (hKv.GotoFirstSubKey())
-		{
-			do
-			{
-				StrategyRole sRole;
-				char szRoleName[64];
-				char szEntry[160];
-
-				hKv.GetSectionName(szRoleName, sizeof(szRoleName));
-				Format(szEntry, sizeof(szEntry), "%s/%s", szStrategyName, szRoleName);
-
-				if (!ReadScriptVectorField(hKv, szConfig, szMap, szEntry, "position", sRole.fPos))
-					continue;
-
-				if (!ReadScriptVectorField(hKv, szConfig, szMap, szEntry, "lookat", sRole.fLook))
-					continue;
-
-				hKv.GetString("replay", sRole.szReplay, sizeof(sRole.szReplay));
-				if (sRole.szReplay[0] == '\0' || !ScriptReplayExists(sRole.szReplay))
-					continue;
-
-				ReadStrategyUtility(hKv, "utility1", sRole.iUtility1DefIndex, sRole.iUtility1Amount);
-				ReadStrategyUtility(hKv, "utility2", sRole.iUtility2DefIndex, sRole.iUtility2Amount);
-				sRole.iClient = 0;
-
-				g_aStrategyRoles.PushArray(sRole);
-				sStrategy.iRoleCount++;
-			}
-			while (hKv.GotoNextKey());
-
-			hKv.GoBack();
-		}
-
-		if (sStrategy.iRoleCount > 0)
-			g_aStrategies.PushArray(sStrategy);
-	}
-	while (hKv.GotoNextKey());
-
-	delete hKv;
-}
-
-void ReadStrategyUtility(KeyValues hKv, const char[] szKey, int &iDefIndex, int &iAmount)
-{
-	char szValue[32];
-	iDefIndex = 0;
-	iAmount = 0;
-	hKv.GetString(szKey, szValue, sizeof(szValue), "");
-
-	if (szValue[0] == '\0')
-		return;
-
-	char szParts[2][16];
-	int iParts = ExplodeString(szValue, " ", szParts, sizeof(szParts), sizeof(szParts[]));
-	if (iParts < 1)
-		return;
-
-	iDefIndex = StringToInt(szParts[0]);
-	iAmount = (iParts >= 2) ? StringToInt(szParts[1]) : 1;
-	if (iDefIndex <= 0)
-	{
-		iDefIndex = 0;
-		iAmount = 0;
-	}
-	else if (iAmount <= 0)
-	{
-		iAmount = 1;
-	}
-}
-
-bool ReadScriptVectorField(KeyValues hKv, const char[] szConfig, const char[] szMap, const char[] szEntry, const char[] szField, float fVector[3])
-{
-	char szValue[128];
-	hKv.GetString(szField, szValue, sizeof(szValue));
-
-	if (!ParseScriptVector(szValue, fVector))
-	{
-		PrintScriptLineupWarning(szConfig, szMap, szEntry, szField, szValue, "malformed vector");
-		return false;
-	}
-
-	return true;
-}
-
-bool ReadScriptFloatField(KeyValues hKv, const char[] szConfig, const char[] szMap, const char[] szEntry, const char[] szField, float &fValue)
-{
-	char szValue[32];
-	hKv.GetString(szField, szValue, sizeof(szValue));
-
-	if (!ParseScriptFloat(szValue, fValue))
-	{
-		PrintScriptLineupWarning(szConfig, szMap, szEntry, szField, szValue, "malformed float");
-		return false;
-	}
-
-	return true;
-}
-
-bool ParseScriptFloat(const char[] szValue, float &fValue)
-{
-	int iLen = strlen(szValue);
-	int iPos = 0;
-	char szToken[32];
-
-	while (iPos < iLen && IsVectorWhitespace(szValue[iPos]))
-		iPos++;
-
-	int iTokenLen = 0;
-	while (iPos < iLen && !IsVectorWhitespace(szValue[iPos]))
-	{
-		if (iTokenLen >= sizeof(szToken) - 1)
-			return false;
-
-		szToken[iTokenLen++] = szValue[iPos++];
-	}
-	szToken[iTokenLen] = '\0';
-
-	while (iPos < iLen && IsVectorWhitespace(szValue[iPos]))
-		iPos++;
-
-	if (iPos != iLen || !IsStrictFloatToken(szToken))
-		return false;
-
-	fValue = StringToFloat(szToken);
-	return true;
-}
-
-bool ParseScriptVector(const char[] szValue, float fVector[3])
-{
-	int iLen = strlen(szValue);
-	int iPos = 0;
-	int iTokenCount = 0;
-	char szToken[32];
-
-	while (iPos < iLen)
-	{
-		while (iPos < iLen && IsVectorWhitespace(szValue[iPos]))
-			iPos++;
-
-		if (iPos >= iLen)
-			break;
-
-		if (iTokenCount >= 3)
-			return false;
-
-		int iTokenLen = 0;
-		while (iPos < iLen && !IsVectorWhitespace(szValue[iPos]))
-		{
-			if (iTokenLen >= sizeof(szToken) - 1)
-				return false;
-
-			szToken[iTokenLen++] = szValue[iPos++];
-		}
-		szToken[iTokenLen] = '\0';
-
-		if (!IsStrictFloatToken(szToken))
-			return false;
-
-		fVector[iTokenCount++] = StringToFloat(szToken);
-	}
-
-	return iTokenCount == 3;
-}
-
-bool IsVectorWhitespace(int iChar)
-{
-	return (iChar == ' ' || iChar == '\t' || iChar == '\r' || iChar == '\n');
-}
-
-bool IsStrictFloatToken(const char[] szToken)
-{
-	int iLen = strlen(szToken);
-	if (iLen == 0)
-		return false;
-
-	int iPos = 0;
-	if (szToken[iPos] == '+' || szToken[iPos] == '-')
-		iPos++;
-
-	bool bSawDigit = false;
-	bool bSawDot = false;
-	for (; iPos < iLen; iPos++)
-	{
-		if (szToken[iPos] >= '0' && szToken[iPos] <= '9')
-		{
-			bSawDigit = true;
-			continue;
-		}
-
-		if (szToken[iPos] == '.' && !bSawDot)
-		{
-			bSawDot = true;
-			continue;
-		}
-
-		return false;
-	}
-
-	return bSawDigit;
-}
-
-bool ScriptReplayExists(const char[] szReplay)
-{
-	if (FileExists(szReplay))
-		return true;
-
-	if (StrContains(szReplay, "addons/sourcemod/", false) == 0)
-	{
-		char szPath[PLATFORM_MAX_PATH];
-		BuildPath(Path_SM, szPath, sizeof(szPath), szReplay[17]);
-		return FileExists(szPath);
-	}
-
-	return false;
-}
-
-void PrintScriptLineupWarning(const char[] szConfig, const char[] szMap, const char[] szEntry, const char[] szField, const char[] szValue, const char[] szReason)
-{
-	PrintToServer("Warning: skipping script lineup config=%s map=%s entry=%s field=%s value=\"%s\" reason=%s.", szConfig, szMap, szEntry, szField, szValue, szReason);
 }
 
 public void LoadSDK()
@@ -3223,7 +2532,6 @@ bool IsBlockedOddPrimaryBuy(const char[] szWeapon)
 	       strcmp(szWeapon, "aug") == 0 || strcmp(szWeapon, "sg556") == 0 ||
 	       strcmp(szWeapon, "p90") == 0 || strcmp(szWeapon, "xm1014") == 0;
 }
-
 
 public int Sort_BotMoneyDesc(int iIndex1, int iIndex2, Handle hArray, Handle hHndl)
 {
@@ -3607,7 +2915,6 @@ bool ProcessRetakeSaveBehavior(int iClient, int &iButtons)
 	bool bChanged = !!(iButtons & IN_USE);
 	iButtons &= ~IN_USE;
 
-	CancelClientActiveLineupActions(iClient, false);
 	if (BotMimic_IsPlayerMimicing(iClient))
 		BotMimic_StopPlayerMimic(iClient);
 
@@ -4057,824 +3364,6 @@ int GetFriendsWithPrimary(int iClient)
 	return iCount;
 }
 
-public int GetNearestGrenade(int iClient)
-{
-	if (g_bBombPlanted || g_bRoundDecided)
-		return -1;
-
-	int iClosestNade = -1;
-	float fOrigin[3], fDist, fClosestDist = -1.0;
-
-	GetClientAbsOrigin(iClient, fOrigin);
-
-	for (int i = 0; i < g_aNades.Length; i++)
-	{
-		NadeLineup sNade;
-		g_aNades.GetArray(i, sNade);
-
-		if ((GetGameTime() - sNade.fTimestamp) < LEGACY_DEFAULT_NADE_RETRY_COOLDOWN)
-			continue;
-
-		if (GetClientTeam(iClient) != sNade.iTeam)
-			continue;
-
-		int iEntity = eItems_FindWeaponByDefIndex(iClient, sNade.iDefIndex);
-		if (!IsValidEntity(iEntity))
-			continue;
-
-		fDist = GetVectorDistance(fOrigin, sNade.fPos);
-		if (fDist > 250.0)
-			continue;
-
-		if (fDist < fClosestDist || fClosestDist == -1.0)
-		{
-			iClosestNade = i;
-			fClosestDist = fDist;
-		}
-	}
-
-	return iClosestNade;
-}
-
-int GetNearestScriptLineup(int iClient, ArrayList aLineups, bool bRequireWeapon, bool bRequireClearLookLine = false)
-{
-	if (aLineups == null || aLineups.Length == 0)
-		return -1;
-
-	int iClosestLineup = -1;
-	float fOrigin[3], fEyes[3], fDist, fClosestDist = -1.0;
-	float fNow = GetGameTime();
-
-	GetClientAbsOrigin(iClient, fOrigin);
-	if (bRequireClearLookLine)
-		GetClientEyePosition(iClient, fEyes);
-
-	for (int i = 0; i < aLineups.Length; i++)
-	{
-		ScriptLineup sLineup;
-		aLineups.GetArray(i, sLineup);
-
-		if (sLineup.fTimestamp > 0.0 && (fNow - sLineup.fTimestamp) < 25.0)
-			continue;
-
-		if (sLineup.fFailureUntil > fNow)
-			continue;
-
-		if (sLineup.iClaimClient != iClient && (fNow - sLineup.fClaimTime) < 10.0 && IsValidClient(sLineup.iClaimClient) && IsPlayerAlive(sLineup.iClaimClient))
-			continue;
-
-		if (GetClientTeam(iClient) != sLineup.iTeam)
-			continue;
-
-		if (bRequireClearLookLine && LineGoesThroughSmoke(fEyes, sLineup.fLook))
-			continue;
-
-		if (bRequireWeapon)
-		{
-			int iEntity = eItems_FindWeaponByDefIndex(iClient, sLineup.iDefIndex);
-			if (!IsValidEntity(iEntity))
-				continue;
-		}
-
-		fDist = GetVectorDistance(fOrigin, sLineup.fPos);
-		if (fDist > 250.0)
-			continue;
-
-		if (fDist < fClosestDist || fClosestDist == -1.0)
-		{
-			iClosestLineup = i;
-			fClosestDist = fDist;
-		}
-	}
-
-	if (iClosestLineup != -1)
-	{
-		ScriptLineup sLineup;
-		aLineups.GetArray(iClosestLineup, sLineup);
-		sLineup.fClaimTime = fNow;
-		sLineup.iClaimClient = iClient;
-		aLineups.SetArray(iClosestLineup, sLineup);
-	}
-
-	return iClosestLineup;
-}
-
-bool IsScriptLineupCandidateForClient(int iClient, ArrayList aLineups, int iLineup, bool bRequireWeapon, bool bRequireClearLookLine, bool bRespectPeekFreeze, float fNow)
-{
-	if (aLineups == null || iLineup < 0 || iLineup >= aLineups.Length)
-		return false;
-
-	ScriptLineup sLineup;
-	aLineups.GetArray(iLineup, sLineup);
-
-	if (sLineup.fTimestamp > 0.0 && (fNow - sLineup.fTimestamp) < 25.0)
-		return false;
-
-	if (sLineup.fFailureUntil > fNow)
-		return false;
-
-	if (bRespectPeekFreeze && sLineup.iFreezeUntilRound > 0 && g_iCurrentRound <= sLineup.iFreezeUntilRound)
-		return false;
-
-	if (sLineup.iClaimClient != iClient && (fNow - sLineup.fClaimTime) < 10.0 && IsValidClient(sLineup.iClaimClient) && IsPlayerAlive(sLineup.iClaimClient))
-		return false;
-
-	if (GetClientTeam(iClient) != sLineup.iTeam)
-		return false;
-
-	if (bRequireClearLookLine)
-	{
-		float fEyes[3];
-		GetClientEyePosition(iClient, fEyes);
-		if (LineGoesThroughSmoke(fEyes, sLineup.fLook))
-			return false;
-	}
-
-	if (bRequireWeapon)
-	{
-		int iEntity = eItems_FindWeaponByDefIndex(iClient, sLineup.iDefIndex);
-		if (!IsValidEntity(iEntity))
-			return false;
-	}
-
-	float fOrigin[3];
-	GetClientAbsOrigin(iClient, fOrigin);
-	return GetVectorDistance(fOrigin, sLineup.fPos) <= 250.0;
-}
-
-bool HasAvailablePeekLineup(int iClient, float fNow)
-{
-	for (int i = 0; i < g_aPeeks.Length; i++)
-	{
-		if (IsScriptLineupCandidateForClient(iClient, g_aPeeks, i, false, false, true, fNow))
-			return true;
-	}
-
-	return false;
-}
-
-int GetRandomPeekLineup(int iClient, float fNow)
-{
-	int iSelectedLineup = -1;
-	int iCandidateCount = 0;
-
-	for (int i = 0; i < g_aPeeks.Length; i++)
-	{
-		if (!IsScriptLineupCandidateForClient(iClient, g_aPeeks, i, false, false, true, fNow))
-			continue;
-
-		iCandidateCount++;
-		if (Math_GetRandomInt(1, iCandidateCount) == 1)
-			iSelectedLineup = i;
-	}
-
-	if (iSelectedLineup != -1)
-	{
-		ScriptLineup sLineup;
-		g_aPeeks.GetArray(iSelectedLineup, sLineup);
-		sLineup.fClaimTime = fNow;
-		sLineup.iClaimClient = iClient;
-		g_aPeeks.SetArray(iSelectedLineup, sLineup);
-	}
-
-	return iSelectedLineup;
-}
-
-void AssignClientScriptLineupAction(int iClient, int iLineup, ScriptAction iAction, float fNow)
-{
-	g_iScriptAction[iClient] = iAction;
-	g_iScriptActionIndex[iClient] = iLineup;
-	g_fScriptActionStart[iClient] = fNow;
-	g_fScriptActionLastMoveTime[iClient] = fNow;
-	g_fScriptNextMoveAt[iClient] = 0.0;
-	GetClientAbsOrigin(iClient, g_fScriptActionLastPos[iClient]);
-}
-
-bool TryAssignTeamPeekScriptLineup(int iTeam, float fNow)
-{
-	if (iTeam != CS_TEAM_T && iTeam != CS_TEAM_CT)
-		return false;
-
-	if (g_bRoundDecided || g_bTeamPeekUsedRound[iTeam] || g_aPeeks == null || g_aPeeks.Length == 0)
-		return false;
-
-	int iCandidates[MAXPLAYERS+1];
-	int iCandidateCount = 0;
-
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (!IsPeekScriptLineupAllowed(i, fNow) || GetClientTeam(i) != iTeam || !HasAvailablePeekLineup(i, fNow))
-			continue;
-
-		iCandidates[iCandidateCount++] = i;
-	}
-
-	if (iCandidateCount == 0)
-		return false;
-
-	if (!g_bTeamPeekRollResolved[iTeam])
-	{
-		g_bTeamPeekRollResolved[iTeam] = true;
-		g_bTeamPeekRollPassed[iTeam] = IsItMyChance(SCRIPT_PEEK_CHANCE);
-	}
-
-	if (!g_bTeamPeekRollPassed[iTeam])
-		return false;
-
-	int iClient = iCandidates[Math_GetRandomInt(1, iCandidateCount) - 1];
-	int iLineup = GetRandomPeekLineup(iClient, fNow);
-	if (iLineup == -1)
-		return false;
-
-	AssignClientScriptLineupAction(iClient, iLineup, ScriptAction_Peek, fNow);
-	g_bTeamPeekUsedRound[iTeam] = true;
-	return true;
-}
-
-bool TryAssignScriptLineup(int iClient, ArrayList aLineups, ScriptAction iAction, bool bRequireWeapon)
-{
-	if (g_bRoundDecided)
-		return false;
-
-	if (iAction == ScriptAction_PostPlantNade && !IsPostPlantScriptLineupAllowed(iClient))
-		return false;
-
-	if (iAction == ScriptAction_Angle && !IsAngleScriptLineupAllowed(iClient, GetGameTime()))
-		return false;
-
-	int iLineup = GetNearestScriptLineup(iClient, aLineups, bRequireWeapon, iAction == ScriptAction_Angle);
-	if (iLineup == -1)
-		return false;
-
-	AssignClientScriptLineupAction(iClient, iLineup, iAction, GetGameTime());
-
-	return true;
-}
-
-void TrySelectStrategy()
-{
-	if (g_iActiveStrategy != -1 || g_aStrategies == null || g_aStrategies.Length == 0 || IsBotMimicBlockedPhase() || !g_bFreezetimeEnd || g_bBombPlanted || g_bRoundDecided)
-		return;
-
-	for (int i = 0; i < g_aStrategies.Length; i++)
-	{
-		StrategyConfig sStrategy;
-		g_aStrategies.GetArray(i, sStrategy);
-
-		if (!IsItMyChance(sStrategy.fChance))
-			continue;
-
-		if (!TryAssignStrategy(i))
-			continue;
-
-		g_bStrategyStarted = false;
-		g_iActiveStrategy = i;
-		g_fStrategyAssignTime = GetGameTime();
-		return;
-	}
-}
-
-bool TryAssignStrategy(int iStrategy)
-{
-	StrategyConfig sStrategy;
-	g_aStrategies.GetArray(iStrategy, sStrategy);
-
-	int iSkipRole = GetStrategySkipRole(sStrategy);
-	if (iSkipRole == -2)
-		return false;
-
-	bool bUsed[MAXPLAYERS + 1];
-	for (int i = 1; i <= MaxClients; i++)
-		bUsed[i] = false;
-
-	for (int iPass = 0; iPass < 2; iPass++)
-	{
-		for (int iRole = 0; iRole < sStrategy.iRoleCount; iRole++)
-		{
-			int iRoleIndex = sStrategy.iRoleStart + iRole;
-			StrategyRole sRole;
-			g_aStrategyRoles.GetArray(iRoleIndex, sRole);
-
-			bool bHasUtility = StrategyRoleHasUtility(sRole);
-			if ((iPass == 0 && !bHasUtility) || (iPass == 1 && bHasUtility))
-				continue;
-
-			if (iRole == iSkipRole)
-			{
-				sRole.iClient = -1;
-				g_aStrategyRoles.SetArray(iRoleIndex, sRole);
-				continue;
-			}
-
-			int iClient = FindBotForStrategyRole(CS_TEAM_T, sRole, bUsed);
-			if (iClient == 0)
-			{
-				ClearActiveStrategy(false);
-				return false;
-			}
-
-			bUsed[iClient] = true;
-			sRole.iClient = iClient;
-			g_aStrategyRoles.SetArray(iRoleIndex, sRole);
-			g_iClientStrategyRole[iClient] = iRoleIndex;
-			CancelClientActiveLineupActions(iClient, false);
-		}
-	}
-
-	return true;
-}
-
-int GetStrategySkipRole(StrategyConfig sStrategy)
-{
-	int iFakeCount = GetAliveTeamCount(CS_TEAM_T, true);
-	int iHumanCount = GetAliveTeamCount(CS_TEAM_T, false);
-
-	if ((iFakeCount + iHumanCount) < sStrategy.iMinPlayers)
-		return -2;
-
-	if (iFakeCount >= sStrategy.iRoleCount)
-		return -1;
-
-	if (iHumanCount <= 0 || iFakeCount < sStrategy.iRoleCount - 1)
-		return -2;
-
-	for (int iRole = 0; iRole < sStrategy.iRoleCount; iRole++)
-	{
-		StrategyRole sRole;
-		g_aStrategyRoles.GetArray(sStrategy.iRoleStart + iRole, sRole);
-		if (!StrategyRoleHasUtility(sRole))
-			return iRole;
-	}
-
-	return -2;
-}
-
-int FindBotForStrategyRole(int iTeam, StrategyRole sRole, bool bUsed[MAXPLAYERS + 1])
-{
-	int iBestClient = 0;
-	float fBestDistance = -1.0;
-
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (bUsed[i] || !IsValidClient(i) || !IsFakeClient(i) || !IsPlayerAlive(i) || GetClientTeam(i) != iTeam)
-			continue;
-
-		if (!IsClientScriptIdle(i) || GetEntityMoveType(i) == MOVETYPE_LADDER || !ClientMeetsStrategyUtility(i, sRole))
-			continue;
-
-		float fOrigin[3];
-		GetClientAbsOrigin(i, fOrigin);
-		float fDistance = GetVectorDistance(fOrigin, sRole.fPos);
-		if (fDistance < fBestDistance || fBestDistance < 0.0)
-		{
-			iBestClient = i;
-			fBestDistance = fDistance;
-		}
-	}
-
-	return iBestClient;
-}
-
-bool HandleStrategyBot(int iClient, bool bEnemyVisible)
-{
-	int iRoleIndex = g_iClientStrategyRole[iClient];
-	if (iRoleIndex < 0 || g_aStrategyRoles == null || iRoleIndex >= g_aStrategyRoles.Length || g_iActiveStrategy < 0)
-		return false;
-
-	StrategyConfig sStrategy;
-	StrategyRole sRole;
-	g_aStrategies.GetArray(g_iActiveStrategy, sStrategy);
-	g_aStrategyRoles.GetArray(iRoleIndex, sRole);
-
-	if (g_bBombPlanted || g_bRoundDecided || !IsPlayerAlive(iClient) || GetClientTeam(iClient) != CS_TEAM_T)
-	{
-		ClearActiveStrategy(g_bStrategyStarted);
-		return false;
-	}
-
-	if (g_bStrategyStarted)
-	{
-		if (bEnemyVisible && BotMimic_IsPlayerMimicing(iClient))
-		{
-			BotMimic_StopPlayerMimic(iClient);
-			BotEquipBestWeapon(iClient, true);
-			sRole.iClient = 0;
-			g_aStrategyRoles.SetArray(iRoleIndex, sRole);
-			g_iClientStrategyRole[iClient] = -1;
-			CheckActiveStrategyFinished();
-			return false;
-		}
-
-		CheckActiveStrategyFinished();
-		return g_iClientStrategyRole[iClient] != -1;
-	}
-
-	float fNow = GetGameTime();
-	if ((fNow - g_fStrategyAssignTime) > sStrategy.fTimeout || !ClientMeetsStrategyUtility(iClient, sRole))
-	{
-		ClearActiveStrategy(false);
-		return false;
-	}
-
-	if (ThrottleScriptMove(iClient, sRole.fPos, fNow))
-	{
-		SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
-		BotMoveTo(iClient, sRole.fPos, FASTEST_ROUTE);
-	}
-
-	if (GetVectorDistance(g_fBotOrigin[iClient], sRole.fPos) < STRATEGY_START_DISTANCE)
-		BotSetLookAt(iClient, "Strategy start", sRole.fLook, PRIORITY_UNINTERRUPTABLE, 0.5, false, 5.0, false);
-
-	TryStartActiveStrategy();
-	return true;
-}
-
-void TryStartActiveStrategy()
-{
-	if (g_bStrategyStarted || g_iActiveStrategy < 0)
-		return;
-
-	StrategyConfig sStrategy;
-	g_aStrategies.GetArray(g_iActiveStrategy, sStrategy);
-
-	for (int iRole = 0; iRole < sStrategy.iRoleCount; iRole++)
-	{
-		StrategyRole sRole;
-		g_aStrategyRoles.GetArray(sStrategy.iRoleStart + iRole, sRole);
-		if (sRole.iClient == -1)
-			continue;
-
-		if (!IsValidClient(sRole.iClient) || !IsFakeClient(sRole.iClient) || !IsPlayerAlive(sRole.iClient))
-			return;
-
-		float fVelocity[3];
-		GetEntPropVector(sRole.iClient, Prop_Data, "m_vecAbsVelocity", fVelocity);
-		fVelocity[2] = 0.0;
-
-		if (GetVectorDistance(g_fBotOrigin[sRole.iClient], sRole.fPos) > STRATEGY_START_DISTANCE || GetVectorLength(fVelocity) > STRATEGY_START_SPEED || !(GetEntityFlags(sRole.iClient) & FL_ONGROUND))
-			return;
-	}
-
-	for (int iRole = 0; iRole < sStrategy.iRoleCount; iRole++)
-	{
-		StrategyRole sRole;
-		g_aStrategyRoles.GetArray(sStrategy.iRoleStart + iRole, sRole);
-		if (sRole.iClient == -1)
-			continue;
-
-		BMError iError = BotMimic_PlayRecordFromFile(sRole.iClient, sRole.szReplay);
-		if (iError != BM_NoError)
-		{
-			ClearActiveStrategy(true);
-			return;
-		}
-	}
-
-	g_bStrategyStarted = true;
-}
-
-void CheckActiveStrategyFinished()
-{
-	if (!g_bStrategyStarted || g_iActiveStrategy < 0)
-		return;
-
-	StrategyConfig sStrategy;
-	g_aStrategies.GetArray(g_iActiveStrategy, sStrategy);
-
-	for (int iRole = 0; iRole < sStrategy.iRoleCount; iRole++)
-	{
-		StrategyRole sRole;
-		g_aStrategyRoles.GetArray(sStrategy.iRoleStart + iRole, sRole);
-		if (sRole.iClient != -1 && IsValidClient(sRole.iClient) && IsFakeClient(sRole.iClient) && IsPlayerAlive(sRole.iClient) && BotMimic_IsPlayerMimicing(sRole.iClient))
-			return;
-	}
-
-	ClearActiveStrategy(false);
-}
-
-void ClearActiveStrategy(bool bStopMimic)
-{
-	if (bStopMimic)
-	{
-		for (int i = 1; i <= MaxClients; i++)
-		{
-			if (g_iClientStrategyRole[i] != -1 && IsValidClient(i) && IsFakeClient(i) && BotMimic_IsPlayerMimicing(i))
-				BotMimic_StopPlayerMimic(i);
-		}
-	}
-
-	g_bStrategyStarted = false;
-	g_iActiveStrategy = -1;
-	g_fStrategyAssignTime = 0.0;
-
-	if (g_aStrategyRoles != null)
-	{
-		for (int i = 0; i < g_aStrategyRoles.Length; i++)
-		{
-			StrategyRole sRole;
-			g_aStrategyRoles.GetArray(i, sRole);
-			sRole.iClient = 0;
-			g_aStrategyRoles.SetArray(i, sRole);
-		}
-	}
-
-	for (int i = 1; i <= MaxClients; i++)
-		g_iClientStrategyRole[i] = -1;
-}
-
-bool ProcessScriptLineupAction(int iClient, ScriptAction iAction, ArrayList aLineups, float fSpeed, float fNow)
-{
-	if (g_iScriptAction[iClient] != iAction)
-		return false;
-
-	int iLineup = g_iScriptActionIndex[iClient];
-	if (aLineups == null || iLineup < 0 || iLineup >= aLineups.Length)
-	{
-		CancelClientScriptAction(iClient);
-		return true;
-	}
-
-	if (ShouldCancelScriptLineupAction(iClient, iAction))
-	{
-		CancelClientScriptAction(iClient);
-		return true;
-	}
-
-	ScriptLineup sLineup;
-	float fActionTimeout = 8.0;
-	if (iAction == ScriptAction_Peek)
-		fActionTimeout = SCRIPT_PEEK_ACTION_TIMEOUT;
-	else if (iAction == ScriptAction_Angle)
-		fActionTimeout = SCRIPT_ANGLE_ACTION_TIMEOUT;
-
-	if ((fNow - g_fScriptActionStart[iClient]) > fActionTimeout)
-	{
-		FailScriptLineup(iClient, aLineups, iLineup, "timed out", fNow);
-		return true;
-	}
-
-	aLineups.GetArray(iLineup, sLineup);
-
-	bool bNeedsScriptWeapon = (iAction == ScriptAction_Nade || iAction == ScriptAction_PostPlantNade);
-	if (GetClientTeam(iClient) != sLineup.iTeam
-		|| (bNeedsScriptWeapon && !IsValidEntity(eItems_FindWeaponByDefIndex(iClient, sLineup.iDefIndex)))
-		|| (iAction == ScriptAction_Angle && !IsClientCurrentPrimarySniperScout(iClient)))
-	{
-		CancelClientScriptAction(iClient);
-		return true;
-	}
-
-	if (iAction == ScriptAction_Angle)
-	{
-		float fEyes[3];
-		GetClientEyePosition(iClient, fEyes);
-		if (LineGoesThroughSmoke(fEyes, sLineup.fLook))
-		{
-			FailScriptLineup(iClient, aLineups, iLineup, "look line blocked by smoke", fNow);
-			return true;
-		}
-	}
-
-	if (BotMimic_IsPlayerMimicing(iClient))
-		return true;
-
-	float fDisToLineup = GetVectorDistance(g_fBotOrigin[iClient], sLineup.fPos);
-	if (fDisToLineup >= 25.0 && IsScriptLineupMovementStale(iClient, fNow))
-	{
-		FailScriptLineup(iClient, aLineups, iLineup, "movement stale", fNow);
-		return true;
-	}
-
-	float fStartDistance = (iAction == ScriptAction_Peek) ? SCRIPT_PEEK_START_DISTANCE : 25.0;
-	float fStartSpeed = (iAction == ScriptAction_Peek) ? SCRIPT_PEEK_START_SPEED : 5.0;
-
-	if (ThrottleScriptMove(iClient, sLineup.fPos, fNow))
-		BotMoveTo(iClient, sLineup.fPos, FASTEST_ROUTE);
-	if (fDisToLineup < fStartDistance)
-	{
-		BotSetLookAt(iClient, "Use entity", sLineup.fLook, PRIORITY_HIGH, 2.0, false, 3.0, false);
-		if (view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT && fSpeed < fStartSpeed && (GetEntityFlags(iClient) & FL_ONGROUND))
-		{
-			BMError iError = BotMimic_PlayRecordFromFile(iClient, sLineup.szReplay);
-			if (iError != BM_NoError)
-			{
-				FailScriptLineup(iClient, aLineups, iLineup, "replay playback failed", fNow, iError);
-				return true;
-			}
-
-			if (iAction == ScriptAction_Peek)
-			{
-				g_bPeekAssigned[iClient] = true;
-				g_bTeamPeekUsedRound[GetClientTeam(iClient)] = true;
-				sLineup.iFreezeUntilRound = g_iCurrentRound + SCRIPT_PEEK_FREEZE_ROUNDS;
-			}
-			else if (iAction == ScriptAction_Angle)
-			{
-				g_bAngleAssigned[iClient] = true;
-			}
-
-			sLineup.fTimestamp = fNow;
-			sLineup.fFailureUntil = 0.0;
-			aLineups.SetArray(iLineup, sLineup);
-
-		}
-	}
-
-	return true;
-}
-
-bool IsCriticalScriptObjectiveTask(TaskType iTask)
-{
-	return (iTask == PLANT_BOMB || iTask == FIND_TICKING_BOMB || iTask == DEFUSE_BOMB || iTask == GUARD_TICKING_BOMB || iTask == GUARD_BOMB_DEFUSER || iTask == GUARD_LOOSE_BOMB || iTask == COLLECT_HOSTAGES || iTask == RESCUE_HOSTAGES || iTask == ESCAPE_FROM_BOMB || iTask == ESCAPE_FROM_FLAMES);
-}
-
-int CountActiveTeamAngles(int iTeam)
-{
-	int iCount = 0;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (g_iScriptAction[i] != ScriptAction_Angle)
-			continue;
-
-		if (!IsValidClient(i) || !IsPlayerAlive(i) || GetClientTeam(i) != iTeam)
-			continue;
-
-		iCount++;
-	}
-	return iCount;
-}
-
-bool IsClientCurrentPrimarySniperScout(int iClient)
-{
-	int iPrimary = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
-	if (!IsValidEntity(iPrimary))
-		return false;
-
-	int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
-	if (iActiveWeapon != iPrimary)
-		return false;
-
-	int iPrimaryDef = GetEntProp(iPrimary, Prop_Send, "m_iItemDefinitionIndex");
-	return (iPrimaryDef == DEFIDX_AWP || iPrimaryDef == DEFIDX_SSG08);
-}
-
-float GetScriptLiveTime(float fNow)
-{
-	float fOpeningStart = g_fFreezeTimeEnd;
-	if (fOpeningStart <= 0.0)
-		fOpeningStart = g_fRoundStart;
-
-	return fNow - fOpeningStart;
-}
-
-bool IsPeekScriptLineupAllowed(int iClient, float fNow)
-{
-	if (!g_bFreezetimeEnd || g_bRoundDecided || !IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient) || !IsClientScriptIdle(iClient))
-		return false;
-
-	int iTeam = GetClientTeam(iClient);
-	if (iTeam != CS_TEAM_T && iTeam != CS_TEAM_CT)
-		return false;
-
-	if (g_bTeamPeekUsedRound[iTeam] || g_bPeekAssigned[iClient] || g_bBombPlanted || g_iAliveCountT == 0 || g_iAliveCountCT == 0)
-		return false;
-
-	if (GetScriptLiveTime(fNow) > SCRIPT_PEEK_OPENING_WINDOW)
-		return false;
-
-	if (GetEntData(iClient, g_iEnemyVisibleOffset) != 0 || GetEntityMoveType(iClient) == MOVETYPE_LADDER)
-		return false;
-
-	if (IsCriticalScriptObjectiveTask(GetTask(iClient)))
-		return false;
-
-	return true;
-}
-
-bool IsAngleScriptLineupAllowed(int iClient, float fNow)
-{
-	if (!g_bFreezetimeEnd || g_bRoundDecided || !IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient) || !IsClientScriptIdle(iClient))
-		return false;
-
-	if (g_bAngleAssigned[iClient] || g_bBombPlanted || g_iAliveCountT < 3 || g_iAliveCountCT < 3)
-		return false;
-
-	float fLiveTime = GetScriptLiveTime(fNow);
-	if (fLiveTime < SCRIPT_ANGLE_LIVE_START || fLiveTime > SCRIPT_ANGLE_LIVE_END)
-		return false;
-
-	if (!IsClientCurrentPrimarySniperScout(iClient))
-		return false;
-
-	if (GetEntData(iClient, g_iEnemyVisibleOffset) != 0 || GetEntityMoveType(iClient) == MOVETYPE_LADDER)
-		return false;
-
-	if (IsCriticalScriptObjectiveTask(GetTask(iClient)))
-		return false;
-
-	return CountActiveTeamAngles(GetClientTeam(iClient)) < SCRIPT_ANGLE_TEAM_ACTIVE_CAP;
-}
-
-bool IsPostPlantScriptLineupAllowed(int iClient)
-{
-	if (!g_bBombPlanted || g_bRoundDecided)
-		return false;
-
-	TaskType iTask = GetTask(iClient);
-	int iTeam = GetClientTeam(iClient);
-	if (iTeam == CS_TEAM_CT)
-	{
-		if (iTask == DEFUSE_BOMB || iTask == FIND_TICKING_BOMB || iTask == GUARD_BOMB_DEFUSER)
-			return false;
-
-		if (GetEntProp(iClient, Prop_Send, "m_bIsDefusing") != 0)
-			return false;
-	}
-	return true;
-}
-
-void FailScriptLineup(int iClient, ArrayList aLineups, int iLineup, const char[] szReason, float fNow, BMError iError = BM_NoError)
-{
-	if (aLineups != null && iLineup >= 0 && iLineup < aLineups.Length)
-	{
-		ScriptLineup sLineup;
-		aLineups.GetArray(iLineup, sLineup);
-		sLineup.fFailureUntil = fNow + SCRIPT_LINEUP_FAILURE_COOLDOWN;
-		aLineups.SetArray(iLineup, sLineup);
-
-		if (iError == BM_NoError)
-			PrintToServer("Warning: script lineup client=%N replay=%s failed: %s; retry after %.1f sec.", iClient, sLineup.szReplay, szReason, SCRIPT_LINEUP_FAILURE_COOLDOWN);
-		else
-			PrintToServer("Warning: script lineup client=%N replay=%s failed: %s (BotMimic error %d); retry after %.1f sec.", iClient, sLineup.szReplay, szReason, view_as<int>(iError), SCRIPT_LINEUP_FAILURE_COOLDOWN);
-	}
-	else
-	{
-		PrintToServer("Warning: script lineup client=%N index=%d failed: %s; retry after %.1f sec.", iClient, iLineup, szReason, SCRIPT_LINEUP_FAILURE_COOLDOWN);
-	}
-
-	CancelClientScriptAction(iClient);
-}
-bool ShouldCancelScriptLineupAction(int iClient, ScriptAction iAction)
-{
-	if (g_bRoundDecided)
-		return true;
-
-	if (GetEntData(iClient, g_iEnemyVisibleOffset) != 0)
-		return true;
-
-	if (GetEntityMoveType(iClient) == MOVETYPE_LADDER)
-		return true;
-
-	TaskType iTask = GetTask(iClient);
-	if (iTask == ESCAPE_FROM_BOMB || iTask == ESCAPE_FROM_FLAMES)
-		return true;
-
-	if (iAction == ScriptAction_PostPlantNade && !IsPostPlantScriptLineupAllowed(iClient))
-		return true;
-
-	if (iAction == ScriptAction_Peek && (g_bBombPlanted || g_iAliveCountT == 0 || g_iAliveCountCT == 0 || IsCriticalScriptObjectiveTask(iTask)))
-		return true;
-
-	if (iAction == ScriptAction_Angle
-		&& (g_bBombPlanted || g_iAliveCountT < 3 || g_iAliveCountCT < 3 || GetScriptLiveTime(GetGameTime()) > SCRIPT_ANGLE_LIVE_CANCEL || IsCriticalScriptObjectiveTask(iTask) || !IsClientCurrentPrimarySniperScout(iClient)))
-		return true;
-
-	if (iAction == ScriptAction_Nade && (g_bBombPlanted || !IsRegulationPistolRound()))
-		return true;
-
-	return false;
-}
-
-bool ThrottleScriptMove(int iClient, const float fTarget[3], float fNow)
-{
-	if (GetVectorDistance(g_fBotOrigin[iClient], fTarget) < 25.0)
-		return false;
-
-	if (fNow < g_fScriptNextMoveAt[iClient])
-		return false;
-
-	g_fScriptNextMoveAt[iClient] = fNow + SCRIPT_MOVE_INTERVAL;
-	return true;
-}
-
-static bool CheckMovementStale(int iClient, float fLastPos[3], float &fLastMoveTime, float fTimeout, float fNow)
-{
-	float fMoveDelta = GetVectorDistance(g_fBotOrigin[iClient], fLastPos);
-	if (fMoveDelta > 8.0)
-	{
-		Array_Copy(g_fBotOrigin[iClient], fLastPos, 3);
-		fLastMoveTime = fNow;
-		return false;
-	}
-
-	return (fNow - fLastMoveTime) > fTimeout;
-}
-
-bool IsScriptLineupMovementStale(int iClient, float fNow)
-{
-	return CheckMovementStale(iClient, g_fScriptActionLastPos[iClient], g_fScriptActionLastMoveTime[iClient], 2.0, fNow);
-}
-
 stock int GetNearestEntity(int iClient, const char[] szClassname)
 {
 	int iNearestEntity = -1, iEntity = -1;
@@ -5314,257 +3803,12 @@ stock bool IsResetRound()
 	return false;
 }
 
-stock bool IsRegulationPistolRound()
-{
-	int iMaxRounds = g_cvMaxRounds.IntValue;
-	return (g_iCurrentRound == 0 || (iMaxRounds > 0 && g_iCurrentRound == iMaxRounds / 2));
-}
-
-bool StrategyRoleHasUtility(StrategyRole sRole)
-{
-	return sRole.iUtility1DefIndex > 0 || sRole.iUtility2DefIndex > 0;
-}
-
-bool ClientMeetsStrategyUtility(int iClient, StrategyRole sRole)
-{
-	if (sRole.iUtility1DefIndex > 0 && CountPlayerWeaponsByDefIndex(iClient, sRole.iUtility1DefIndex) < sRole.iUtility1Amount)
-		return false;
-
-	if (sRole.iUtility2DefIndex > 0 && CountPlayerWeaponsByDefIndex(iClient, sRole.iUtility2DefIndex) < sRole.iUtility2Amount)
-		return false;
-
-	return true;
-}
-
-int CountPlayerWeaponsByDefIndex(int iClient, int iDefIndex)
-{
-	static int iWeaponsOffset = -2;
-	if (iWeaponsOffset == -2)
-		iWeaponsOffset = FindDataMapInfo(iClient, "m_hMyWeapons");
-
-	int iCount = 0;
-
-	if (iWeaponsOffset == -1)
-		return IsValidEntity(eItems_FindWeaponByDefIndex(iClient, iDefIndex)) ? 1 : 0;
-
-	for (int i = 0; i < 64; i++)
-	{
-		int iWeapon = GetEntDataEnt2(iClient, iWeaponsOffset + (i * 4));
-		if (!IsValidEntity(iWeapon) || GetEntProp(iWeapon, Prop_Send, "m_iItemDefinitionIndex") != iDefIndex)
-			continue;
-
-		iCount++;
-
-		if (HasEntProp(iWeapon, Prop_Send, "m_iPrimaryReserveAmmoCount"))
-		{
-			int iReserve = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
-			if (iReserve > iCount)
-				iCount = iReserve;
-		}
-
-		if (HasEntProp(iWeapon, Prop_Data, "m_iPrimaryAmmoCount"))
-		{
-			int iAmmo = GetEntProp(iWeapon, Prop_Data, "m_iPrimaryAmmoCount");
-			if (iAmmo > iCount)
-				iCount = iAmmo;
-		}
-	}
-
-	return iCount;
-}
-
-int GetAliveTeamCount(int iTeam, bool bFake)
-{
-	int iCount = 0;
-
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsValidClient(i) && IsPlayerAlive(i) && GetClientTeam(i) == iTeam && IsFakeClient(i) == bFake)
-			iCount++;
-	}
-
-	return iCount;
-}
-
 stock bool IsItMyChance(float fChance)
 {
     return (fChance > 0.0) && (Math_GetRandomFloat(0.0, 100.0) <= fChance);
 }
 
-stock bool IsClientScriptIdle(int iClient)
-{
-	return (g_iScriptAction[iClient] == ScriptAction_None && g_iDoingSmokeNum[iClient] == -1 && !BotMimic_IsPlayerMimicing(iClient) && g_iClientStrategyRole[iClient] == -1);
-}
-
-stock void ReleaseClientScriptLineupClaim(int iClient)
-{
-	ScriptAction iAction = g_iScriptAction[iClient];
-	int iLineup = g_iScriptActionIndex[iClient];
-	ArrayList aLineups = null;
-
-	if (iAction == ScriptAction_Nade)
-		aLineups = g_aPistolNades;
-	else if (iAction == ScriptAction_PostPlantNade)
-		aLineups = g_aPostPlantNades;
-	else if (iAction == ScriptAction_Peek)
-		aLineups = g_aPeeks;
-	else if (iAction == ScriptAction_Angle)
-		aLineups = g_aAngles;
-
-	if (aLineups == null || iLineup < 0 || iLineup >= aLineups.Length)
-		return;
-
-	ScriptLineup sLineup;
-	aLineups.GetArray(iLineup, sLineup);
-	if (sLineup.iClaimClient != iClient)
-		return;
-
-	sLineup.iClaimClient = 0;
-	sLineup.fClaimTime = 0.0;
-	aLineups.SetArray(iLineup, sLineup);
-}
-stock void ClearClientScriptAction(int iClient)
-{
-	ReleaseClientScriptLineupClaim(iClient);
-
-	g_iScriptAction[iClient] = ScriptAction_None;
-	g_iScriptActionIndex[iClient] = -1;
-	g_fScriptActionStart[iClient] = 0.0;
-	g_fScriptActionLastMoveTime[iClient] = 0.0;
-	g_fScriptNextMoveAt[iClient] = 0.0;
-	g_fScriptActionLastPos[iClient][0] = 0.0;
-	g_fScriptActionLastPos[iClient][1] = 0.0;
-	g_fScriptActionLastPos[iClient][2] = 0.0;
-}
-
-stock void ResetClientLegacyDefaultNadeTracking(int iClient)
-{
-	g_fLegacyDefaultNadeActionStart[iClient] = 0.0;
-	g_fLegacyDefaultNadeLastMoveTime[iClient] = 0.0;
-	g_fScriptNextMoveAt[iClient] = 0.0;
-	g_fLegacyDefaultNadeLastPos[iClient][0] = 0.0;
-	g_fLegacyDefaultNadeLastPos[iClient][1] = 0.0;
-	g_fLegacyDefaultNadeLastPos[iClient][2] = 0.0;
-}
-
-stock void StartClientLegacyDefaultNadeAction(int iClient, int iNade, float fNow)
-{
-	g_iDoingSmokeNum[iClient] = iNade;
-	g_fLegacyDefaultNadeActionStart[iClient] = fNow;
-	g_fLegacyDefaultNadeLastMoveTime[iClient] = fNow;
-	Array_Copy(g_fBotOrigin[iClient], g_fLegacyDefaultNadeLastPos[iClient], 3);
-}
-
-stock bool IsLegacyDefaultNadeMovementStale(int iClient, float fNow)
-{
-	return CheckMovementStale(iClient, g_fLegacyDefaultNadeLastPos[iClient], g_fLegacyDefaultNadeLastMoveTime[iClient], LEGACY_DEFAULT_NADE_STUCK_TIMEOUT, fNow);
-}
-
-stock void FailClientLegacyDefaultNadeAction(int iClient, const char[] szReason, float fNow)
-{
-	int iNade = g_iDoingSmokeNum[iClient];
-	if (g_aNades != null && iNade >= 0 && iNade < g_aNades.Length)
-	{
-		NadeLineup sNade;
-		g_aNades.GetArray(iNade, sNade);
-		sNade.fTimestamp = fNow;
-		g_aNades.SetArray(iNade, sNade);
-
-		PrintToServer("Warning: legacy default nade client=%N replay=%s failed: %s at pos=%.1f %.1f %.1f; retry after %.1f sec.", iClient, sNade.szReplay, szReason, sNade.fPos[0], sNade.fPos[1], sNade.fPos[2], LEGACY_DEFAULT_NADE_RETRY_COOLDOWN);
-	}
-	else
-	{
-		PrintToServer("Warning: legacy default nade client=%N index=%d failed: %s; retry after %.1f sec.", iClient, iNade, szReason, LEGACY_DEFAULT_NADE_RETRY_COOLDOWN);
-	}
-
-	CancelClientLegacyDefaultNadeAction(iClient);
-}
-
-stock void CancelClientLegacyDefaultNadeAction(int iClient)
-{
-	if (g_iDoingSmokeNum[iClient] == -1)
-		return;
-
-	if (BotMimic_IsPlayerMimicing(iClient))
-	{
-		if (g_aNades != null && g_iDoingSmokeNum[iClient] >= 0 && g_iDoingSmokeNum[iClient] < g_aNades.Length)
-			SetNadeTimestamp(g_iDoingSmokeNum[iClient], GetGameTime());
-
-		BotMimic_StopPlayerMimic(iClient);
-	}
-
-	g_iDoingSmokeNum[iClient] = -1;
-	ResetClientLegacyDefaultNadeTracking(iClient);
-}
-
-stock void CancelClientScriptAction(int iClient, bool bSwitchWeapon = true)
-{
-	if (g_iScriptAction[iClient] == ScriptAction_None)
-		return;
-
-	if (BotMimic_IsPlayerMimicing(iClient))
-		BotMimic_StopPlayerMimic(iClient);
-
-	g_iDoingSmokeNum[iClient] = -1;
-	ResetClientLegacyDefaultNadeTracking(iClient);
-	ClearClientScriptAction(iClient);
-
-	if (bSwitchWeapon && IsValidClient(iClient) && IsPlayerAlive(iClient))
-		BotEquipBestWeapon(iClient, true);
-}
-
-stock void CancelClientActiveLineupActions(int iClient, bool bSwitchWeapon = true)
-{
-	CancelClientScriptAction(iClient, bSwitchWeapon);
-	CancelClientLegacyDefaultNadeAction(iClient);
-}
-
 stock bool IsValidClient(int iClient)
 {
 	return (iClient > 0 && iClient <= MaxClients && IsClientConnected(iClient) && IsClientInGame(iClient) && !IsClientSourceTV(iClient));
-}
-
-void SetNadeTimestamp(int iIndex, float fTime)
-{
-	NadeLineup sNade;
-	g_aNades.GetArray(iIndex, sNade);
-	sNade.fTimestamp = fTime;
-	g_aNades.SetArray(iIndex, sNade);
-}
-
-void ResetScriptLineupRuntimeState()
-{
-	ResetScriptLineupRuntime(g_aPistolNades);
-	ResetScriptLineupRuntime(g_aPostPlantNades);
-	ResetScriptLineupRuntime(g_aPeeks);
-	ResetScriptLineupRuntime(g_aAngles);
-}
-
-void ResetScriptLineupRuntime(ArrayList aLineups)
-{
-	if (aLineups == null)
-		return;
-
-	for (int i = 0; i < aLineups.Length; i++)
-	{
-		ScriptLineup sLineup;
-		aLineups.GetArray(i, sLineup);
-		sLineup.fTimestamp = 0.0;
-		sLineup.fClaimTime = 0.0;
-		sLineup.fFailureUntil = 0.0;
-		sLineup.iClaimClient = 0;
-		aLineups.SetArray(i, sLineup);
-	}
-}
-void ResetNadeTimestamps()
-{
-	ResetScriptLineupRuntimeState();
-
-	for (int i = 0; i < g_aNades.Length; i++)
-	{
-		NadeLineup sNade;
-		g_aNades.GetArray(i, sNade);
-		sNade.fTimestamp = 0.0;
-		g_aNades.SetArray(i, sNade);
-	}
 }
