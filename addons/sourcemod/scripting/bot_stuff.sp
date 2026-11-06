@@ -325,6 +325,8 @@ public void OnPluginStart()
     HookEventEx("player_death", OnPlayerDeath);
     HookEventEx("player_team", OnPlayerTeam);
 
+    if (!HookEventEx("player_hurt", DR_OnPlayerHurt, EventHookMode_Post))
+        SetFailState("Failed to hook required player_hurt event");
     HookEventEx("weapon_zoom", OnWeaponZoom);
     HookEventEx("weapon_fire", OnWeaponFire);
     HookEventEx("smokegrenade_detonate", DR_EffectEvent);
@@ -1611,6 +1613,15 @@ public MRESReturn CCSBot_MoveTo(int iClient, DHookParam hParams)
 	if (!IsValidClient(iClient) || !IsFakeClient(iClient) || hParams == null)
 		return MRES_Ignored;
 
+    if (DR_OwnsGrenade(iClient))
+    {
+        if (g_DRIssuingMove[iClient])
+            return MRES_Ignored;
+        if (DR_GrenadePhaseAllowed(iClient, true))
+            return MRES_Supercede;
+        DR_StopGrenade(iClient, "phase_or_task");
+    }
+
 	if (g_bIssuingSaveMove[iClient])
 		return MRES_Ignored;
 
@@ -1641,6 +1652,17 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 
 	char szDesc[64];
 	DHookGetParamString(hParams, 1, szDesc, sizeof(szDesc));
+    if (DR_OwnsGrenade(iClient))
+    {
+        if (!bPosNull && StrEqual(szDesc, "Noise"))
+            DR_StopGrenade(iClient, "noise");
+        else
+        {
+            DR_UpdateGrenade(iClient);
+            if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying)
+                return MRES_Supercede;
+        }
+    }
 	int iTeam = GetClientTeam(iClient);
 	bool bSaveActive = g_bSaveActiveCache[iClient];
 
@@ -1712,8 +1734,11 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 			BotMimic_StopPlayerMimic(iClient);
 		}
 
-		if (eItems_GetWeaponSlotByWeapon(g_iActiveWeapon[iClient]) == CS_SLOT_KNIFE && GetTask(iClient) != ESCAPE_FROM_BOMB && GetTask(iClient) != ESCAPE_FROM_FLAMES)
-			BotEquipBestWeapon(iClient, true);
+        int iCurrentWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+        if (IsValidEntity(iCurrentWeapon) && HasEntProp(iCurrentWeapon, Prop_Send, "m_iItemDefinitionIndex")
+            && eItems_GetWeaponSlotByWeapon(iCurrentWeapon) == CS_SLOT_KNIFE
+            && GetTask(iClient) != ESCAPE_FROM_BOMB && GetTask(iClient) != ESCAPE_FROM_FLAMES)
+            BotEquipBestWeapon(iClient, true);
 
 		g_bDontSwitch[iClient] = true;
 		CreateTimer(5.0, Timer_EnableSwitch, GetClientUserId(iClient));
@@ -1955,6 +1980,8 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 	#pragma unused iMouse
     if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
         return Plugin_Continue;
+    if (DR_OwnsGrenade(iClient))
+        DR_UpdateGrenade(iClient);
     if (DR_IsReserved(iClient))
         return Plugin_Continue;
 
@@ -2502,7 +2529,7 @@ public bool BotIsHiding(int iClient)
 
 public void BotEquipBestWeapon(int iClient, bool bMustEquip)
 {
-    if (DR_OwnsOpening(iClient))
+    if (DR_OwnsOpening(iClient) || DR_OwnsGrenade(iClient))
         return;
 	SDKCall(g_hBotEquipBestWeapon, iClient, bMustEquip);
 }
@@ -2534,7 +2561,7 @@ public void AddMoney(int iClient, int iAmount, bool bTrackChange, bool bItemBoug
 
 void SwitchWeapon(int iClient, int iWeapon)
 {
-    if (DR_OwnsOpening(iClient))
+    if (DR_OwnsOpening(iClient) || DR_OwnsGrenade(iClient))
         return;
 	SDKCall(g_hSwitchWeaponCall, iClient, iWeapon, 0);
 }

@@ -7,9 +7,9 @@
 #define DR_OPENING_CHANCE 80
 #define DR_GRENADE_CHANCE 60
 #define DR_OPENING_START_RADIUS 1.0
-#define DR_GRENADE_START_RADIUS 16.0
-#define DR_STILL_SPEED 3.0
-#define DR_STILL_TIME 0.25
+#define DR_GRENADE_SELECT_RADIUS 250.0
+#define DR_GRENADE_START_RADIUS 25.0
+#define DR_GRENADE_START_SPEED 130.0
 #define DR_OPPORTUNITY_RESET 0.5
 
 stock bool DR_AcceptRoll(int roll, int chance)
@@ -93,8 +93,14 @@ enum struct DROpportunity
     bool rolled;
     bool accepted;
     bool requested;
-    float stillSince;
     float outsideSince;
+}
+
+stock bool DR_CanStartGrenade(float distanceSquared, float horizontalSpeedSquared, bool onGround)
+{
+    return onGround && distanceSquared >= 0.0 && horizontalSpeedSquared >= 0.0
+        && distanceSquared < DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS
+        && horizontalSpeedSquared < DR_GRENADE_START_SPEED * DR_GRENADE_START_SPEED;
 }
 
 stock bool DR_UpdateOpportunity(DROpportunity opportunity, bool qualified, float now, int serial, int round)
@@ -105,16 +111,14 @@ stock bool DR_UpdateOpportunity(DROpportunity opportunity, bool qualified, float
         opportunity.round = round;
         opportunity.sequence = 0;
         opportunity.engaged = false;
-        opportunity.stillSince = -1.0;
         opportunity.outsideSince = -1.0;
     }
+    if (opportunity.outsideSince >= 0.0 && now - opportunity.outsideSince >= DR_OPPORTUNITY_RESET)
+        opportunity.engaged = false;
     if (!qualified)
     {
-        opportunity.stillSince = -1.0;
         if (opportunity.outsideSince < 0.0)
             opportunity.outsideSince = now;
-        if (now - opportunity.outsideSince >= DR_OPPORTUNITY_RESET)
-            opportunity.engaged = false;
         return false;
     }
     if (!opportunity.engaged)
@@ -124,12 +128,9 @@ stock bool DR_UpdateOpportunity(DROpportunity opportunity, bool qualified, float
         opportunity.rolled = false;
         opportunity.accepted = false;
         opportunity.requested = false;
-        opportunity.stillSince = now;
     }
-    if (opportunity.stillSince < 0.0)
-        opportunity.stillSince = now;
     opportunity.outsideSince = -1.0;
-    return now - opportunity.stillSince >= DR_STILL_TIME;
+    return true;
 }
 
 

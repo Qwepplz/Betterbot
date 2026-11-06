@@ -113,6 +113,7 @@ bool g_bBotSwitchedWeapon[MAXPLAYERS+1];
 BMPlaybackMode g_PlaybackMode[MAXPLAYERS+1];
 int g_PlaybackSerial[MAXPLAYERS+1];
 bool g_FirstFramePending[MAXPLAYERS+1];
+bool g_AlignStartPending[MAXPLAYERS+1];
 bool g_MapEnding;
 CSWeaponID g_InitialRecordedWeapon[MAXPLAYERS+1];
 bool g_bValidTeleportCall[MAXPLAYERS+1];
@@ -267,6 +268,8 @@ public void OnLibraryRemoved(const char[] name)
 public void OnMapStart()
 {
     g_MapEnding = false;
+    for (int client = 1; client <= MaxClients; client++)
+        g_AlignStartPending[client] = false;
 	// Clear old records for old map
 	int iSize = g_hSortedRecordList.Length;
 	char sPath[PLATFORM_MAX_PATH];
@@ -346,6 +349,7 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
+    g_AlignStartPending[client] = false;
     if (g_hBotMimicsRecord[client] != null)
         StopMimicPlayback(client);
 }
@@ -389,6 +393,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
         }
         if (result == Plugin_Changed)
             return Plugin_Continue;
+        if (g_AlignStartPending[client])
+        {
+            g_AlignStartPending[client] = false;
+            g_bValidTeleportCall[client] = true;
+            TeleportEntity(client, g_fInitialPosition[client], g_fInitialAngles[client], iFrame.actualVelocity);
+        }
         if (g_FirstFramePending[client] && iFrame.newWeapon == CSWeapon_NONE)
             iFrame.newWeapon = g_InitialRecordedWeapon[client];
     }
@@ -724,6 +734,7 @@ public int GoToBookmark(Handle plugin, int numParams)
 	}
 	
 	g_PlaybackSerial[client]++;
+    g_AlignStartPending[client] = false;
     g_iBotMimicTick[client] = iBookmark.BKM_frame;
 	g_iCurrentAdditionalTeleportIndex[client] = iBookmark.BKM_additionalTeleportTick;
 	
@@ -761,6 +772,7 @@ void StopMimicPlayback(int client)
     g_PlaybackSerial[client]++;
     g_PlaybackMode[client] = BMPlayback_Legacy;
     g_FirstFramePending[client] = false;
+    g_AlignStartPending[client] = false;
     g_InitialRecordedWeapon[client] = CSWeapon_NONE;
     g_iBotActiveWeapon[client] = INVALID_ENT_REFERENCE;
     g_bBotSwitchedWeapon[client] = false;
@@ -835,7 +847,9 @@ public int PlayRecordFromFileEx(Handle plugin, int numParams)
         return view_as<int>(BM_BadClient);
     int startFrame = GetNativeCell(3);
     BMPlaybackMode mode = view_as<BMPlaybackMode>(GetNativeCell(4));
-    if (startFrame < 0 || (mode != BMPlayback_Legacy && mode != BMPlayback_LiveInput))
+    bool alignStart = numParams >= 5 && GetNativeCell(5) != 0;
+    if (startFrame < 0 || (mode != BMPlayback_Legacy && mode != BMPlayback_LiveInput)
+        || (alignStart && (startFrame != 0 || mode != BMPlayback_LiveInput)))
         return view_as<int>(BM_BadParameter);
     char path[PLATFORM_MAX_PATH];
     int length;
@@ -845,7 +859,7 @@ public int PlayRecordFromFileEx(Handle plugin, int numParams)
     GetNativeString(2, path, sizeof(path));
     if (!FileExists(path))
         return view_as<int>(BM_FileNotFound);
-    return view_as<int>(PlayRecord(client, path, startFrame, mode));
+    return view_as<int>(PlayRecord(client, path, startFrame, mode, alignStart));
 }
 
 public int PlayRecordByName(Handle plugin, int numParams)
@@ -903,6 +917,7 @@ public int ResetPlayback(Handle plugin, int numParams)
 	
 	g_PlaybackSerial[client]++;
     g_FirstFramePending[client] = true;
+    g_AlignStartPending[client] = false;
     g_InitialRecordedWeapon[client] = CSWeapon_NONE;
     g_bBotSwitchedWeapon[client] = false;
     if (g_PlaybackMode[client] == BMPlayback_LiveInput)
@@ -1246,8 +1261,10 @@ public int SortFuncADT_ByEndTime(int index1, int index2, Handle arrayHndl, Handl
 	return header1.FH_recordEndTime - header2.FH_recordEndTime;
 }
 
-BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlaybackMode mode = BMPlayback_Legacy)
+BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlaybackMode mode = BMPlayback_Legacy, bool alignStart = false)
 {
+    if (alignStart && (startFrame != 0 || mode != BMPlayback_LiveInput))
+        return BM_BadParameter;
     if (g_MapEnding)
         return BM_BadClient;
     if (g_hBotMimicsRecord[client] != null)
@@ -1293,6 +1310,7 @@ BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlayback
     int playbackSerial = g_PlaybackSerial[client];
     g_PlaybackMode[client] = mode;
     g_FirstFramePending[client] = true;
+    g_AlignStartPending[client] = alignStart;
     g_hBotMimicsRecord[client] = iFileHeader.FH_frames;
     g_iBotMimicTick[client] = startFrame;
 	g_iBotMimicRecordTickCount[client] = iFileHeader.FH_tickCount;
