@@ -276,6 +276,8 @@ enum GamePhase
 	GAMEPHASE_MAX
 }
 
+#include <bot_demo_replays>
+
 public Plugin myinfo =
 {
 	name = "BOT Improvement",
@@ -325,6 +327,10 @@ public void OnPluginStart()
 
     HookEventEx("weapon_zoom", OnWeaponZoom);
     HookEventEx("weapon_fire", OnWeaponFire);
+    HookEventEx("smokegrenade_detonate", DR_EffectEvent);
+    HookEventEx("flashbang_detonate", DR_EffectEvent);
+    HookEventEx("hegrenade_detonate", DR_EffectEvent);
+    HookEventEx("inferno_startburn", DR_EffectEvent);
 
     HookEventEx("bomb_planted", OnBombPlanted);
     HookEventEx("bomb_dropped", OnBombDropped);
@@ -467,6 +473,7 @@ public Action Command_ValidateBots(int iClient, int iArgs)
 
 public void OnMapStart()
 {
+    RequestFrame(DR_LoadCatalogFrame);
 	ResetAllBotReactions("map_start");
 	InitializeMapRuntime();
 }
@@ -579,7 +586,7 @@ public Action Timer_CheckPlayer(Handle hTimer, any data)
 		if (IsItMyChance(2.0))
 			FakeClientCommand(i, "+lookatweapon;-lookatweapon");
 
-		if (g_bDropWeapon[i])
+		if (g_bDropWeapon[i] || DR_IsReserved(i))
 			continue;
 
 		bool bInBuyZone = view_as<bool>(GetEntProp(i, Prop_Send, "m_bInBuyZone"));
@@ -763,7 +770,7 @@ public Action Timer_DropWeapons(Handle hTimer, any data)
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient])
+        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient] || DR_IsReserved(iClient))
             continue;
 
         int iPrimaryWeapon = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
@@ -822,7 +829,7 @@ void AssignDrops(ArrayList aBotsT, ArrayList aBotsCT, bool &bNeedDropT, bool &bN
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || g_bHasGottenDrop[iClient])
+        if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || g_bHasGottenDrop[iClient] || DR_IsReserved(iClient))
             continue;
 
         if (!GetEntProp(iClient, Prop_Send, "m_bInBuyZone"))
@@ -870,7 +877,7 @@ void CollectCheapDroppers(ArrayList aTeamBots, int iTeam)
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient])
+        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient] || DR_IsReserved(iClient))
             continue;
 
         if (GetClientTeam(iClient) != iTeam)
@@ -908,6 +915,7 @@ void SafeDeleteTimer(Handle &hTimer)
 
 public void OnMapEnd()
 {
+    DR_OnRoundEnd();
 	ResetAllBotReactions("map_end");
 	SafeDeleteTimer(g_hCheckPlayerTimer);
 	SafeDeleteTimer(g_hMoveToBombTimer);
@@ -925,11 +933,19 @@ public void OnMapEnd()
 
 public void OnPluginEnd()
 {
+    DR_OnRoundEnd();
+    delete g_DRCatalog;
+    delete g_DRUsedRoles;
+    delete g_DREffects;
+    for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
+        for (int kind = 0; kind < 4; kind++)
+            delete g_DRGrenadeIndex[team][kind];
 	ResetAllBotReactions("plugin_end");
 }
 
 public void OnClientPutInServer(int iClient)
 {
+    DR_ResetClient(iClient);
 	ResetBotReaction(iClient, "put_in_server");
 	if (!IsValidClient(iClient))
 		return;
@@ -1080,6 +1096,7 @@ public void OnRoundPreStart(Event eEvent, const char[] szName, bool bDontBroadca
 public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	ResetAllBotReactions("round_start");
+    DR_OnRoundStart();
 
 	g_bFreezetimeEnd = false;
 	g_bBombPlanted = false;
@@ -1145,6 +1162,7 @@ public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 public void OnRoundEnd(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	ResetAllBotReactions("round_end");
+    DR_OnRoundEnd();
 
 	if (g_hDropWeaponsTimer != null)
 	{
@@ -1190,6 +1208,8 @@ public void OnFreezetimeEnd(Event eEvent, const char[] szName, bool bDontBroadca
 
 public void OnBombPlanted(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
+    for (int client = 1; client <= MaxClients; client++)
+        DR_StopClient(client, "bomb_planted");
 	g_bBombPlanted = true;
 
 	int iPlantedC4 = FindEntityByClassname(-1, "planted_c4");
@@ -1246,6 +1266,7 @@ public void OnPlayerJump(Event eEvent, const char[] szName, bool bDontBroadcast)
 public void OnBombBeginPlant(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	int iPlanter = GetClientOfUserId(eEvent.GetInt("userid"));
+    DR_StopClient(iPlanter, "bomb_beginplant");
 	if (!IsValidClient(iPlanter) || !IsPlayerAlive(iPlanter))
 		return;
 
@@ -1265,7 +1286,11 @@ public void OnPlayerDeath(Event eEvent, const char[] szName, bool bDontBroadcast
 {
 	int iClient = GetClientOfUserId(eEvent.GetInt("userid"));
 	if (iClient > 0 && iClient <= MaxClients)
-		ResetBotReaction(iClient, "death");
+		{
+        ResetBotReaction(iClient, "death");
+        DR_StopClient(iClient, "death");
+        DR_StopGrenade(iClient, "death");
+    }
 	if (IsValidClient(iClient))
 	{
 		g_bSaveLocked[iClient] = false;
@@ -1379,6 +1404,8 @@ public Action Timer_RefreshPlayerResourceData(Handle hTimer, int iUserId)
 
 public Action CS_OnBuyCommand(int iClient, const char[] szWeapon)
 {
+    if (DR_IsReserved(iClient))
+        return g_DRBuying[iClient] ? Plugin_Continue : Plugin_Handled;
 	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
 		return Plugin_Continue;
 
@@ -1606,9 +1633,11 @@ public MRESReturn CCSBot_SetLookAtLinux(DHookParam hParams)
 public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 {
 	if (!IsValidClient(iClient) || !IsFakeClient(iClient) || hParams == null)
-		return MRES_Ignored;
+        return MRES_Ignored;
+    if (DR_OwnsOpening(iClient))
+        return MRES_Supercede;
 
-	bool bPosNull = hParams.IsNull(2);
+    bool bPosNull = hParams.IsNull(2);
 
 	char szDesc[64];
 	DHookGetParamString(hParams, 1, szDesc, sizeof(szDesc));
@@ -1924,10 +1953,12 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fV
 Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fVel[3], float fAngles[3], int &iWeapon, int &iSubtype, int &iCmdNum, int &iTickCount, int &iSeed, int iMouse[2])
 {
 	#pragma unused iMouse
-	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
-		return Plugin_Continue;
+    if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
+        return Plugin_Continue;
+    if (DR_IsReserved(iClient))
+        return Plugin_Continue;
 
-	if (!g_bFreezetimeEnd && g_bDropWeapon[iClient] && view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT)
+    if (!g_bFreezetimeEnd && g_bDropWeapon[iClient] && view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT)
 	{
 		if (g_bCheapDrop[iClient])
 		{
@@ -2219,6 +2250,7 @@ public void OnPlayerSpawn(Event eEvent, const char[] szName, bool bDontBroadcast
         return;
 
 	ResetBotReaction(iClient, "spawn");
+    DR_ResetClient(iClient);
     SetPlayerTeammateColor(iClient);
 
     if (!IsFakeClient(iClient))
@@ -2257,12 +2289,14 @@ public void OnPlayerTeam(Event eEvent, const char[] szName, bool bDontBroadcast)
 		return;
 
 	ResetBotReaction(iClient, "team_changed");
+    DR_ResetClient(iClient);
 	CreateTimer(0.2, Timer_RefreshPlayerResourceData, GetClientUserId(iClient), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void OnClientDisconnect(int iClient)
 {
 	ResetBotReaction(iClient, "disconnect");
+    DR_ResetClient(iClient, true);
 	SetProfileRank(iClient, 0);
 	g_iPlayerColor[iClient] = -1;
 	g_bIsProBot[iClient] = false;
@@ -2468,6 +2502,8 @@ public bool BotIsHiding(int iClient)
 
 public void BotEquipBestWeapon(int iClient, bool bMustEquip)
 {
+    if (DR_OwnsOpening(iClient))
+        return;
 	SDKCall(g_hBotEquipBestWeapon, iClient, bMustEquip);
 }
 
@@ -2498,6 +2534,8 @@ public void AddMoney(int iClient, int iAmount, bool bTrackChange, bool bItemBoug
 
 void SwitchWeapon(int iClient, int iWeapon)
 {
+    if (DR_OwnsOpening(iClient))
+        return;
 	SDKCall(g_hSwitchWeaponCall, iClient, iWeapon, 0);
 }
 
@@ -2574,6 +2612,8 @@ bool IsLooseBombDroppedByLiveT()
 
 bool ShouldSaveInsteadOfRetake(int iClient)
 {
+    if (DR_OwnsOpening(iClient))
+        return false;
 	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
 		return false;
 
@@ -3470,8 +3510,8 @@ public void FinishQuickSwitch(int iUserId)
 
 public Action Timer_AvoidSelfFlash(Handle hTimer, any iUserId)
 {
-	int iClient = GetClientOfUserId(iUserId);
-	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient))
+    int iClient = GetClientOfUserId(iUserId);
+    if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || DR_OwnsOpening(iClient))
 		return Plugin_Stop;
 
 	float fEyePos[3], fEyeAngles[3], fForward[3], fAway[3];

@@ -78,6 +78,7 @@ enum struct FileHeader {
 	float FH_initialAngles[3];
 	ArrayList FH_bookmarks;
 	ArrayList FH_frames;
+    bool FH_releaseWhenIdle;
 }
 
 enum struct Bookmarks {
@@ -109,6 +110,11 @@ int g_iBotMimicTick[MAXPLAYERS+1] = {0,...};
 int g_iBotMimicRecordTickCount[MAXPLAYERS+1] = {0,...};
 int g_iBotActiveWeapon[MAXPLAYERS+1] = {-1,...};
 bool g_bBotSwitchedWeapon[MAXPLAYERS+1];
+BMPlaybackMode g_PlaybackMode[MAXPLAYERS+1];
+int g_PlaybackSerial[MAXPLAYERS+1];
+bool g_FirstFramePending[MAXPLAYERS+1];
+bool g_MapEnding;
+CSWeaponID g_InitialRecordedWeapon[MAXPLAYERS+1];
 bool g_bValidTeleportCall[MAXPLAYERS+1];
 BookmarkWhileMimicing g_iBotMimicNextBookmarkTick[MAXPLAYERS+1];
 
@@ -116,6 +122,7 @@ GlobalForward g_hfwdOnPlayerStartsMimicing;
 GlobalForward g_hfwdOnPlayerStopsMimicing;
 GlobalForward g_hfwdOnPlayerMimicLoops;
 GlobalForward g_hfwdOnPlayerMimicBookmark;
+GlobalForward g_hfwdOnPlayerMimicFrame;
 
 // DHooks/SDK
 Handle g_hTeleport;
@@ -140,6 +147,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("BotMimic_IsPlayerMimicing", IsPlayerMimicing);
 	CreateNative("BotMimic_GetRecordPlayerMimics", GetRecordPlayerMimics);
 	CreateNative("BotMimic_PlayRecordFromFile", PlayRecordFromFile);
+	CreateNative("BotMimic_PlayRecordFromFileEx", PlayRecordFromFileEx);
 	CreateNative("BotMimic_PlayRecordByName", PlayRecordByName);
 	CreateNative("BotMimic_ResetPlayback", ResetPlayback);
 	CreateNative("BotMimic_GoToBookmark", GoToBookmark);
@@ -154,6 +162,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	g_hfwdOnPlayerStopsMimicing = new GlobalForward("BotMimic_OnPlayerStopsMimicing", ET_Ignore, Param_Cell, Param_String, Param_String, Param_String);
 	g_hfwdOnPlayerMimicLoops = new GlobalForward("BotMimic_OnPlayerMimicLoops", ET_Ignore, Param_Cell);
 	g_hfwdOnPlayerMimicBookmark = new GlobalForward("BotMimic_OnPlayerMimicBookmark", ET_Ignore, Param_Cell, Param_String);
+	g_hfwdOnPlayerMimicFrame = new GlobalForward("BotMimic_OnPlayerMimicFrame", ET_Hook, Param_Cell, Param_Cell, Param_Array, Param_Array);
 	
 	return APLRes_Success;
 }
@@ -257,6 +266,7 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnMapStart()
 {
+    g_MapEnding = false;
 	// Clear old records for old map
 	int iSize = g_hSortedRecordList.Length;
 	char sPath[PLATFORM_MAX_PATH];
@@ -315,6 +325,19 @@ public void OnMapStart()
 	delete hDir;
 }
 
+public void OnMapEnd()
+{
+    g_MapEnding = true;
+    for (int client = 1; client <= MaxClients; client++)
+        if (g_hBotMimicsRecord[client] != null)
+            StopMimicPlayback(client);
+}
+
+public void OnPluginEnd()
+{
+    OnMapEnd();
+}
+
 public void OnClientPutInServer(int client)
 {
 	if(g_hTeleport != null)
@@ -323,8 +346,8 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
-	if(g_hBotMimicsRecord[client] != null)
-		BotMimic_StopPlayerMimic(client);
+    if (g_hBotMimicsRecord[client] != null)
+        StopMimicPlayback(client);
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
@@ -346,12 +369,42 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	FrameInfo iFrame;
 	g_hBotMimicsRecord[client].GetArray(g_iBotMimicTick[client], iFrame, sizeof(FrameInfo));
 
-	buttons = iFrame.playerButtons;
-	BlockBotDisruptiveAltFire(client, buttons);
+	bool liveInput = g_PlaybackMode[client] == BMPlayback_LiveInput;
+    int playbackSerial = g_PlaybackSerial[client];
+    if (liveInput)
+    {
+        Action result;
+        Call_StartForward(g_hfwdOnPlayerMimicFrame);
+        Call_PushCell(client);
+        Call_PushCell(g_iBotMimicTick[client]);
+        Call_PushArray(iFrame.origin, 3);
+        Call_PushArray(iFrame.predictedVelocity, 3);
+        Call_Finish(result);
+        if (g_PlaybackSerial[client] != playbackSerial || g_hBotMimicsRecord[client] == null)
+            return Plugin_Continue;
+        if (result >= Plugin_Handled)
+        {
+            StopMimicPlayback(client);
+            return Plugin_Continue;
+        }
+        if (result == Plugin_Changed)
+            return Plugin_Continue;
+        if (g_FirstFramePending[client] && iFrame.newWeapon == CSWeapon_NONE)
+            iFrame.newWeapon = g_InitialRecordedWeapon[client];
+    }
+
+    buttons = iFrame.playerButtons;
+    if (!liveInput)
+        BlockBotDisruptiveAltFire(client, buttons);
 	impulse = iFrame.playerImpulse;
 	Array_Copy(iFrame.predictedVelocity, vel, 3);
 	
 	Array_Copy(iFrame.predictedAngles, angles, 2);
+    if (liveInput)
+    {
+        g_bValidTeleportCall[client] = true;
+        TeleportEntity(client, NULL_VECTOR, angles, NULL_VECTOR);
+    }
 	subtype = iFrame.playerSubtype;
 	seed = iFrame.playerSeed;
 	weapon = 0;
@@ -429,8 +482,18 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 	
 	// This is the first tick. Teleport him to the initial position
-	if(g_iBotMimicTick[client] == 0)
-	{
+	if (liveInput)
+    {
+        if (g_FirstFramePending[client])
+        {
+            g_FirstFramePending[client] = false;
+            Call_StartForward(g_hfwdOnPlayerMimicLoops);
+            Call_PushCell(client);
+            Call_Finish();
+        }
+    }
+    else if(g_iBotMimicTick[client] == 0)
+    {
 		g_bValidTeleportCall[client] = true;
 		TeleportEntity(client, g_fInitialPosition[client], g_fInitialAngles[client], fActualVelocity);
 		SDKCall(g_hSwitchWeaponCall, client, GetPlayerWeaponSlot(client, CS_SLOT_KNIFE), 0);
@@ -448,8 +511,11 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		TeleportEntity(client, NULL_VECTOR, angles, NULL_VECTOR);
 	}
 	
-	if(iFrame.newWeapon != CSWeapon_NONE)
-	{
+	if (g_PlaybackSerial[client] != playbackSerial || g_hBotMimicsRecord[client] == null)
+        return Plugin_Changed;
+
+    if(iFrame.newWeapon != CSWeapon_NONE)
+    {
 		char sAlias[64];
 		CS_WeaponIDToAlias(iFrame.newWeapon, sAlias, sizeof(sAlias));
 		
@@ -465,7 +531,12 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		else
 		{
 			weapon = GetPlayerWeaponSlot(client, BotMimic_GetWeaponSlotByClassName(sAlias));
-			g_iBotActiveWeapon[client] = weapon;
+            if (liveInput && !IsValidEntity(weapon))
+            {
+                StopMimicPlayback(client);
+                return Plugin_Changed;
+            }
+            g_iBotActiveWeapon[client] = weapon;
 			g_bBotSwitchedWeapon[client] = true;
 			SDKCall(g_hSwitchWeaponCall, client, weapon, 0);
 		}
@@ -474,10 +545,14 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	else if (g_bBotSwitchedWeapon[client])
 	{
 		g_bBotSwitchedWeapon[client] = false;
-		SDKCall(g_hSwitchWeaponCall, client, g_iBotActiveWeapon[client], 0);
-	}
-	
-	// See if there's a bookmark on this tick
+		if (!liveInput || (IsValidEntity(g_iBotActiveWeapon[client])
+            && GetEntPropEnt(g_iBotActiveWeapon[client], Prop_Send, "m_hOwnerEntity") == client))
+            SDKCall(g_hSwitchWeaponCall, client, g_iBotActiveWeapon[client], 0);
+    }
+    if (liveInput)
+        BlockBotDisruptiveAltFire(client, buttons);
+
+    // See if there's a bookmark on this tick
 	if(g_iBotMimicTick[client] == g_iBotMimicNextBookmarkTick[client].BWM_frame)
 	{
 		// Get the file header of the current playing record.
@@ -648,7 +723,8 @@ public int GoToBookmark(Handle plugin, int numParams)
 		return -1;
 	}
 	
-	g_iBotMimicTick[client] = iBookmark.BKM_frame;
+	g_PlaybackSerial[client]++;
+    g_iBotMimicTick[client] = iBookmark.BKM_frame;
 	g_iCurrentAdditionalTeleportIndex[client] = iBookmark.BKM_additionalTeleportTick;
 	
 	// Remember that we're now at this bookmark.
@@ -673,10 +749,22 @@ public int StopPlayerMimic(Handle plugin, int numParams)
 		return -1;
 	}
 	
-	char sPath[PLATFORM_MAX_PATH];
-	GetFileFromFrameHandle(g_hBotMimicsRecord[client], sPath, sizeof(sPath));
-	
-	g_hBotMimicsRecord[client] = null;
+	StopMimicPlayback(client);
+    return 1;
+}
+
+void StopMimicPlayback(int client)
+{
+    char sPath[PLATFORM_MAX_PATH];
+    GetFileFromFrameHandle(g_hBotMimicsRecord[client], sPath, sizeof(sPath));
+
+    g_PlaybackSerial[client]++;
+    g_PlaybackMode[client] = BMPlayback_Legacy;
+    g_FirstFramePending[client] = false;
+    g_InitialRecordedWeapon[client] = CSWeapon_NONE;
+    g_iBotActiveWeapon[client] = INVALID_ENT_REFERENCE;
+    g_bBotSwitchedWeapon[client] = false;
+    g_hBotMimicsRecord[client] = null;
 	g_iBotMimicTick[client] = 0;
 	g_iCurrentAdditionalTeleportIndex[client] = 0;
 	g_iBotMimicRecordTickCount[client] = 0;
@@ -687,7 +775,8 @@ public int StopPlayerMimic(Handle plugin, int numParams)
 	FileHeader iFileHeader;
 	g_hLoadedRecords.GetArray(sPath, iFileHeader, sizeof(FileHeader));
 	
-	SDKUnhook(client, SDKHook_WeaponCanSwitchTo, Hook_WeaponCanSwitchTo);
+	if (IsClientInGame(client))
+        SDKUnhook(client, SDKHook_WeaponCanSwitchTo, Hook_WeaponCanSwitchTo);
 	
 	char sCategory[64];
 	g_hLoadedRecordsCategory.GetString(sPath, sCategory, sizeof(sCategory));
@@ -697,9 +786,27 @@ public int StopPlayerMimic(Handle plugin, int numParams)
 	Call_PushString(iFileHeader.FH_recordName);
 	Call_PushString(sCategory);
 	Call_PushString(sPath);
-	Call_Finish();
-	
-	return 1;
+    Call_Finish();
+    ReleaseUnusedFrames(sPath);
+}
+
+void ReleaseUnusedFrames(const char[] path)
+{
+    FileHeader header;
+    if (!g_hLoadedRecords.GetArray(path, header, sizeof(FileHeader))
+        || !header.FH_releaseWhenIdle || header.FH_frames == null)
+        return;
+    for (int client = 1; client <= MaxClients; client++)
+        if (g_hBotMimicsRecord[client] == header.FH_frames)
+            return;
+    delete header.FH_frames;
+    ArrayList teleports;
+    if (g_hLoadedRecordsAdditionalTeleport.GetValue(path, teleports))
+    {
+        delete teleports;
+        g_hLoadedRecordsAdditionalTeleport.Remove(path);
+    }
+    g_hLoadedRecords.SetArray(path, header, sizeof(FileHeader));
 }
 
 public int PlayRecordFromFile(Handle plugin, int numParams)
@@ -719,6 +826,26 @@ public int PlayRecordFromFile(Handle plugin, int numParams)
 		return view_as<int>(BM_FileNotFound);
 	
 	return view_as<int>(PlayRecord(client, sPath));
+}
+
+public int PlayRecordFromFileEx(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+    if (client < 1 || client > MaxClients || !IsClientInGame(client))
+        return view_as<int>(BM_BadClient);
+    int startFrame = GetNativeCell(3);
+    BMPlaybackMode mode = view_as<BMPlaybackMode>(GetNativeCell(4));
+    if (startFrame < 0 || (mode != BMPlayback_Legacy && mode != BMPlayback_LiveInput))
+        return view_as<int>(BM_BadParameter);
+    char path[PLATFORM_MAX_PATH];
+    int length;
+    GetNativeStringLength(2, length);
+    if (length >= sizeof(path))
+        return view_as<int>(BM_BadParameter);
+    GetNativeString(2, path, sizeof(path));
+    if (!FileExists(path))
+        return view_as<int>(BM_FileNotFound);
+    return view_as<int>(PlayRecord(client, path, startFrame, mode));
 }
 
 public int PlayRecordByName(Handle plugin, int numParams)
@@ -774,9 +901,15 @@ public int ResetPlayback(Handle plugin, int numParams)
 		return -1;
 	}
 	
-	g_iBotMimicTick[client] = 0;
-	g_iCurrentAdditionalTeleportIndex[client] = 0;
-	g_bValidTeleportCall[client] = false;
+	g_PlaybackSerial[client]++;
+    g_FirstFramePending[client] = true;
+    g_InitialRecordedWeapon[client] = CSWeapon_NONE;
+    g_bBotSwitchedWeapon[client] = false;
+    if (g_PlaybackMode[client] == BMPlayback_LiveInput)
+        g_iBotActiveWeapon[client] = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+    g_iBotMimicTick[client] = 0;
+    g_iCurrentAdditionalTeleportIndex[client] = 0;
+    g_bValidTeleportCall[client] = false;
 	g_iBotMimicNextBookmarkTick[client].BWM_frame = -1;
 	g_iBotMimicNextBookmarkTick[client].BWM_index = -1;
 	UpdateNextBookmarkTick(client);
@@ -1113,8 +1246,12 @@ public int SortFuncADT_ByEndTime(int index1, int index2, Handle arrayHndl, Handl
 	return header1.FH_recordEndTime - header2.FH_recordEndTime;
 }
 
-BMError PlayRecord(int client, const char[] path)
+BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlaybackMode mode = BMPlayback_Legacy)
 {
+    if (g_MapEnding)
+        return BM_BadClient;
+    if (g_hBotMimicsRecord[client] != null)
+        StopMimicPlayback(client);
 	FileHeader iFileHeader;
 	g_hLoadedRecords.GetArray(path, iFileHeader, sizeof(FileHeader));
 	
@@ -1129,19 +1266,71 @@ BMError PlayRecord(int client, const char[] path)
 			return error;
 	}
 	
-	g_hBotMimicsRecord[client] = iFileHeader.FH_frames;
-	g_iBotMimicTick[client] = 0;
+	if (mode == BMPlayback_LiveInput)
+    {
+        iFileHeader.FH_releaseWhenIdle = true;
+        g_hLoadedRecords.SetArray(path, iFileHeader, sizeof(FileHeader));
+    }
+    if (startFrame >= iFileHeader.FH_tickCount)
+    {
+        ReleaseUnusedFrames(path);
+        return BM_BadParameter;
+    }
+    if (mode == BMPlayback_LiveInput)
+    {
+        FrameInfo frame;
+        for (int tick = 0; tick < iFileHeader.FH_tickCount; tick++)
+        {
+            iFileHeader.FH_frames.GetArray(tick, frame, sizeof(FrameInfo));
+            if (frame.additionalFields != 0)
+            {
+                ReleaseUnusedFrames(path);
+                return BM_BadParameter;
+            }
+        }
+    }
+    g_PlaybackSerial[client]++;
+    int playbackSerial = g_PlaybackSerial[client];
+    g_PlaybackMode[client] = mode;
+    g_FirstFramePending[client] = true;
+    g_hBotMimicsRecord[client] = iFileHeader.FH_frames;
+    g_iBotMimicTick[client] = startFrame;
 	g_iBotMimicRecordTickCount[client] = iFileHeader.FH_tickCount;
 	g_iCurrentAdditionalTeleportIndex[client] = 0;
-	g_iBotActiveWeapon[client] = INVALID_ENT_REFERENCE;
+    FrameInfo precedingFrame;
+    g_InitialRecordedWeapon[client] = CSWeapon_NONE;
+    for (int tick = 0; tick < startFrame; tick++)
+    {
+        iFileHeader.FH_frames.GetArray(tick, precedingFrame, sizeof(FrameInfo));
+        if (precedingFrame.newWeapon != CSWeapon_NONE)
+            g_InitialRecordedWeapon[client] = precedingFrame.newWeapon;
+        if (precedingFrame.additionalFields & 7)
+            g_iCurrentAdditionalTeleportIndex[client]++;
+    }
+    g_iBotActiveWeapon[client] = mode == BMPlayback_LiveInput ? GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") : INVALID_ENT_REFERENCE;
 	g_bBotSwitchedWeapon[client] = false;
 	
 	// Cache at which tick we should fire the first OnPlayerMimicBookmark forward.
 	g_iBotMimicNextBookmarkTick[client].BWM_frame = -1;
 	g_iBotMimicNextBookmarkTick[client].BWM_index = -1;
-	UpdateNextBookmarkTick(client);
-	
-	Array_Copy(iFileHeader.FH_initialPosition, g_fInitialPosition[client], 3);
+    UpdateNextBookmarkTick(client);
+    if (startFrame > 0 && iFileHeader.FH_bookmarks != null)
+    {
+        g_iBotMimicNextBookmarkTick[client].BWM_frame = -1;
+        for (int index = 0; index < iFileHeader.FH_bookmarkCount; index++)
+        {
+            Bookmarks bookmark;
+            iFileHeader.FH_bookmarks.GetArray(index, bookmark, sizeof(Bookmarks));
+            if (bookmark.BKM_frame >= startFrame)
+            {
+                g_iBotMimicNextBookmarkTick[client].BWM_frame = bookmark.BKM_frame;
+                g_iBotMimicNextBookmarkTick[client].BWM_index = index;
+                break;
+            }
+        }
+    }
+
+    Array_Copy(iFileHeader.FH_initialPosition, g_fInitialPosition[client], 3);
 	Array_Copy(iFileHeader.FH_initialAngles, g_fInitialAngles[client], 3);
 	
 	SDKHook(client, SDKHook_WeaponCanSwitchTo, Hook_WeaponCanSwitchTo);
@@ -1158,13 +1347,9 @@ BMError PlayRecord(int client, const char[] path)
 	Call_Finish(result);
 	
 	// Someone doesn't want this guy to play that record.
-	if(result >= Plugin_Handled)
-	{
-		g_hBotMimicsRecord[client] = null;
-		g_iBotMimicRecordTickCount[client] = 0;
-		g_iBotMimicNextBookmarkTick[client].BWM_frame = -1;
-		g_iBotMimicNextBookmarkTick[client].BWM_index = -1;
-	}
+	if (result >= Plugin_Handled && g_PlaybackSerial[client] == playbackSerial
+        && g_hBotMimicsRecord[client] != null)
+        StopMimicPlayback(client);
 	
 	return BM_NoError;
 }

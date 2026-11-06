@@ -12,7 +12,14 @@ enum BMError {
 	BM_BadClient, // Provided client index is invalid
 	BM_FileNotFound, // The file does not exists or can't be opened
 	BM_BadFile, // Not a Bot Mimic record.
-	BM_NewerBinaryVersion // The record was recorded with a newer version of Bot Mimic and can't be played.
+	BM_NewerBinaryVersion, // The record was recorded with a newer version of Bot Mimic and can't be played.
+	BM_BadParameter // Invalid frame, mode or unsupported LiveInput payload.
+};
+
+enum BMPlaybackMode
+{
+    BMPlayback_Legacy = 0,
+    BMPlayback_LiveInput
 };
 
 enum struct BMFileHeader {
@@ -50,6 +57,11 @@ native void BotMimic_GetRecordPlayerMimics(int client, char[] path, int maxlen);
  * @return			BM_NoError if all went smooth, see BMError definition.
  */
 native BMError BotMimic_PlayRecordFromFile(int client, const char[] path);
+
+// LiveInput applies commands through engine physics. Changed suspends the cursor.
+// Handled/Stop ends playback. The callback precedes every replay field write.
+native BMError BotMimic_PlayRecordFromFileEx(int client, const char[] path, int startFrame, BMPlaybackMode mode);
+forward Action BotMimic_OnPlayerMimicFrame(int client, int frameIndex, const float recordedOrigin[3], const float movement[3]);
 
 /**
  * Let a client start to mimic a record by providing the record name.
@@ -190,7 +202,11 @@ stock void BotMimic_GetErrorString(BMError error, char[] str, int maxlen)
 		{
 			strcopy(str, maxlen, "The file was recorded with a newer version of Bot Mimic and can't be played.");
 		}
-		case BM_BadFile:
+		case BM_BadParameter:
+        {
+            strcopy(str, maxlen, "Invalid playback frame, mode or record payload.");
+        }
+        case BM_BadFile:
 		{
 			strcopy(str, maxlen, "The file is not a record. Bad format.");
 		}
@@ -219,6 +235,7 @@ public void __pl_botmimic_SetNTVOptional()
 	MarkNativeAsOptional("BotMimic_IsPlayerMimicing");
 	MarkNativeAsOptional("BotMimic_GetRecordPlayerMimics");
 	MarkNativeAsOptional("BotMimic_PlayRecordFromFile");
+	MarkNativeAsOptional("BotMimic_PlayRecordFromFileEx");
 	MarkNativeAsOptional("BotMimic_ResetPlayback");
 	MarkNativeAsOptional("BotMimic_PlayRecordByName");
 	MarkNativeAsOptional("BotMimic_StopPlayerMimic");
