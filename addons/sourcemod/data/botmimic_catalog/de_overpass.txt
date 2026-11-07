@@ -3,7 +3,6 @@
   "schema" "1"
   "tickrate" "128"
   "opening_chance" "80"
-  "grenade_chance" "60"
   "minimum_survival_ticks" "3840"
   "records"
   {

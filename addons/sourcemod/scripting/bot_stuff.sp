@@ -290,12 +290,24 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("BB_FilterBotReactionButtons", Native_FilterBotReactionButtons);
+    CreateNative("BB_AdjustOpeningMovement", Native_AdjustOpeningMovement);
 	return APLRes_Success;
 }
 
 public any Native_FilterBotReactionButtons(Handle plugin, int numParams)
 {
 	return FilterBotReactionButtons(GetNativeCell(1), GetNativeCell(2));
+}
+
+public any Native_AdjustOpeningMovement(Handle plugin, int numParams)
+{
+    float recordedOrigin[3], angles[3], movement[3];
+    GetNativeArray(2, recordedOrigin, 3);
+    GetNativeArray(3, angles, 3);
+    GetNativeArray(4, movement, 3);
+    DR_AdjustOpeningMovement(GetNativeCell(1), recordedOrigin, angles, movement);
+    SetNativeArray(4, movement, 3);
+    return 0;
 }
 
 public void OnPluginStart()
@@ -1613,13 +1625,11 @@ public MRESReturn CCSBot_MoveTo(int iClient, DHookParam hParams)
 	if (!IsValidClient(iClient) || !IsFakeClient(iClient) || hParams == null)
 		return MRES_Ignored;
 
-    if (DR_OwnsGrenade(iClient))
+    if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying)
     {
-        if (g_DRIssuingMove[iClient])
-            return MRES_Ignored;
-        if (DR_GrenadePhaseAllowed(iClient, true))
+        DR_UpdateGrenade(iClient);
+        if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying)
             return MRES_Supercede;
-        DR_StopGrenade(iClient, "phase_or_task");
     }
 
 	if (g_bIssuingSaveMove[iClient])
@@ -1652,7 +1662,7 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 
 	char szDesc[64];
 	DHookGetParamString(hParams, 1, szDesc, sizeof(szDesc));
-    if (DR_OwnsGrenade(iClient))
+    if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying)
     {
         if (!bPosNull && StrEqual(szDesc, "Noise"))
             DR_StopGrenade(iClient, "noise");
@@ -2125,6 +2135,13 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 			ProcessCombat(iClient, iButtons, fVel, fAngles, iDefIndex, fSpeed, fNow);
 	}
 
+    if (DR_HoldsGrenadePosition(iClient))
+    {
+        fVel[0] = 0.0;
+        fVel[1] = 0.0;
+        iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_JUMP);
+    }
+
 	int iButtonsAfterCombat = iButtons;
 	LogAttackStateDebug(iClient, iButtonsIn, iButtonsAfterPreClear, iButtonsAfterCombat, iButtons, view_as<int>(GetTask(iClient)), eDispositionBeforeSave, GetDisposition(iClient), !!GetEntData(iClient, g_iEnemyVisibleOffset), g_iTarget[iClient], GetClientAimTarget(iClient, true), g_fTargetPos[iClient], iDefIndex, bWeaponCoveredByPluginFire, false, BotMimic_IsPlayerMimicing(iClient));
 
@@ -2529,7 +2546,7 @@ public bool BotIsHiding(int iClient)
 
 public void BotEquipBestWeapon(int iClient, bool bMustEquip)
 {
-    if (DR_OwnsOpening(iClient) || DR_OwnsGrenade(iClient))
+    if (DR_IsReserved(iClient) || DR_IsGrenadeEquipping(iClient))
         return;
 	SDKCall(g_hBotEquipBestWeapon, iClient, bMustEquip);
 }
@@ -2561,7 +2578,7 @@ public void AddMoney(int iClient, int iAmount, bool bTrackChange, bool bItemBoug
 
 void SwitchWeapon(int iClient, int iWeapon)
 {
-    if (DR_OwnsOpening(iClient) || DR_OwnsGrenade(iClient))
+    if (DR_IsReserved(iClient) || DR_IsGrenadeEquipping(iClient))
         return;
 	SDKCall(g_hSwitchWeaponCall, iClient, iWeapon, 0);
 }

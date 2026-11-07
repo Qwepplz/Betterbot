@@ -24,6 +24,7 @@
 #pragma newdecls required
 
 native int BB_FilterBotReactionButtons(int client, int buttons);
+native void BB_AdjustOpeningMovement(int client, const float recordedOrigin[3], const float angles[3], float movement[3]);
 
 #define PLUGIN_VERSION "2.1"
 
@@ -144,6 +145,7 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	MarkNativeAsOptional("BB_FilterBotReactionButtons");
+    MarkNativeAsOptional("BB_AdjustOpeningMovement");
 	RegPluginLibrary("botmimic");
 	CreateNative("BotMimic_IsPlayerMimicing", IsPlayerMimicing);
 	CreateNative("BotMimic_GetRecordPlayerMimics", GetRecordPlayerMimics);
@@ -584,6 +586,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		Call_Finish();
 	}
 	
+    if (liveInput && g_PlaybackSerial[client] == playbackSerial
+        && GetFeatureStatus(FeatureType_Native, "BB_AdjustOpeningMovement") == FeatureStatus_Available)
+        BB_AdjustOpeningMovement(client, iFrame.origin, angles, vel);
+
 	g_iBotMimicTick[client]++;
 	
 	if (GetFeatureStatus(FeatureType_Native, "BB_FilterBotReactionButtons") == FeatureStatus_Available)

@@ -5,12 +5,9 @@
 
 #define DR_TICKRATE 128
 #define DR_OPENING_CHANCE 80
-#define DR_GRENADE_CHANCE 60
 #define DR_OPENING_START_RADIUS 1.0
 #define DR_GRENADE_SELECT_RADIUS 250.0
 #define DR_GRENADE_START_RADIUS 25.0
-#define DR_GRENADE_START_SPEED 130.0
-#define DR_OPPORTUNITY_RESET 0.5
 
 stock bool DR_AcceptRoll(int roll, int chance)
 {
@@ -84,53 +81,11 @@ stock bool DR_ShouldBlockEffect(int requestTeam, int requestType, int effectTeam
         && (pending || now < expiresAt);
 }
 
-enum struct DROpportunity
-{
-    int serial;
-    int round;
-    int sequence;
-    bool engaged;
-    bool rolled;
-    bool accepted;
-    bool requested;
-    float outsideSince;
-}
-
 stock bool DR_CanStartGrenade(float distanceSquared, float horizontalSpeedSquared, bool onGround)
 {
     return onGround && distanceSquared >= 0.0 && horizontalSpeedSquared >= 0.0
         && distanceSquared < DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS
-        && horizontalSpeedSquared < DR_GRENADE_START_SPEED * DR_GRENADE_START_SPEED;
-}
-
-stock bool DR_UpdateOpportunity(DROpportunity opportunity, bool qualified, float now, int serial, int round)
-{
-    if (opportunity.serial != serial || opportunity.round != round)
-    {
-        opportunity.serial = serial;
-        opportunity.round = round;
-        opportunity.sequence = 0;
-        opportunity.engaged = false;
-        opportunity.outsideSince = -1.0;
-    }
-    if (opportunity.outsideSince >= 0.0 && now - opportunity.outsideSince >= DR_OPPORTUNITY_RESET)
-        opportunity.engaged = false;
-    if (!qualified)
-    {
-        if (opportunity.outsideSince < 0.0)
-            opportunity.outsideSince = now;
-        return false;
-    }
-    if (!opportunity.engaged)
-    {
-        opportunity.engaged = true;
-        opportunity.sequence++;
-        opportunity.rolled = false;
-        opportunity.accepted = false;
-        opportunity.requested = false;
-    }
-    opportunity.outsideSince = -1.0;
-    return true;
+        && horizontalSpeedSquared == 0.0;
 }
 
 
@@ -141,4 +96,26 @@ stock float DR_EffectBlockDistanceSquared(float targetDistanceSquared, float act
     if (sourceKnown && targetDistanceSquared < actualDistanceSquared)
         return targetDistanceSquared;
     return actualDistanceSquared;
+}
+
+stock void DR_CorrectOpeningMovement(const float error[3], float yaw, float movement[3])
+{
+    float distance = SquareRoot(error[0] * error[0] + error[1] * error[1]);
+    if (distance <= 4.0)
+        return;
+    float gain = 12.0;
+    if (distance * gain > 225.0)
+        gain = 225.0 / distance;
+    float radians = DegToRad(yaw);
+    float correction[2];
+    correction[0] = (error[0] * Cosine(radians) + error[1] * Sine(radians)) * gain;
+    correction[1] = (error[0] * Sine(radians) - error[1] * Cosine(radians)) * gain;
+    for (int axis = 0; axis < 2; axis++)
+    {
+        movement[axis] += correction[axis];
+        if (movement[axis] > 450.0)
+            movement[axis] = 450.0;
+        else if (movement[axis] < -450.0)
+            movement[axis] = -450.0;
+    }
 }
