@@ -119,3 +119,14 @@ stock void DR_CorrectOpeningMovement(const float error[3], float yaw, float move
             movement[axis] = -450.0;
     }
 }
+
+stock bool DR_QualityPhaseAllowed(bool curated, bool postPlant, bool bombPlanted)
+{
+    return !curated || postPlant == bombPlanted;
+}
+
+stock bool DR_QualityThreatAllowed(float age, float distanceSquared, float heightDifference, float radius)
+{
+    return age >= 0.0 && age <= 4.0 && distanceSquared >= 0.0 && distanceSquared <= radius * radius
+        && FloatAbs(heightDifference) <= 96.0;
+}
