@@ -24,7 +24,6 @@
 #pragma newdecls required
 
 native int BB_FilterBotReactionButtons(int client, int buttons);
-native void BB_AdjustOpeningMovement(int client, const float recordedOrigin[3], const float angles[3], float movement[3]);
 
 #define PLUGIN_VERSION "2.1"
 
@@ -145,7 +144,6 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	MarkNativeAsOptional("BB_FilterBotReactionButtons");
-    MarkNativeAsOptional("BB_AdjustOpeningMovement");
 	RegPluginLibrary("botmimic");
 	CreateNative("BotMimic_IsPlayerMimicing", IsPlayerMimicing);
 	CreateNative("BotMimic_GetRecordPlayerMimics", GetRecordPlayerMimics);
@@ -366,6 +364,16 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	if(!IsPlayerAlive(client) || GetClientTeam(client) < CS_TEAM_T)
 		return Plugin_Continue;
 	
+	if (GameRules_GetProp("m_bMatchWaitingForResume") != 0
+        || GameRules_GetProp("m_bTerroristTimeOutActive") != 0
+        || GameRules_GetProp("m_bCTTimeOutActive") != 0)
+    {
+        buttons = 0;
+        impulse = 0;
+        weapon = 0;
+        vel[0] = vel[1] = vel[2] = 0.0;
+        return Plugin_Changed;
+    }
 	if(g_iBotMimicTick[client] >= g_iBotMimicRecordTickCount[client])
 	{
 		BotMimic_StopPlayerMimic(client);
@@ -401,9 +409,11 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
             g_bValidTeleportCall[client] = true;
             TeleportEntity(client, g_fInitialPosition[client], g_fInitialAngles[client], iFrame.actualVelocity);
         }
-        if (g_FirstFramePending[client] && iFrame.newWeapon == CSWeapon_NONE)
-            iFrame.newWeapon = g_InitialRecordedWeapon[client];
     }
+    bool firstFrame = g_FirstFramePending[client];
+    bool preserveReadyWeapon = !liveInput && firstFrame && g_AlignStartPending[client];
+    if (firstFrame && iFrame.newWeapon == CSWeapon_NONE)
+        iFrame.newWeapon = g_InitialRecordedWeapon[client];
 
     buttons = iFrame.playerButtons;
     if (!liveInput)
@@ -504,12 +514,14 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
             Call_Finish();
         }
     }
-    else if(g_iBotMimicTick[client] == 0)
+    else if(firstFrame || g_iBotMimicTick[client] == 0)
     {
 		g_bValidTeleportCall[client] = true;
 		TeleportEntity(client, g_fInitialPosition[client], g_fInitialAngles[client], fActualVelocity);
-		SDKCall(g_hSwitchWeaponCall, client, GetPlayerWeaponSlot(client, CS_SLOT_KNIFE), 0);
-		
+		if (g_iBotMimicTick[client] == 0 && !preserveReadyWeapon)
+            SDKCall(g_hSwitchWeaponCall, client, GetPlayerWeaponSlot(client, CS_SLOT_KNIFE), 0);
+        g_FirstFramePending[client] = false;
+        g_AlignStartPending[client] = false;
 		Call_StartForward(g_hfwdOnPlayerMimicLoops);
 		Call_PushCell(client);
 		Call_Finish();
@@ -586,9 +598,6 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 		Call_Finish();
 	}
 	
-    if (liveInput && g_PlaybackSerial[client] == playbackSerial
-        && GetFeatureStatus(FeatureType_Native, "BB_AdjustOpeningMovement") == FeatureStatus_Available)
-        BB_AdjustOpeningMovement(client, iFrame.origin, angles, vel);
 
 	g_iBotMimicTick[client]++;
 	
@@ -741,6 +750,9 @@ public int GoToBookmark(Handle plugin, int numParams)
 	
 	g_PlaybackSerial[client]++;
     g_AlignStartPending[client] = false;
+    g_FirstFramePending[client] = false;
+    g_InitialRecordedWeapon[client] = CSWeapon_NONE;
+    g_bBotSwitchedWeapon[client] = false;
     g_iBotMimicTick[client] = iBookmark.BKM_frame;
 	g_iCurrentAdditionalTeleportIndex[client] = iBookmark.BKM_additionalTeleportTick;
 	
@@ -855,7 +867,7 @@ public int PlayRecordFromFileEx(Handle plugin, int numParams)
     BMPlaybackMode mode = view_as<BMPlaybackMode>(GetNativeCell(4));
     bool alignStart = numParams >= 5 && GetNativeCell(5) != 0;
     if (startFrame < 0 || (mode != BMPlayback_Legacy && mode != BMPlayback_LiveInput)
-        || (alignStart && (startFrame != 0 || mode != BMPlayback_LiveInput)))
+        || (alignStart && startFrame != 0))
         return view_as<int>(BM_BadParameter);
     char path[PLATFORM_MAX_PATH];
     int length;
@@ -925,6 +937,12 @@ public int ResetPlayback(Handle plugin, int numParams)
     g_FirstFramePending[client] = true;
     g_AlignStartPending[client] = false;
     g_InitialRecordedWeapon[client] = CSWeapon_NONE;
+    char path[PLATFORM_MAX_PATH];
+    GetFileFromFrameHandle(g_hBotMimicsRecord[client], path, sizeof(path));
+    FileHeader header;
+    g_hLoadedRecords.GetArray(path, header, sizeof(FileHeader));
+    Array_Copy(header.FH_initialPosition, g_fInitialPosition[client], 3);
+    Array_Copy(header.FH_initialAngles, g_fInitialAngles[client], 3);
     g_bBotSwitchedWeapon[client] = false;
     if (g_PlaybackMode[client] == BMPlayback_LiveInput)
         g_iBotActiveWeapon[client] = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
@@ -1269,14 +1287,31 @@ public int SortFuncADT_ByEndTime(int index1, int index2, Handle arrayHndl, Handl
 
 BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlaybackMode mode = BMPlayback_Legacy, bool alignStart = false)
 {
-    if (alignStart && (startFrame != 0 || mode != BMPlayback_LiveInput))
+    if (alignStart && startFrame != 0)
         return BM_BadParameter;
     if (g_MapEnding)
         return BM_BadClient;
+    if (startFrame < 0 || (mode != BMPlayback_Legacy && mode != BMPlayback_LiveInput))
+        return BM_BadParameter;
+    FileHeader iFileHeader;
+    if (!g_hLoadedRecords.GetArray(path, iFileHeader, sizeof(FileHeader)))
+    {
+        BMError error = LoadRecordFromFile(path, DEFAULT_CATEGORY, iFileHeader, true, false);
+        if (error != BM_NoError)
+            return error;
+    }
+    if (startFrame >= iFileHeader.FH_tickCount)
+        return BM_BadParameter;
     if (g_hBotMimicsRecord[client] != null)
+    {
         StopMimicPlayback(client);
-	FileHeader iFileHeader;
-	g_hLoadedRecords.GetArray(path, iFileHeader, sizeof(FileHeader));
+        if (g_hBotMimicsRecord[client] != null)
+            return BM_NoError;
+    }
+    if (g_MapEnding || !IsClientInGame(client))
+        return BM_BadClient;
+    // A stop forward can release the final reference to the cached frames.
+    g_hLoadedRecords.GetArray(path, iFileHeader, sizeof(FileHeader));
 	
 	// That record isn't fully loaded yet. Do that now.
 	if(iFileHeader.FH_frames == null)
@@ -1331,7 +1366,8 @@ BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlayback
         if (precedingFrame.additionalFields & 7)
             g_iCurrentAdditionalTeleportIndex[client]++;
     }
-    g_iBotActiveWeapon[client] = mode == BMPlayback_LiveInput ? GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") : INVALID_ENT_REFERENCE;
+    g_iBotActiveWeapon[client] = mode == BMPlayback_LiveInput || alignStart
+        ? GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") : INVALID_ENT_REFERENCE;
 	g_bBotSwitchedWeapon[client] = false;
 	
 	// Cache at which tick we should fire the first OnPlayerMimicBookmark forward.
@@ -1355,7 +1391,15 @@ BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlayback
     }
 
     Array_Copy(iFileHeader.FH_initialPosition, g_fInitialPosition[client], 3);
-	Array_Copy(iFileHeader.FH_initialAngles, g_fInitialAngles[client], 3);
+    Array_Copy(iFileHeader.FH_initialAngles, g_fInitialAngles[client], 3);
+    if (startFrame > 0 && mode == BMPlayback_Legacy)
+    {
+        FrameInfo initialFrame;
+        iFileHeader.FH_frames.GetArray(startFrame, initialFrame, sizeof(FrameInfo));
+        Array_Copy(initialFrame.origin, g_fInitialPosition[client], 3);
+        Array_Copy(initialFrame.predictedAngles, g_fInitialAngles[client], 2);
+        g_fInitialAngles[client][2] = 0.0;
+    }
 	
 	SDKHook(client, SDKHook_WeaponCanSwitchTo, Hook_WeaponCanSwitchTo);
 	

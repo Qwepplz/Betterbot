@@ -290,24 +290,12 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	CreateNative("BB_FilterBotReactionButtons", Native_FilterBotReactionButtons);
-    CreateNative("BB_AdjustOpeningMovement", Native_AdjustOpeningMovement);
 	return APLRes_Success;
 }
 
 public any Native_FilterBotReactionButtons(Handle plugin, int numParams)
 {
 	return FilterBotReactionButtons(GetNativeCell(1), GetNativeCell(2));
-}
-
-public any Native_AdjustOpeningMovement(Handle plugin, int numParams)
-{
-    float recordedOrigin[3], angles[3], movement[3];
-    GetNativeArray(2, recordedOrigin, 3);
-    GetNativeArray(3, angles, 3);
-    GetNativeArray(4, movement, 3);
-    DR_AdjustOpeningMovement(GetNativeCell(1), recordedOrigin, angles, movement);
-    SetNativeArray(4, movement, 3);
-    return 0;
 }
 
 public void OnPluginStart()
@@ -337,8 +325,6 @@ public void OnPluginStart()
     HookEventEx("player_death", OnPlayerDeath);
     HookEventEx("player_team", OnPlayerTeam);
 
-    if (!HookEventEx("player_hurt", DR_OnPlayerHurt, EventHookMode_Post))
-        SetFailState("Failed to hook required player_hurt event");
     HookEventEx("weapon_zoom", OnWeaponZoom);
     HookEventEx("weapon_fire", OnWeaponFire);
     HookEventEx("smokegrenade_detonate", DR_EffectEvent);
@@ -600,7 +586,7 @@ public Action Timer_CheckPlayer(Handle hTimer, any data)
 		if (IsItMyChance(2.0))
 			FakeClientCommand(i, "+lookatweapon;-lookatweapon");
 
-		if (g_bDropWeapon[i] || DR_IsReserved(i))
+		if (g_bDropWeapon[i])
 			continue;
 
 		bool bInBuyZone = view_as<bool>(GetEntProp(i, Prop_Send, "m_bInBuyZone"));
@@ -784,7 +770,7 @@ public Action Timer_DropWeapons(Handle hTimer, any data)
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient] || DR_IsReserved(iClient))
+        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient])
             continue;
 
         int iPrimaryWeapon = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
@@ -843,7 +829,7 @@ void AssignDrops(ArrayList aBotsT, ArrayList aBotsCT, bool &bNeedDropT, bool &bN
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || g_bHasGottenDrop[iClient] || DR_IsReserved(iClient))
+        if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || g_bHasGottenDrop[iClient])
             continue;
 
         if (!GetEntProp(iClient, Prop_Send, "m_bInBuyZone"))
@@ -891,7 +877,7 @@ void CollectCheapDroppers(ArrayList aTeamBots, int iTeam)
 
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
-        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient] || DR_IsReserved(iClient))
+        if (!IsValidClient(iClient) || !IsFakeClient(iClient) || !IsPlayerAlive(iClient) || g_bDropWeapon[iClient])
             continue;
 
         if (GetClientTeam(iClient) != iTeam)
@@ -949,7 +935,6 @@ public void OnPluginEnd()
 {
     DR_OnRoundEnd();
     delete g_DRCatalog;
-    delete g_DRUsedRoles;
     delete g_DREffects;
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
         for (int kind = 0; kind < 4; kind++)
@@ -1217,7 +1202,8 @@ public void OnFreezetimeEnd(Event eEvent, const char[] szName, bool bDontBroadca
 	g_bFreezetimeEnd = true;
 	g_fFreezeTimeEnd = GetGameTime();
 	UpdateAliveTeamCounts();
-
+    DR_AssignOpening(CS_TEAM_T);
+    DR_AssignOpening(CS_TEAM_CT);
 }
 
 public void OnBombPlanted(Event eEvent, const char[] szName, bool bDontBroadcast)
@@ -1302,7 +1288,7 @@ public void OnPlayerDeath(Event eEvent, const char[] szName, bool bDontBroadcast
 	if (iClient > 0 && iClient <= MaxClients)
 		{
         ResetBotReaction(iClient, "death");
-        DR_StopClient(iClient, "death");
+        DR_OpeningLifecycle(iClient, "death");
         DR_StopGrenade(iClient, "death");
     }
 	if (IsValidClient(iClient))
@@ -1418,8 +1404,6 @@ public Action Timer_RefreshPlayerResourceData(Handle hTimer, int iUserId)
 
 public Action CS_OnBuyCommand(int iClient, const char[] szWeapon)
 {
-    if (DR_IsReserved(iClient))
-        return g_DRBuying[iClient] ? Plugin_Continue : Plugin_Handled;
 	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
 		return Plugin_Continue;
 
@@ -1655,24 +1639,11 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 {
 	if (!IsValidClient(iClient) || !IsFakeClient(iClient) || hParams == null)
         return MRES_Ignored;
-    if (DR_OwnsOpening(iClient))
-        return MRES_Supercede;
 
     bool bPosNull = hParams.IsNull(2);
 
 	char szDesc[64];
 	DHookGetParamString(hParams, 1, szDesc, sizeof(szDesc));
-    if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying)
-    {
-        if (!bPosNull && StrEqual(szDesc, "Noise"))
-            DR_StopGrenade(iClient, "noise");
-        else
-        {
-            DR_UpdateGrenade(iClient);
-            if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying)
-                return MRES_Supercede;
-        }
-    }
 	int iTeam = GetClientTeam(iClient);
 	bool bSaveActive = g_bSaveActiveCache[iClient];
 
@@ -1738,11 +1709,9 @@ public MRESReturn CCSBot_SetLookAt(int iClient, DHookParam hParams)
 
 		if (IsItMyChance(15.0) && IsPointVisible(fClientEyes, fNoisePos) && LineGoesThroughSmoke(fClientEyes, fNoisePos) && !bIsWalking)
 			DHookSetParam(hParams, 7, true);
+        DR_StopGrenade(iClient, "noise");
 		if (BotMimic_IsPlayerMimicing(iClient))
-		{
-
 			BotMimic_StopPlayerMimic(iClient);
-		}
 
         int iCurrentWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
         if (IsValidEntity(iCurrentWeapon) && HasEntProp(iCurrentWeapon, Prop_Send, "m_iItemDefinitionIndex")
@@ -1990,10 +1959,6 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 	#pragma unused iMouse
     if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
         return Plugin_Continue;
-    if (DR_OwnsGrenade(iClient))
-        DR_UpdateGrenade(iClient);
-    if (DR_IsReserved(iClient))
-        return Plugin_Continue;
 
     if (!g_bFreezetimeEnd && g_bDropWeapon[iClient] && view_as<LookAtSpotState>(GetEntData(iClient, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT)
 	{
@@ -2074,6 +2039,9 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 		LogRetakeSaveDebug(iClient);
 	}
 
+    if (DR_HandleOpening(iClient, DR_VisibleEnemy(iClient)))
+        return Plugin_Continue;
+
 	int iPrimary = GetPlayerWeaponSlot(iClient, CS_SLOT_PRIMARY);
 	if (IsValidEntity(iPrimary) && fNow >= g_fSniperRetreatCooldown[iClient])
 	{
@@ -2098,6 +2066,9 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 
 	}
 
+    if (!IsBotMimicBlockedPhase())
+        DR_TryGrenade(iClient);
+
 	if (GetDisposition(iClient) == SELF_DEFENSE && !bShouldSaveInsteadOfRetake)
 		SetDisposition(iClient, ENGAGE_AND_INVESTIGATE);
 
@@ -2111,10 +2082,13 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
 			iButtons &= ~IN_SPEED;
 	}
 
+    DR_UpdateGrenade(iClient);
+
 	if (IsSafe(iClient))
 	{
 		iButtons &= ~IN_SPEED;
-		if (g_bIsProBot[iClient] && !g_bDontSwitch[iClient] && !BotIsHiding(iClient))
+		if (g_bIsProBot[iClient] && !g_bDontSwitch[iClient] && !BotIsHiding(iClient)
+            && !DR_HoldsGrenadePosition(iClient) && DR_GrenadeIdle(iClient))
 			SwitchWeapon(iClient, GetPlayerWeaponSlot(iClient, CS_SLOT_KNIFE));
 	}
 
@@ -2141,6 +2115,11 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
         fVel[1] = 0.0;
         iButtons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT | IN_JUMP);
     }
+
+    // The core may have processed this command before the business started playback.
+    if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying
+        && !g_DRGrenade[iClient].firstFrame)
+        iButtons &= ~(IN_ATTACK | IN_ATTACK2);
 
 	int iButtonsAfterCombat = iButtons;
 	LogAttackStateDebug(iClient, iButtonsIn, iButtonsAfterPreClear, iButtonsAfterCombat, iButtons, view_as<int>(GetTask(iClient)), eDispositionBeforeSave, GetDisposition(iClient), !!GetEntData(iClient, g_iEnemyVisibleOffset), g_iTarget[iClient], GetClientAimTarget(iClient, true), g_fTargetPos[iClient], iDefIndex, bWeaponCoveredByPluginFire, false, BotMimic_IsPlayerMimicing(iClient));
@@ -2546,8 +2525,6 @@ public bool BotIsHiding(int iClient)
 
 public void BotEquipBestWeapon(int iClient, bool bMustEquip)
 {
-    if (DR_IsReserved(iClient) || DR_IsGrenadeEquipping(iClient))
-        return;
 	SDKCall(g_hBotEquipBestWeapon, iClient, bMustEquip);
 }
 
@@ -2578,8 +2555,6 @@ public void AddMoney(int iClient, int iAmount, bool bTrackChange, bool bItemBoug
 
 void SwitchWeapon(int iClient, int iWeapon)
 {
-    if (DR_IsReserved(iClient) || DR_IsGrenadeEquipping(iClient))
-        return;
 	SDKCall(g_hSwitchWeaponCall, iClient, iWeapon, 0);
 }
 
@@ -2656,8 +2631,6 @@ bool IsLooseBombDroppedByLiveT()
 
 bool ShouldSaveInsteadOfRetake(int iClient)
 {
-    if (DR_OwnsOpening(iClient))
-        return false;
 	if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || !IsFakeClient(iClient))
 		return false;
 
@@ -2998,6 +2971,8 @@ bool ProcessRetakeSaveBehavior(int iClient, int &iButtons)
 {
 	bool bChanged = !!(iButtons & IN_USE);
 	iButtons &= ~IN_USE;
+    DR_StopClient(iClient, "save");
+    DR_StopGrenade(iClient, "save");
 
 	if (BotMimic_IsPlayerMimicing(iClient))
 		BotMimic_StopPlayerMimic(iClient);
@@ -3555,7 +3530,7 @@ public void FinishQuickSwitch(int iUserId)
 public Action Timer_AvoidSelfFlash(Handle hTimer, any iUserId)
 {
     int iClient = GetClientOfUserId(iUserId);
-    if (!IsValidClient(iClient) || !IsPlayerAlive(iClient) || DR_OwnsOpening(iClient))
+    if (!IsValidClient(iClient) || !IsPlayerAlive(iClient))
 		return Plugin_Stop;
 
 	float fEyePos[3], fEyeAngles[3], fForward[3], fAway[3];

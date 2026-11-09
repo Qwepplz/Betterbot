@@ -61,7 +61,9 @@ native BMError BotMimic_PlayRecordFromFile(int client, const char[] path);
 // LiveInput applies commands through engine physics. Changed suspends the cursor.
 // Handled/Stop ends playback. The callback precedes every replay field write.
 // alignStart aligns origin, angles and actual velocity once on the first approved
-// frame. It requires LiveInput at frame zero. Reset and bookmarks clear the option.
+// frame. It requires frame zero in either mode. Aligned Legacy preserves an
+// already deployed weapon. Nonzero Legacy starts at that frame's pose and restores
+// the last preceding weapon. Reset and bookmarks clear the alignment option.
 native BMError BotMimic_PlayRecordFromFileEx(int client, const char[] path, int startFrame, BMPlaybackMode mode, bool alignStart = false);
 forward Action BotMimic_OnPlayerMimicFrame(int client, int frameIndex, const float recordedOrigin[3], const float movement[3]);
 
