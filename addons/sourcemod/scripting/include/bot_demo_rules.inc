@@ -5,7 +5,8 @@
 
 #define DR_TICKRATE 128
 #define DR_OPENING_CHANCE 80
-#define DR_GRENADE_START_RADIUS 25.0
+#define DR_GRENADE_START_RADIUS 32.0
+#define DR_GRENADE_WALK_FACTOR 0.52
 
 stock bool DR_AcceptRoll(int roll, int chance)
 {
@@ -36,11 +37,12 @@ stock bool DR_ShouldBlockEffect(int requestTeam, int requestType, int effectTeam
         && (pending || now < expiresAt);
 }
 
-stock bool DR_CanStartGrenade(float distanceSquared, float horizontalSpeedSquared, bool onGround)
+stock bool DR_CanStartGrenade(float distanceSquared, float horizontalSpeedSquared, bool onGround, float walkSpeed)
 {
     return onGround && distanceSquared >= 0.0 && horizontalSpeedSquared >= 0.0
-        && distanceSquared < DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS
-        && horizontalSpeedSquared == 0.0;
+        && walkSpeed > 0.0 && (view_as<int>(walkSpeed) & 0x7F800000) != 0x7F800000
+        && distanceSquared <= DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS
+        && horizontalSpeedSquared <= walkSpeed * walkSpeed;
 }
 
 

@@ -414,6 +414,25 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
     bool preserveReadyWeapon = !liveInput && firstFrame && g_AlignStartPending[client];
     if (firstFrame && iFrame.newWeapon == CSWeapon_NONE)
         iFrame.newWeapon = g_InitialRecordedWeapon[client];
+    if (preserveReadyWeapon && iFrame.newWeapon == CSWeapon_KNIFE)
+    {
+        int activeWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+        if (IsValidEntity(activeWeapon) && HasEntProp(activeWeapon, Prop_Send, "m_bPinPulled")
+            && !GetEntProp(activeWeapon, Prop_Send, "m_bPinPulled")
+            && GetEntPropFloat(activeWeapon, Prop_Send, "m_fThrowTime") <= 0.0
+            && GetEntPropFloat(client, Prop_Send, "m_flNextAttack") <= GetGameTime()
+            && GetEntPropFloat(activeWeapon, Prop_Send, "m_flNextPrimaryAttack") <= GetGameTime())
+            iFrame.newWeapon = CSWeapon_NONE;
+    }
+
+    if (!liveInput && iFrame.newWeapon == CSWeapon_MOLOTOV
+        && !BotMimic_ClientHasWeapon(client, "weapon_molotov")
+        && BotMimic_ClientHasWeapon(client, "weapon_incgrenade"))
+        iFrame.newWeapon = CSWeapon_INCGRENADE;
+    else if (!liveInput && iFrame.newWeapon == CSWeapon_INCGRENADE
+        && !BotMimic_ClientHasWeapon(client, "weapon_incgrenade")
+        && BotMimic_ClientHasWeapon(client, "weapon_molotov"))
+        iFrame.newWeapon = CSWeapon_MOLOTOV;
 
     buttons = iFrame.playerButtons;
     if (!liveInput)

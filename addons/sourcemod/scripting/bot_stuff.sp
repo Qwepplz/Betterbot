@@ -156,6 +156,7 @@ Handle g_hBotEquipBestWeapon;
 Handle g_hBotSetLookAt;
 Handle g_hSetCrosshairCode;
 Handle g_hSwitchWeaponCall;
+Handle g_hGetPlayerMaxSpeedCall;
 Handle g_hIsLineBlockedBySmoke;
 Handle g_hAddMoney;
 Handle g_hOnAudibleEvent;
@@ -934,6 +935,7 @@ public void OnMapEnd()
 public void OnPluginEnd()
 {
     DR_OnRoundEnd();
+    delete g_hGetPlayerMaxSpeedCall;
     delete g_DRCatalog;
     delete g_DREffects;
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
@@ -2117,8 +2119,8 @@ Action ProcessBotPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float f
     }
 
     // The core may have processed this command before the business started playback.
-    if (DR_OwnsGrenade(iClient) && g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying
-        && !g_DRGrenade[iClient].firstFrame)
+    if (DR_OwnsGrenade(iClient) && !g_DRGrenade[iClient].firstFrame
+        && (g_DRGrenade[iClient].stage == DR_GrenadeStagePlaying || DR_HoldsGrenadePosition(iClient)))
         iButtons &= ~(IN_ATTACK | IN_ATTACK2);
 
 	int iButtonsAfterCombat = iButtons;
@@ -2430,6 +2432,13 @@ public void LoadSDK()
 	PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 	if ((g_hSetCrosshairCode = EndPrepSDKCall()) == null)
 		SetFailState("Failed to create SDKCall: SetCrosshairCode");
+
+	StartPrepSDKCall(SDKCall_Player);
+	if (!PrepSDKCall_SetFromConf(hConf, SDKConf_Signature, "CCSPlayer::GetPlayerMaxSpeed"))
+		SetFailState("Missing signature: CCSPlayer::GetPlayerMaxSpeed");
+	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+	if ((g_hGetPlayerMaxSpeedCall = EndPrepSDKCall()) == null)
+		SetFailState("Failed to create SDKCall: CCSPlayer::GetPlayerMaxSpeed");
 
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hConf, SDKConf_Virtual, "Weapon_Switch");

@@ -14,10 +14,13 @@ enum struct DRRecord
     char weaponGroup[32];
     int team;
     bool opening;
+    bool targetKnown;
+    char headerName[64];
     bool pistol;
     int frames;
     int freezeFrame;
     float origin[3];
+    float triggerOrigin[3];
     float startAngles[3];
     float target[3];
     bool requiresPrimary;
@@ -271,44 +274,65 @@ bool DR_LoadMapCatalog()
     char map[64], path[PLATFORM_MAX_PATH];
     GetCurrentMap(map, sizeof(map));
     BuildPath(Path_SM, path, sizeof(path), "data/botmimic_catalog/%s.txt", map);
+    bool source = DR_LoadCatalogFile(map, path, false);
+    BuildPath(Path_SM, path, sizeof(path), "data/botmimic_legacy_catalog/%s.txt", map);
+    bool legacy = DR_LoadCatalogFile(map, path, true);
+    PrintToServer("[DemoReplay] catalog_loaded map=%s enabled=%d source=%d legacy=%d", map, g_DRCatalog.Length, source, legacy);
+    return source || legacy;
+}
+
+bool DR_LoadCatalogFile(const char[] map, const char[] path, bool legacy)
+{
     KeyValues catalog = new KeyValues("DemoReplays");
     if (!catalog.ImportFromFile(path))
     {
         delete catalog;
-        PrintToServer("[DemoReplay] catalog_missing map=%s", map);
+        PrintToServer("[DemoReplay] catalog_missing map=%s legacy=%d path=%s", map, legacy, path);
         return false;
     }
     if (catalog.GetNum("schema") != 1 || catalog.GetNum("tickrate") != DR_TICKRATE
         || catalog.GetNum("opening_chance") != DR_OPENING_CHANCE)
     {
         delete catalog;
-        LogError("[DemoReplay] catalog contract mismatch map=%s", map);
+        LogError("[DemoReplay] catalog contract mismatch map=%s path=%s", map, path);
         return false;
     }
-    int rejected;
+    int rejected, added;
     if (catalog.JumpToKey("records") && catalog.GotoFirstSubKey())
         do
         {
             if (catalog.GetNum("enabled") != 1) continue;
             DRRecord record;
-            if (!DR_ReadCatalogRecord(catalog, map, record))
+            if (!DR_ReadCatalogRecord(catalog, map, record, legacy))
             {
                 rejected++;
-                PrintToServer("[DemoReplay] catalog_record_rejected map=%s rec=%s reason=invalid_or_unavailable",
-                    map, record.id);
+                PrintToServer("[DemoReplay] catalog_record_rejected map=%s rec=%s reason=invalid_or_unavailable", map, record.id);
+                continue;
+            }
+            bool duplicate;
+            DRRecord existing;
+            for (int i = 0; i < g_DRCatalog.Length; i++)
+            {
+                g_DRCatalog.GetArray(i, existing, sizeof(DRRecord));
+                if (StrEqual(existing.id, record.id)) { duplicate = true; break; }
+            }
+            if (duplicate)
+            {
+                rejected++;
+                PrintToServer("[DemoReplay] catalog_record_rejected map=%s rec=%s reason=duplicate_id path=%s", map, record.id, path);
                 continue;
             }
             int index = g_DRCatalog.PushArray(record, sizeof(DRRecord));
-            if (!record.opening)
-                g_DRGrenadeIndex[record.team][view_as<int>(record.kind)].Push(index);
+            if (!record.opening) g_DRGrenadeIndex[record.team][view_as<int>(record.kind)].Push(index);
+            added++;
         }
         while (catalog.GotoNextKey());
     delete catalog;
-    PrintToServer("[DemoReplay] catalog_loaded map=%s enabled=%d rejected=%d", map, g_DRCatalog.Length, rejected);
+    PrintToServer("[DemoReplay] catalog_file_loaded map=%s legacy=%d added=%d rejected=%d", map, legacy, added, rejected);
     return true;
 }
 
-bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record)
+bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, bool legacy = false)
 {
     char relative[PLATFORM_MAX_PATH], entryMap[64], expected[PLATFORM_MAX_PATH], kind[16];
     catalog.GetSectionName(record.id, sizeof(record.id));
@@ -318,8 +342,23 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record)
     record.opening = StrContains(record.category, "opening_") == 0;
     record.pistol = StrContains(record.category, "_pistol") != -1;
     record.team = catalog.GetNum("team");
-    Format(expected, sizeof(expected), "botmimic/%s/%s/%s.rec", record.category, map, record.id);
-    if (!DR_ValidID(record.id) || !StrEqual(entryMap, map) || !StrEqual(relative, expected)
+    bool validPath;
+    if (legacy)
+    {
+        Format(expected, sizeof(expected), "botmimic/default/%s/", map);
+        int prefix = strlen(expected), length = strlen(relative);
+        validPath = StrEqual(record.category, "default") && !record.opening
+            && strncmp(relative, expected, prefix) == 0 && length > prefix + 4
+            && StrEqual(relative[length - 4], ".rec")
+            && StrContains(relative[prefix], "/") == -1 && StrContains(relative, "\\") == -1
+            && StrContains(relative, "..") == -1 && StrContains(relative, ":") == -1;
+    }
+    else
+    {
+        Format(expected, sizeof(expected), "botmimic/%s/%s/%s.rec", record.category, map, record.id);
+        validPath = StrEqual(relative, expected);
+    }
+    if (!DR_ValidID(record.id) || !StrEqual(entryMap, map) || !validPath
         || StrContains(record.category, "..") != -1 || StrContains(record.category, "/") != -1
         || StrContains(record.category, "\\") != -1 || (record.team != CS_TEAM_T && record.team != CS_TEAM_CT))
         return false;
@@ -328,7 +367,18 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record)
     catalog.GetString("round_uid", record.sourceRound, sizeof(record.sourceRound));
     catalog.GetString("weapon_group", record.weaponGroup, sizeof(record.weaponGroup));
     catalog.GetVector("origin", record.origin);
-    catalog.GetVector("angles", record.startAngles);
+    BMFileHeader header;
+    if (BotMimic_GetFileHeaders(record.path, header, sizeof(BMFileHeader)) != BM_NoError) return false;
+    float originError = GetVectorDistance(record.origin, header.BMFH_initialPosition, true);
+    if (!(originError >= 0.0 && originError <= 0.0001)) return false;
+    Array_Copy(header.BMFH_initialPosition, record.origin, 3);
+    Array_Copy(header.BMFH_initialAngles, record.startAngles, 3);
+    catalog.GetVector("trigger_origin", record.triggerOrigin, record.origin);
+    float triggerDistance = GetVectorDistance(record.triggerOrigin, record.origin, true);
+    if (!(triggerDistance >= 0.0 && triggerDistance <= DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)) return false;
+    catalog.GetString("header_name", record.headerName, sizeof(record.headerName), record.id);
+    if (!StrEqual(header.BMFH_recordName, record.headerName)) return false;
+    record.targetKnown = catalog.GetNum("target_known", legacy ? 0 : 1) == 1;
     catalog.GetVector("target_center", record.target);
     record.frames = catalog.GetNum("frame_count");
     record.freezeFrame = catalog.GetNum("freeze_end_frame", -1);
@@ -361,8 +411,16 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record)
     if (record.frames <= 0 || (record.opening && (record.sourceRound[0] == '\0'
         || record.freezeFrame < 0 || record.freezeFrame >= record.frames)))
         return false;
+    if (record.frames != header.BMFH_tickCount) return false;
+    if (!record.opening && (record.kind == DR_Smoke || record.kind == DR_Fire))
+    {
+        if (!record.targetKnown && !legacy) return false;
+        for (int axis = 0; axis < 3; axis++)
+            if ((view_as<int>(record.target[axis]) & 0x7F800000) == 0x7F800000) return false;
+    }
     char expectedCategory[64];
-    if (record.opening)
+    if (legacy) strcopy(expectedCategory, sizeof(expectedCategory), "default");
+    else if (record.opening)
         Format(expectedCategory, sizeof(expectedCategory), "opening_%s_%s",
             record.team == CS_TEAM_CT ? "ct" : "t", record.pistol ? "pistol" : "nonpistol");
     else
@@ -632,6 +690,16 @@ int DR_CountWeapon(int client, CSWeaponID weaponID)
     return 0;
 }
 
+CSWeaponID DR_InventoryGrenadeWeapon(int client, CSWeaponID weaponID)
+{
+    if (DR_CountWeapon(client, weaponID) > 0) return weaponID;
+    CSWeaponID alternative = CSWeapon_NONE;
+    if (weaponID == CSWeapon_MOLOTOV) alternative = CSWeapon_INCGRENADE;
+    else if (weaponID == CSWeapon_INCGRENADE) alternative = CSWeapon_MOLOTOV;
+    if (alternative != CSWeapon_NONE && DR_CountWeapon(client, alternative) > 0) return alternative;
+    return weaponID;
+}
+
 
 
 
@@ -658,7 +726,7 @@ bool DR_HoldsGrenadePosition(int client)
     float origin[3];
     GetClientAbsOrigin(client, origin);
     return GetVectorDistance(origin, record.origin, true)
-        < DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS;
+        <= DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS;
 }
 
 
@@ -929,6 +997,8 @@ bool DR_RecordAvailable(DRRecord record)
         && StrEqual(category, record.category)
         && BotMimic_GetFileHeaders(record.path, header, sizeof(BMFileHeader)) == BM_NoError
         && header.BMFH_tickCount > 0 && header.BMFH_tickCount == record.frames
+        && StrEqual(header.BMFH_recordName, record.headerName)
+        && GetVectorDistance(header.BMFH_initialPosition, record.origin, true) <= 0.0001
         && (!record.opening || (record.freezeFrame >= 0 && record.freezeFrame < header.BMFH_tickCount));
 }
 
@@ -953,8 +1023,8 @@ void DR_TryGrenade(int client)
             DRRecord record;
             g_DRCatalog.GetArray(index, record, sizeof(DRRecord));
             float distance = GetVectorDistance(origin, record.origin, true);
-            if ((selected != -1 && distance > selectedDistance) || DR_CountWeapon(client, record.targetWeapon) == 0
-                || DR_EffectBlocked(record.team, record.kind, record.target))
+            if ((selected != -1 && distance > selectedDistance) || DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
+                || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))
                 continue;
             if (!DR_RecordAvailable(record))
             {
@@ -1091,8 +1161,8 @@ void DR_AssignGrenade(int client, int recordIndex)
     DRRecord record;
     g_DRCatalog.GetArray(recordIndex, record, sizeof(DRRecord));
     if (!DR_GrenadePhaseAllowed(client) || !DR_RecordAvailable(record)
-        || DR_CountWeapon(client, record.targetWeapon) == 0
-        || DR_EffectBlocked(record.team, record.kind, record.target))
+        || DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
+        || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))
         return;
     if (g_DREffects == null)
         g_DREffects = new ArrayList(sizeof(DREffect));
@@ -1104,7 +1174,7 @@ void DR_AssignGrenade(int client, int recordIndex)
     effect.team = record.team;
     effect.kind = record.kind;
     effect.phase = DR_EffectSelected;
-    effect.sourceKnown = true;
+    effect.sourceKnown = record.targetKnown;
     effect.projectileRef = INVALID_ENT_REFERENCE;
     effect.infernoRef = INVALID_ENT_REFERENCE;
     strcopy(effect.recordID, sizeof(effect.recordID), record.id);
@@ -1130,8 +1200,17 @@ void DR_AssignGrenade(int client, int recordIndex)
         g_DRRoundSerial, GetClientSerial(client), record.id);
 }
 
+float DR_GrenadeWalkSpeed(int client)
+{
+    if (!DR_IsClient(client) || g_hGetPlayerMaxSpeedCall == null) return 0.0;
+    float maxSpeed = SDKCall(g_hGetPlayerMaxSpeedCall, client);
+    if (maxSpeed <= 0.0 || (view_as<int>(maxSpeed) & 0x7F800000) == 0x7F800000) return 0.0;
+    return maxSpeed * DR_GRENADE_WALK_FACTOR;
+}
+
 bool DR_GrenadeWeaponReady(int client, CSWeaponID weaponID)
 {
+    weaponID = DR_InventoryGrenadeWeapon(client, weaponID);
     if (DR_VisibleEnemy(client))
         return false;
     char alias[64];
@@ -1185,7 +1264,7 @@ void DR_UpdateGrenade(int client)
         DR_StopGrenade(client, "core_catalog");
         return;
     }
-    if (DR_CountWeapon(client, record.targetWeapon) == 0)
+    if (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0)
     {
         DR_CaptureGrenadeProjectile(client);
         int index = DR_FindEffect(g_DRGrenade[client].reservation);
@@ -1203,7 +1282,7 @@ void DR_UpdateGrenade(int client)
             return;
         }
     }
-    if (!g_DRGrenade[client].firstFrame
+    if (!g_DRGrenade[client].firstFrame && record.targetKnown
         && DR_EffectBlocked(record.team, record.kind, record.target, g_DRGrenade[client].reservation))
     {
         DR_StopGrenade(client, "effect_blocked");
@@ -1231,11 +1310,11 @@ void DR_UpdateGrenade(int client)
     GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", velocity);
     velocity[2] = 0.0;
     float distanceSquared = GetVectorDistance(origin, record.origin, true);
-    if (distanceSquared >= DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)
+    if (distanceSquared > DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)
     {
         if (now >= g_DRGrenade[client].nextMoveAt)
         {
-            BotMoveTo(client, record.origin, FASTEST_ROUTE);
+            BotMoveTo(client, record.triggerOrigin, FASTEST_ROUTE);
             g_DRGrenade[client].nextMoveAt = now + 0.35;
         }
         return;
@@ -1246,10 +1325,10 @@ void DR_UpdateGrenade(int client)
     for (int axis = 0; axis < 3; axis++)
         look[axis] = eye[axis] + direction[axis] * 1000.0;
     BotSetLookAt(client, "Use entity", look, PRIORITY_HIGH, 2.0, false, 3.0, false);
-    if (!DR_CanStartGrenade(distanceSquared, GetVectorLength(velocity, true), (GetEntityFlags(client) & FL_ONGROUND) != 0))
+    if (!DR_GrenadeWeaponReady(client, record.targetWeapon)) return;
+    if (!DR_CanStartGrenade(distanceSquared, GetVectorLength(velocity, true), (GetEntityFlags(client) & FL_ONGROUND) != 0, DR_GrenadeWalkSpeed(client)))
         return;
-    bool weaponReady = DR_GrenadeWeaponReady(client, record.targetWeapon);
-    if (weaponReady && view_as<LookAtSpotState>(GetEntData(client, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT)
+    if (view_as<LookAtSpotState>(GetEntData(client, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT)
         DR_StartGrenade(client, g_DRGrenade[client].record);
 }
 
@@ -1263,10 +1342,11 @@ void DR_StartGrenade(int client, int recordIndex)
     velocity[2] = 0.0;
     if (!DR_OwnsGrenade(client) || g_DRGrenade[client].stage != DR_GrenadeStageApproaching
         || !DR_GrenadePhaseAllowed(client, true) || !DR_RecordAvailable(record)
-        || DR_CountWeapon(client, record.targetWeapon) == 0
-        || DR_EffectBlocked(record.team, record.kind, record.target, g_DRGrenade[client].reservation)
+        || DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
+        || !DR_GrenadeWeaponReady(client, record.targetWeapon)
+        || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target, g_DRGrenade[client].reservation))
         || !DR_CanStartGrenade(GetVectorDistance(origin, record.origin, true), GetVectorLength(velocity, true),
-            (GetEntityFlags(client) & FL_ONGROUND) != 0)
+            (GetEntityFlags(client) & FL_ONGROUND) != 0, DR_GrenadeWalkSpeed(client))
         || view_as<LookAtSpotState>(GetEntData(client, g_iBotLookAtSpotStateOffset)) != LOOK_AT_SPOT)
     {
         DR_StopGrenade(client, "start_state_changed");
