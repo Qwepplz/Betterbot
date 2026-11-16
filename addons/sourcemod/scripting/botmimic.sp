@@ -112,10 +112,25 @@ int g_iBotActiveWeapon[MAXPLAYERS+1] = {-1,...};
 bool g_bBotSwitchedWeapon[MAXPLAYERS+1];
 BMPlaybackMode g_PlaybackMode[MAXPLAYERS+1];
 int g_PlaybackSerial[MAXPLAYERS+1];
+int g_PlaybackInstance[MAXPLAYERS+1];
 bool g_FirstFramePending[MAXPLAYERS+1];
 bool g_AlignStartPending[MAXPLAYERS+1];
 bool g_MapEnding;
+bool g_RejectingStart[MAXPLAYERS+1];
+bool g_StopContextActive[MAXPLAYERS+1];
+bool g_StopReachedEnd[MAXPLAYERS+1];
+int g_StopClientSerial[MAXPLAYERS+1];
+int g_StopInstance[MAXPLAYERS+1];
+char g_StopPath[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 CSWeaponID g_InitialRecordedWeapon[MAXPLAYERS+1];
+CSWeaponID g_RecordedWeapon[MAXPLAYERS+1];
+int g_RecordedGrenadeRef[MAXPLAYERS+1];
+bool g_RecordedGrenadeStarted[MAXPLAYERS+1];
+bool g_RecordedGrenadeCommitted[MAXPLAYERS+1];
+int g_RecordedGrenadeInheritedButtons[MAXPLAYERS+1];
+bool g_RecordedGrenadeInputWindow[MAXPLAYERS+1];
+int g_RecordedInputStart[MAXPLAYERS+1];
+bool g_WeaponSelectionPending[MAXPLAYERS+1];
 bool g_bValidTeleportCall[MAXPLAYERS+1];
 BookmarkWhileMimicing g_iBotMimicNextBookmarkTick[MAXPLAYERS+1];
 
@@ -343,12 +358,14 @@ public void OnPluginEnd()
 
 public void OnClientPutInServer(int client)
 {
+    BM_ClearRecordedWeapon(client);
 	if(g_hTeleport != null)
 		DHookEntity(g_hTeleport, false, client);
 }
 
 public void OnClientDisconnect(int client)
 {
+    BM_ClearRecordedWeapon(client);
     g_AlignStartPending[client] = false;
     if (g_hBotMimicsRecord[client] != null)
         StopMimicPlayback(client);
@@ -376,7 +393,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
     }
 	if(g_iBotMimicTick[client] >= g_iBotMimicRecordTickCount[client])
 	{
-		BotMimic_StopPlayerMimic(client);
+		StopMimicPlayback(client, true);
 		return Plugin_Continue;
 	}
 	
@@ -412,7 +429,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
     }
     bool firstFrame = g_FirstFramePending[client];
     bool preserveReadyWeapon = !liveInput && firstFrame && g_AlignStartPending[client];
-    if (firstFrame && iFrame.newWeapon == CSWeapon_NONE)
+    if ((firstFrame || g_WeaponSelectionPending[client]) && iFrame.newWeapon == CSWeapon_NONE)
         iFrame.newWeapon = g_InitialRecordedWeapon[client];
     if (preserveReadyWeapon && iFrame.newWeapon == CSWeapon_KNIFE)
     {
@@ -422,7 +439,10 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
             && GetEntPropFloat(activeWeapon, Prop_Send, "m_fThrowTime") <= 0.0
             && GetEntPropFloat(client, Prop_Send, "m_flNextAttack") <= GetGameTime()
             && GetEntPropFloat(activeWeapon, Prop_Send, "m_flNextPrimaryAttack") <= GetGameTime())
+        {
             iFrame.newWeapon = CSWeapon_NONE;
+            g_RecordedWeapon[client] = BM_WeaponType(activeWeapon);
+        }
     }
 
     if (!liveInput && iFrame.newWeapon == CSWeapon_MOLOTOV
@@ -434,6 +454,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
         && BotMimic_ClientHasWeapon(client, "weapon_molotov"))
         iFrame.newWeapon = CSWeapon_MOLOTOV;
 
+    g_WeaponSelectionPending[client] = false;
     buttons = iFrame.playerButtons;
     if (!liveInput)
         BlockBotDisruptiveAltFire(client, buttons);
@@ -557,7 +578,34 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	if (g_PlaybackSerial[client] != playbackSerial || g_hBotMimicsRecord[client] == null)
         return Plugin_Changed;
 
-    if(iFrame.newWeapon != CSWeapon_NONE)
+    if (iFrame.newWeapon != CSWeapon_NONE)
+    {
+        g_RecordedWeapon[client] = iFrame.newWeapon;
+        g_RecordedGrenadeRef[client] = INVALID_ENT_REFERENCE;
+        g_RecordedGrenadeStarted[client] = false;
+        g_RecordedGrenadeCommitted[client] = false;
+        BM_InitRecordedGrenadeInput(client);
+    }
+    if (BM_IsGrenade(g_RecordedWeapon[client]))
+    {
+        g_bBotSwitchedWeapon[client] = false;
+        // The old active firearm's mode filter must not swallow recorded grenade ATTACK2.
+        buttons = iFrame.playerButtons;
+        bool prepared = BM_PrepareRecordedGrenade(client, g_RecordedWeapon[client], iFrame.playerButtons);
+        if (g_PlaybackSerial[client] != playbackSerial || g_hBotMimicsRecord[client] == null)
+            return Plugin_Changed;
+        if (!g_RecordedGrenadeStarted[client] && !g_RecordedGrenadeInputWindow[client])
+            buttons &= ~(IN_ATTACK | IN_ATTACK2);
+        if (!prepared)
+        {
+            buttons = 0;
+            impulse = 0;
+            vel[0] = vel[1] = vel[2] = 0.0;
+            StopMimicPlayback(client);
+            return Plugin_Changed;
+        }
+    }
+    else if(iFrame.newWeapon != CSWeapon_NONE)
     {
 		char sAlias[64];
 		CS_WeaponIDToAlias(iFrame.newWeapon, sAlias, sizeof(sAlias));
@@ -592,6 +640,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
             && GetEntPropEnt(g_iBotActiveWeapon[client], Prop_Send, "m_hOwnerEntity") == client))
             SDKCall(g_hSwitchWeaponCall, client, g_iBotActiveWeapon[client], 0);
     }
+    if (g_PlaybackSerial[client] != playbackSerial || g_hBotMimicsRecord[client] == null)
+        return Plugin_Changed;
     if (liveInput)
         BlockBotDisruptiveAltFire(client, buttons);
 
@@ -618,6 +668,8 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	}
 	
 
+    if (g_PlaybackSerial[client] != playbackSerial || g_hBotMimicsRecord[client] == null)
+        return Plugin_Changed;
 	g_iBotMimicTick[client]++;
 	
 	if (GetFeatureStatus(FeatureType_Native, "BB_FilterBotReactionButtons") == FeatureStatus_Available)
@@ -770,8 +822,18 @@ public int GoToBookmark(Handle plugin, int numParams)
 	g_PlaybackSerial[client]++;
     g_AlignStartPending[client] = false;
     g_FirstFramePending[client] = false;
+    BM_ClearRecordedWeapon(client);
     g_InitialRecordedWeapon[client] = CSWeapon_NONE;
+    FrameInfo precedingFrame;
+    for (int tick = 0; tick < iBookmark.BKM_frame; tick++)
+    {
+        g_hBotMimicsRecord[client].GetArray(tick, precedingFrame, sizeof(FrameInfo));
+        if (precedingFrame.newWeapon != CSWeapon_NONE)
+            g_InitialRecordedWeapon[client] = precedingFrame.newWeapon;
+    }
+    g_WeaponSelectionPending[client] = true;
     g_bBotSwitchedWeapon[client] = false;
+    g_RecordedInputStart[client] = iBookmark.BKM_frame;
     g_iBotMimicTick[client] = iBookmark.BKM_frame;
 	g_iCurrentAdditionalTeleportIndex[client] = iBookmark.BKM_additionalTeleportTick;
 	
@@ -801,13 +863,41 @@ public int StopPlayerMimic(Handle plugin, int numParams)
     return 1;
 }
 
-void StopMimicPlayback(int client)
+// Internal synchronous query; playback instance is stable across Reset and bookmarks.
+public bool BM_ReadPlaybackContext(int client, const char[] path, bool stopped, int &instance, bool &reachedEnd)
 {
+    instance = 0;
+    reachedEnd = false;
+    if (client < 1 || client > MaxClients || !IsClientInGame(client)) return false;
+    if (stopped)
+    {
+        if (!g_StopContextActive[client] || g_StopClientSerial[client] != GetClientSerial(client)
+            || !StrEqual(g_StopPath[client], path)) return false;
+        instance = g_StopInstance[client];
+        reachedEnd = g_StopReachedEnd[client];
+    }
+    else
+    {
+        if (g_hBotMimicsRecord[client] == null) return false;
+        char activePath[PLATFORM_MAX_PATH];
+        GetFileFromFrameHandle(g_hBotMimicsRecord[client], activePath, sizeof(activePath));
+        if (!StrEqual(activePath, path)) return false;
+        instance = g_PlaybackInstance[client];
+    }
+    return instance != 0;
+}
+
+void StopMimicPlayback(int client, bool reachedEnd = false)
+{
+    int ownerSerial = IsClientInGame(client) ? GetClientSerial(client) : 0;
+    int instance = g_PlaybackInstance[client];
+    g_PlaybackInstance[client] = 0;
     char sPath[PLATFORM_MAX_PATH];
     GetFileFromFrameHandle(g_hBotMimicsRecord[client], sPath, sizeof(sPath));
 
     g_PlaybackSerial[client]++;
     g_PlaybackMode[client] = BMPlayback_Legacy;
+    BM_ClearRecordedWeapon(client);
     g_FirstFramePending[client] = false;
     g_AlignStartPending[client] = false;
     g_InitialRecordedWeapon[client] = CSWeapon_NONE;
@@ -830,12 +920,27 @@ void StopMimicPlayback(int client)
 	char sCategory[64];
 	g_hLoadedRecordsCategory.GetString(sPath, sCategory, sizeof(sCategory));
 	
+    bool previousActive = g_StopContextActive[client], previousEnd = g_StopReachedEnd[client];
+    int previousOwner = g_StopClientSerial[client], previousInstance = g_StopInstance[client];
+    char previousPath[PLATFORM_MAX_PATH];
+    strcopy(previousPath, sizeof(previousPath), g_StopPath[client]);
+    g_StopContextActive[client] = true;
+    g_StopReachedEnd[client] = reachedEnd;
+    g_StopClientSerial[client] = ownerSerial;
+    g_StopInstance[client] = instance;
+    strcopy(g_StopPath[client], sizeof(g_StopPath[]), sPath);
+
 	Call_StartForward(g_hfwdOnPlayerStopsMimicing);
 	Call_PushCell(client);
 	Call_PushString(iFileHeader.FH_recordName);
 	Call_PushString(sCategory);
 	Call_PushString(sPath);
     Call_Finish();
+    g_StopContextActive[client] = previousActive;
+    g_StopReachedEnd[client] = previousEnd;
+    g_StopClientSerial[client] = previousOwner;
+    g_StopInstance[client] = previousInstance;
+    strcopy(g_StopPath[client], sizeof(g_StopPath[]), previousPath);
     ReleaseUnusedFrames(sPath);
 }
 
@@ -874,7 +979,8 @@ public int PlayRecordFromFile(Handle plugin, int numParams)
 	if(!FileExists(sPath))
 		return view_as<int>(BM_FileNotFound);
 	
-	return view_as<int>(PlayRecord(client, sPath));
+	int instance;
+	return view_as<int>(PlayRecord(client, sPath, instance));
 }
 
 public int PlayRecordFromFileEx(Handle plugin, int numParams)
@@ -896,7 +1002,8 @@ public int PlayRecordFromFileEx(Handle plugin, int numParams)
     GetNativeString(2, path, sizeof(path));
     if (!FileExists(path))
         return view_as<int>(BM_FileNotFound);
-    return view_as<int>(PlayRecord(client, path, startFrame, mode, alignStart));
+    int instance;
+    return view_as<int>(PlayRecord(client, path, instance, startFrame, mode, alignStart));
 }
 
 public int PlayRecordByName(Handle plugin, int numParams)
@@ -934,7 +1041,8 @@ public int PlayRecordByName(Handle plugin, int numParams)
 	if(!iRecentTimeStamp || !FileExists(sRecentPath))
 		return view_as<int>(BM_FileNotFound);
 	
-	return view_as<int>(PlayRecord(client, sRecentPath));
+	int instance;
+	return view_as<int>(PlayRecord(client, sRecentPath, instance));
 }
 
 public int ResetPlayback(Handle plugin, int numParams)
@@ -954,6 +1062,7 @@ public int ResetPlayback(Handle plugin, int numParams)
 	
 	g_PlaybackSerial[client]++;
     g_FirstFramePending[client] = true;
+    BM_ClearRecordedWeapon(client);
     g_AlignStartPending[client] = false;
     g_InitialRecordedWeapon[client] = CSWeapon_NONE;
     char path[PLATFORM_MAX_PATH];
@@ -1304,11 +1413,22 @@ public int SortFuncADT_ByEndTime(int index1, int index2, Handle arrayHndl, Handl
 	return header1.FH_recordEndTime - header2.FH_recordEndTime;
 }
 
-BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlaybackMode mode = BMPlayback_Legacy, bool alignStart = false)
+// Paired task caller receives the instance created by this request, even across reentrant callbacks.
+public BMError BM_PlayRecordForTask(int client, const char[] path, int startFrame, bool alignStart, int &instance)
 {
+    instance = 0;
+    if (client < 1 || client > MaxClients || !IsClientInGame(client)) return BM_BadClient;
+    if (strlen(path) >= PLATFORM_MAX_PATH) return BM_BadParameter;
+    if (!FileExists(path)) return BM_FileNotFound;
+    return PlayRecord(client, path, instance, startFrame, BMPlayback_Legacy, alignStart);
+}
+
+BMError PlayRecord(int client, const char[] path, int &instance, int startFrame = 0, BMPlaybackMode mode = BMPlayback_Legacy, bool alignStart = false)
+{
+    instance = 0;
     if (alignStart && startFrame != 0)
         return BM_BadParameter;
-    if (g_MapEnding)
+    if (g_MapEnding || g_RejectingStart[client])
         return BM_BadClient;
     if (startFrame < 0 || (mode != BMPlayback_Legacy && mode != BMPlayback_LiveInput))
         return BM_BadParameter;
@@ -1367,11 +1487,16 @@ BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlayback
         }
     }
     g_PlaybackSerial[client]++;
+    if (g_PlaybackSerial[client] == 0) g_PlaybackSerial[client]++;
     int playbackSerial = g_PlaybackSerial[client];
+    g_PlaybackInstance[client] = instance = playbackSerial;
     g_PlaybackMode[client] = mode;
+    BM_ClearRecordedWeapon(client);
+    g_RecordedWeapon[client] = alignStart ? BM_WeaponType(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon")) : CSWeapon_NONE;
     g_FirstFramePending[client] = true;
     g_AlignStartPending[client] = alignStart;
     g_hBotMimicsRecord[client] = iFileHeader.FH_frames;
+    g_RecordedInputStart[client] = startFrame;
     g_iBotMimicTick[client] = startFrame;
 	g_iBotMimicRecordTickCount[client] = iFileHeader.FH_tickCount;
 	g_iCurrentAdditionalTeleportIndex[client] = 0;
@@ -1436,7 +1561,12 @@ BMError PlayRecord(int client, const char[] path, int startFrame = 0, BMPlayback
 	// Someone doesn't want this guy to play that record.
 	if (result >= Plugin_Handled && g_PlaybackSerial[client] == playbackSerial
         && g_hBotMimicsRecord[client] != null)
+    {
+        // A rejected start's stop forward must not recursively create another rejected start.
+        g_RejectingStart[client] = true;
         StopMimicPlayback(client);
+        g_RejectingStart[client] = false;
+    }
 	
 	return BM_NoError;
 }
@@ -1490,6 +1620,150 @@ void BlockBotDisruptiveAltFire(int client, int &buttons)
 			buttons &= ~IN_ATTACK2;
 		}
 	}
+}
+
+bool BM_IsGrenade(CSWeaponID weapon)
+{
+    return weapon == CSWeapon_HEGRENADE || weapon == CSWeapon_FLASHBANG
+        || weapon == CSWeapon_SMOKEGRENADE || weapon == CSWeapon_MOLOTOV
+        || weapon == CSWeapon_INCGRENADE || weapon == CSWeapon_DECOY;
+}
+
+CSWeaponID BM_WeaponType(int entity)
+{
+    if (entity <= MaxClients || !IsValidEntity(entity))
+        return CSWeapon_NONE;
+    char classname[64];
+    GetEntityClassname(entity, classname, sizeof(classname));
+    if (strncmp(classname, "weapon_", 7) != 0)
+        return CSWeapon_NONE;
+    return CS_AliasToWeaponID(classname[7]);
+}
+
+void BM_ClearRecordedWeapon(int client)
+{
+    g_WeaponSelectionPending[client] = false;
+    g_RecordedWeapon[client] = CSWeapon_NONE;
+    g_RecordedGrenadeRef[client] = INVALID_ENT_REFERENCE;
+    g_RecordedGrenadeStarted[client] = false;
+    g_RecordedGrenadeCommitted[client] = false;
+    g_RecordedGrenadeInheritedButtons[client] = 0;
+    g_RecordedGrenadeInputWindow[client] = false;
+    g_RecordedInputStart[client] = 0;
+}
+
+void BM_InitRecordedGrenadeInput(int client)
+{
+    g_RecordedGrenadeInheritedButtons[client] = 0;
+    g_RecordedGrenadeInputWindow[client] = false;
+    if (!BM_IsGrenade(g_RecordedWeapon[client])) return;
+    FrameInfo frame, previous;
+    int selectedAt = g_iBotMimicTick[client];
+    for (; selectedAt >= 0; selectedAt--)
+    {
+        g_hBotMimicsRecord[client].GetArray(selectedAt, frame, sizeof(FrameInfo));
+        if (frame.newWeapon != CSWeapon_NONE) break;
+    }
+    if (selectedAt < 0 || !BM_IsGrenade(frame.newWeapon)) return;
+    // Weapon expectation may precede this play/seek, but its old input window may not.
+    if (selectedAt < g_RecordedInputStart[client]) selectedAt = g_RecordedInputStart[client];
+    g_hBotMimicsRecord[client].GetArray(selectedAt, frame, sizeof(FrameInfo));
+    int selectedButtons = frame.playerButtons & (IN_ATTACK | IN_ATTACK2);
+    if (selectedAt > 0)
+        g_hBotMimicsRecord[client].GetArray(selectedAt - 1, previous, sizeof(FrameInfo));
+    if (selectedButtons != 0 && (selectedButtons & ~previous.playerButtons) == 0)
+        g_RecordedGrenadeInheritedButtons[client] = selectedButtons;
+    for (int tick = selectedAt; tick <= g_iBotMimicTick[client]; tick++)
+    {
+        g_hBotMimicsRecord[client].GetArray(tick, frame, sizeof(FrameInfo));
+        int inputs = frame.playerButtons & (IN_ATTACK | IN_ATTACK2);
+        if (g_RecordedGrenadeInheritedButtons[client] != 0
+            ? inputs != g_RecordedGrenadeInheritedButtons[client] : inputs != 0)
+            g_RecordedGrenadeInputWindow[client] = true;
+    }
+}
+
+bool BM_PrepareRecordedGrenade(int client, CSWeaponID expectedWeapon, int recordedButtons)
+{
+    int previous = EntRefToEntIndex(g_RecordedGrenadeRef[client]);
+    if (previous > MaxClients && IsValidEntity(previous)
+        && GetEntPropEnt(previous, Prop_Send, "m_hOwnerEntity") == client
+        && BM_WeaponType(previous) == expectedWeapon)
+    {
+        g_RecordedGrenadeStarted[client] = g_RecordedGrenadeStarted[client]
+            || GetEntProp(previous, Prop_Send, "m_bPinPulled") != 0;
+        g_RecordedGrenadeCommitted[client] = g_RecordedGrenadeCommitted[client]
+            || GetEntPropFloat(previous, Prop_Send, "m_fThrowTime") > 0.0;
+    }
+    // A committed throw consumes its inventory entity; never re-equip it.
+    if (g_RecordedGrenadeCommitted[client])
+        return true;
+
+    char alias[64];
+    CS_WeaponIDToAlias(expectedWeapon, alias, sizeof(alias));
+    Format(alias, sizeof(alias), "weapon_%s", alias);
+    int expected = BotMimic_GetClientWeapon(client, alias);
+    bool owned = expected > MaxClients && IsValidEntity(expected)
+        && GetEntPropEnt(expected, Prop_Send, "m_hOwnerEntity") == client
+        && BM_WeaponType(expected) == expectedWeapon;
+    int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+    if (owned)
+    {
+        g_iBotActiveWeapon[client] = expected;
+        g_RecordedGrenadeRef[client] = EntIndexToEntRef(expected);
+        if (active != expected && !g_RecordedGrenadeStarted[client])
+        {
+            int serial = g_PlaybackSerial[client];
+            SDKCall(g_hSwitchWeaponCall, client, expected, 0);
+            if (serial != g_PlaybackSerial[client] || g_hBotMimicsRecord[client] == null)
+                return true;
+            active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+        }
+    }
+    if (owned && active == expected)
+    {
+        g_RecordedGrenadeStarted[client] = g_RecordedGrenadeStarted[client]
+            || GetEntProp(expected, Prop_Send, "m_bPinPulled") != 0;
+        g_RecordedGrenadeCommitted[client] = GetEntPropFloat(expected, Prop_Send, "m_fThrowTime") > 0.0;
+        if (g_RecordedGrenadeCommitted[client]) return true;
+    }
+    int inputs = recordedButtons & (IN_ATTACK | IN_ATTACK2);
+    if (g_RecordedGrenadeInheritedButtons[client] != 0
+        ? inputs != g_RecordedGrenadeInheritedButtons[client] : inputs != 0)
+        g_RecordedGrenadeInputWindow[client] = true;
+    bool ready = owned && active == expected
+        && GetEntPropFloat(client, Prop_Send, "m_flNextAttack") <= GetGameTime()
+        && GetEntPropFloat(expected, Prop_Send, "m_flNextPrimaryAttack") <= GetGameTime();
+    if (!g_RecordedGrenadeInputWindow[client] && !g_RecordedGrenadeStarted[client])
+    {
+        // A key inherited from the previous weapon may be held throughout deployment.
+        // Only apply it once ready; a later release/new press defines the throw window.
+        if (inputs != 0 && ready) g_RecordedGrenadeStarted[client] = true;
+        return true;
+    }
+    if (!g_RecordedGrenadeStarted[client] && inputs == 0)
+    {
+        PrintToServer("[BotMimic] grenade_rejected serial=%d frame=%d expected=%d reason=release_before_pin",
+            g_PlaybackSerial[client], g_iBotMimicTick[client], expectedWeapon);
+        return false;
+    }
+    if (!owned || active != expected)
+    {
+        PrintToServer("[BotMimic] grenade_rejected serial=%d frame=%d expected=%d active=%d reason=weapon_mismatch",
+            g_PlaybackSerial[client], g_iBotMimicTick[client], expectedWeapon, BM_WeaponType(active));
+        return false;
+    }
+    if (!g_RecordedGrenadeStarted[client])
+    {
+        if (!ready)
+        {
+            PrintToServer("[BotMimic] grenade_rejected serial=%d frame=%d expected=%d reason=attack_not_ready",
+                g_PlaybackSerial[client], g_iBotMimicTick[client], expectedWeapon);
+            return false;
+        }
+        g_RecordedGrenadeStarted[client] = true;
+    }
+    return true;
 }
 
 bool BotMimic_ClientHasWeapon(int client, const char[] classname)

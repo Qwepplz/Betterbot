@@ -14,6 +14,10 @@ enum struct DRRecord
     char weaponGroup[32];
     int team;
     bool opening;
+    bool action;
+    int requiredWeaponDefIndex;
+    float lookAt[3];
+    float actionTimestamp;
     bool targetKnown;
     char headerName[64];
     bool pistol;
@@ -36,6 +40,7 @@ enum struct DRClient
     int serial;
     int round;
     int role;
+    int playbackInstance;
     bool consumed;
     bool preparing;
     bool active;
@@ -51,14 +56,25 @@ enum DRGrenadeStage
     DR_GrenadeStagePlaying
 }
 
+enum DRThrowResult
+{
+    DR_NotThrown,
+    DR_CancelledBeforeThrow,
+    DR_ThrowPending,
+    DR_Thrown
+}
+
 enum struct DRGrenadePlayback
 {
     DRGrenadeStage stage;
     bool firstFrame;
+    bool projectileObserved;
+    DRThrowResult result;
     int serial;
     int round;
     int record;
     int reservation;
+    int playbackInstance;
     int equippedWeaponRef;
     float startedAt;
     float assignedAt;
@@ -107,11 +123,13 @@ ArrayList g_DREffects;
 int g_DRNextEffect;
 int g_DRNextProjectile;
 ArrayList g_DRGrenadeIndex[4][4];
+ArrayList g_DRActionIndex[4];
 float g_DRNextGrenadeScan[MAXPLAYERS + 1];
 DRGrenadePlayback g_DRGrenade[MAXPLAYERS + 1];
 DRClient g_DRClient[MAXPLAYERS + 1];
 int g_DRRoundSerial;
 bool g_DRRoundActive;
+bool g_DRTPostPlantBlocked;
 bool g_DRTeamRolled[4];
 bool g_DRTeamAccepted[4];
 bool g_DRTeamStarted[4];
@@ -138,9 +156,11 @@ bool DR_MatchesOpeningPlayback(int client)
     if (role < 0 || role >= g_DRCatalog.Length) return false;
     DRRecord record;
     g_DRCatalog.GetArray(role, record, sizeof(DRRecord));
-    char path[PLATFORM_MAX_PATH];
-    BotMimic_GetRecordPlayerMimics(client, path, sizeof(path));
-    return StrEqual(path, record.path);
+    int instance;
+    bool reachedEnd;
+    return g_DRClient[client].playbackInstance != 0
+        && DR_ReadPlaybackContext(client, record.path, false, instance, reachedEnd)
+        && instance == g_DRClient[client].playbackInstance;
 }
 
 void DR_ClearOpeningTeam(int team, const char[] reason)
@@ -186,6 +206,7 @@ void DR_StopClient(int client, const char[] reason, bool stopMimic = true)
         team = record.team;
     }
     g_DRClient[client].active = false;
+    g_DRClient[client].playbackInstance = 0;
     g_DRClient[client].preparing = false;
     g_DRClient[client].role = -1;
     g_DRClient[client].firstFrame = false;
@@ -218,6 +239,7 @@ void DR_CheckOpeningFinished(int team)
 
 void DR_OnRoundStart()
 {
+    g_DRRoundActive = false;
     DR_ResetRound();
     g_DRRoundSerial++;
     g_DRRoundActive = true;
@@ -235,6 +257,7 @@ void DR_OnRoundStart()
         g_DRClient[client].serial = IsClientInGame(client) ? GetClientSerial(client) : 0;
         g_DRClient[client].round = g_DRRoundSerial;
     }
+    g_DRTPostPlantBlocked = false;
 }
 
 void DR_OnRoundEnd()
@@ -245,14 +268,41 @@ void DR_OnRoundEnd()
     DR_ResetRound();
 }
 
+bool DR_TReplayBlocked(int client)
+{
+    if (client < 1 || client > MaxClients || !IsClientInGame(client) || GetClientTeam(client) != CS_TEAM_T)
+        return false;
+    if (g_bBombPlanted || GameRules_GetProp("m_bBombPlanted") != 0)
+        g_DRTPostPlantBlocked = true;
+    return g_DRTPostPlantBlocked;
+}
+
+void DR_BlockTReplays()
+{
+    g_DRTPostPlantBlocked = true;
+    DR_ClearOpeningTeam(CS_TEAM_T, "bomb_planted");
+    g_DRTeamRolled[CS_TEAM_T] = true;
+    g_DRTeamAccepted[CS_TEAM_T] = false;
+    g_DRTeamStarted[CS_TEAM_T] = false;
+    g_DRTeamSource[CS_TEAM_T][0] = '\0';
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (!IsClientInGame(client) || GetClientTeam(client) != CS_TEAM_T) continue;
+        DR_StopClient(client, "bomb_planted");
+        DR_StopGrenade(client, "bomb_planted");
+        if (BotMimic_IsPlayerMimicing(client))
+            BotMimic_StopPlayerMimic(client);
+    }
+}
+
 bool DR_FormalRound()
 {
     return g_DRRoundActive && !IsWarmupPeriod() && Get5_GetGameState() == Get5State_Live;
 }
 
-bool DR_ValidID(const char[] id)
+bool DR_ValidID(const char[] id, bool action = false)
 {
-    if (strlen(id) != 34 || id[1] != '_' || (id[0] != 'o' && id[0] != 'g'))
+    if (strlen(id) != 34 || id[1] != '_' || (action ? id[0] != 'a' : (id[0] != 'o' && id[0] != 'g')))
         return false;
     for (int i = 2; i < 34; i++)
         if (!((id[i] >= '0' && id[i] <= '9') || (id[i] >= 'a' && id[i] <= 'f')))
@@ -266,11 +316,15 @@ bool DR_LoadMapCatalog()
     delete g_DRCatalog;
     g_DRCatalog = new ArrayList(sizeof(DRRecord));
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
+    {
+        delete g_DRActionIndex[team];
+        g_DRActionIndex[team] = new ArrayList();
         for (int kind = 0; kind < 4; kind++)
         {
             delete g_DRGrenadeIndex[team][kind];
             g_DRGrenadeIndex[team][kind] = new ArrayList();
         }
+    }
     char map[64], path[PLATFORM_MAX_PATH];
     GetCurrentMap(map, sizeof(map));
     BuildPath(Path_SM, path, sizeof(path), "data/botmimic_catalog/%s.txt", map);
@@ -323,7 +377,8 @@ bool DR_LoadCatalogFile(const char[] map, const char[] path, bool legacy)
                 continue;
             }
             int index = g_DRCatalog.PushArray(record, sizeof(DRRecord));
-            if (!record.opening) g_DRGrenadeIndex[record.team][view_as<int>(record.kind)].Push(index);
+            if (record.action) g_DRActionIndex[record.team].Push(index);
+            else if (!record.opening) g_DRGrenadeIndex[record.team][view_as<int>(record.kind)].Push(index);
             added++;
         }
         while (catalog.GotoNextKey());
@@ -342,6 +397,8 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
     record.opening = StrContains(record.category, "opening_") == 0;
     record.pistol = StrContains(record.category, "_pistol") != -1;
     record.team = catalog.GetNum("team");
+    catalog.GetString("kind", kind, sizeof(kind));
+    record.action = legacy && StrEqual(kind, "action");
     bool validPath;
     if (legacy)
     {
@@ -358,7 +415,7 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
         Format(expected, sizeof(expected), "botmimic/%s/%s/%s.rec", record.category, map, record.id);
         validPath = StrEqual(relative, expected);
     }
-    if (!DR_ValidID(record.id) || !StrEqual(entryMap, map) || !validPath
+    if (!DR_ValidID(record.id, record.action) || !StrEqual(entryMap, map) || !validPath
         || StrContains(record.category, "..") != -1 || StrContains(record.category, "/") != -1
         || StrContains(record.category, "\\") != -1 || (record.team != CS_TEAM_T && record.team != CS_TEAM_CT))
         return false;
@@ -375,7 +432,8 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
     Array_Copy(header.BMFH_initialAngles, record.startAngles, 3);
     catalog.GetVector("trigger_origin", record.triggerOrigin, record.origin);
     float triggerDistance = GetVectorDistance(record.triggerOrigin, record.origin, true);
-    if (!(triggerDistance >= 0.0 && triggerDistance <= DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)) return false;
+    if (!(triggerDistance >= 0.0) || (!record.action
+        && triggerDistance > DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)) return false;
     catalog.GetString("header_name", record.headerName, sizeof(record.headerName), record.id);
     if (!StrEqual(header.BMFH_recordName, record.headerName)) return false;
     record.targetKnown = catalog.GetNum("target_known", legacy ? 0 : 1) == 1;
@@ -388,7 +446,7 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
     else if (StrEqual(kind, "flash")) record.kind = DR_Flash;
     else if (StrEqual(kind, "he")) record.kind = DR_HE;
     else if (StrEqual(kind, "fire")) record.kind = DR_Fire;
-    else if (!record.opening) return false;
+    else if (!record.opening && !record.action) return false;
     record.fireWeapon = record.team == CS_TEAM_CT ? CSWeapon_INCGRENADE : CSWeapon_MOLOTOV;
     if (catalog.JumpToKey("weapons"))
     {
@@ -412,7 +470,7 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
         || record.freezeFrame < 0 || record.freezeFrame >= record.frames)))
         return false;
     if (record.frames != header.BMFH_tickCount) return false;
-    if (!record.opening && (record.kind == DR_Smoke || record.kind == DR_Fire))
+    if (!record.opening && !record.action && (record.kind == DR_Smoke || record.kind == DR_Fire))
     {
         if (!record.targetKnown && !legacy) return false;
         for (int axis = 0; axis < 3; axis++)
@@ -426,7 +484,7 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
     else
         Format(expectedCategory, sizeof(expectedCategory), "grenade_%s_%s",
             record.team == CS_TEAM_CT ? "ct" : "t", kind);
-    if (!StrEqual(record.category, expectedCategory) || record.id[0] != (record.opening ? 'o' : 'g'))
+    if (!StrEqual(record.category, expectedCategory) || record.id[0] != (record.action ? 'a' : record.opening ? 'o' : 'g'))
         return false;
     int total;
     for (int type = 0; type < 4; type++)
@@ -436,7 +494,24 @@ bool DR_ReadCatalogRecord(KeyValues catalog, const char[] map, DRRecord record, 
         total += record.grenades[type];
     }
     if (total > 4) return false;
-    if (!record.opening && record.targetWeapon != DR_GrenadeWeapon(record.kind, record))
+    if (record.action)
+    {
+        record.requiredWeaponDefIndex = catalog.GetNum("required_weapon_defindex");
+        char look[128];
+        catalog.GetString("lookat", look, sizeof(look));
+        catalog.GetVector("lookat", record.lookAt);
+        if (record.team != CS_TEAM_T || (record.requiredWeaponDefIndex != 4 && record.requiredWeaponDefIndex != 7)
+            || look[0] == '\0' || !StrEqual(record.weaponGroup, "action")
+            || record.targetWeapon != CSWeapon_NONE || record.targetKnown || total != 0
+            || record.requiresPrimary || record.requiresC4) return false;
+        char components[3][32];
+        if (ExplodeString(look, " ", components, 3, 32) != 3) return false;
+        for (int axis = 0; axis < 3; axis++)
+            if (StringToFloatEx(components[axis], record.lookAt[axis]) != strlen(components[axis])
+                || (view_as<int>(record.lookAt[axis]) & 0x7F800000) == 0x7F800000
+                || (view_as<int>(record.triggerOrigin[axis]) & 0x7F800000) == 0x7F800000) return false;
+    }
+    if (!record.opening && !record.action && record.targetWeapon != DR_GrenadeWeapon(record.kind, record))
         return false;
     return true;
 }
@@ -448,7 +523,7 @@ public void DR_LoadCatalogFrame(any data)
 
 bool DR_EligibleOpeningClient(int client)
 {
-    return DR_IsClient(client) && !g_DRClient[client].consumed && !g_DRClient[client].active
+    return DR_IsClient(client) && !DR_TReplayBlocked(client) && !g_DRClient[client].consumed && !g_DRClient[client].active
         && !BotMimic_IsPlayerMimicing(client) && GetTask(client) != PLANT_BOMB
         && GetTask(client) != GUARD_TICKING_BOMB;
 }
@@ -525,7 +600,8 @@ int DR_FindOpeningClient(int team, DRRecord role, const bool used[MAXPLAYERS + 1
 
 void DR_AssignOpening(int team)
 {
-    if (!DR_FormalRound() || !g_bFreezetimeEnd || g_bBombPlanted || g_DRCatalog == null || g_DRTeamRolled[team])
+    if (!DR_FormalRound() || !g_bFreezetimeEnd || g_bBombPlanted || g_DRCatalog == null || g_DRTeamRolled[team]
+        || (team == CS_TEAM_T && g_DRTPostPlantBlocked))
         return;
     bool pistol = DR_IsPistolRound(GameRules_GetProp("m_totalRoundsPlayed"), g_cvMaxRounds.IntValue,
         GameRules_GetProp("m_nOvertimePlaying") != 0);
@@ -572,6 +648,7 @@ void DR_AssignOpening(int team)
             }
             used[client] = true;
             g_DRClient[client].role = i;
+            g_DRClient[client].playbackInstance = 0;
             g_DRClient[client].preparing = true;
             g_DRClient[client].consumed = true;
             g_DRClient[client].startedAt = GetGameTime();
@@ -593,7 +670,7 @@ bool DR_HandleOpening(int client, bool enemyVisible)
     }
     DRRecord record;
     g_DRCatalog.GetArray(role, record, sizeof(DRRecord));
-    if (!DR_IsClient(client) || !DR_FormalRound() || g_bBombPlanted || GetClientTeam(client) != record.team)
+    if (!DR_IsClient(client) || DR_TReplayBlocked(client) || !DR_FormalRound() || g_bBombPlanted || GetClientTeam(client) != record.team)
     {
         DR_ClearOpeningTeam(record.team, "opening_lifecycle");
         return false;
@@ -725,6 +802,7 @@ bool DR_HoldsGrenadePosition(int client)
     g_DRCatalog.GetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
     float origin[3];
     GetClientAbsOrigin(client, origin);
+    if (record.action) return GetVectorDistance(origin, record.triggerOrigin, true) < 25.0 * 25.0;
     return GetVectorDistance(origin, record.origin, true)
         <= DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS;
 }
@@ -744,6 +822,11 @@ bool DR_Paused()
 
 void DR_TryStartOpening(int client)
 {
+    if (DR_TReplayBlocked(client))
+    {
+        DR_ClearOpeningTeam(CS_TEAM_T, "postplant_blocked");
+        return;
+    }
     if (!g_DRClient[client].preparing || !DR_FormalRound() || DR_Paused())
         return;
     int team = GetClientTeam(client);
@@ -755,7 +838,7 @@ void DR_TryStartOpening(int client)
         DRRecord record;
         g_DRCatalog.GetArray(role, record, sizeof(DRRecord));
         if (record.team != team) continue;
-        if (!DR_IsClient(member) || !DR_OpeningEquipmentMatches(member, record))
+        if (!DR_IsClient(member) || DR_TReplayBlocked(member) || !DR_OpeningEquipmentMatches(member, record))
         {
             DR_ClearOpeningTeam(team, "opening_member_lost");
             return;
@@ -776,11 +859,21 @@ void DR_TryStartOpening(int client)
         DRRecord record;
         g_DRCatalog.GetArray(role, record, sizeof(DRRecord));
         if (record.team != team) continue;
+        if (DR_TReplayBlocked(member))
+        {
+            DR_ClearOpeningTeam(team, "postplant_blocked");
+            return;
+        }
         g_DRClient[member].active = true;
         g_DRClient[member].preparing = false;
         g_DRClient[member].firstFrame = false;
         g_DRClient[member].startedAt = GetGameTime();
-        BMError result = BotMimic_PlayRecordFromFileEx(member, record.path, record.freezeFrame, BMPlayback_Legacy);
+        int serial = g_DRClient[member].serial, round = g_DRClient[member].round, instance;
+        BMError result = DR_PlayRecordForTask(member, record.path, record.freezeFrame, false, instance);
+        if (!g_DRClient[member].active || g_DRClient[member].serial != serial
+            || g_DRClient[member].round != round || g_DRClient[member].role != role)
+            return;
+        g_DRClient[member].playbackInstance = instance;
         PrintToServer("[DemoReplay] opening_start_requested round=%d serial=%d rec=%s start=%d result=%d",
             g_DRRoundSerial, GetClientSerial(member), record.id, record.freezeFrame, result);
         if (result != BM_NoError || !DR_MatchesOpeningPlayback(member))
@@ -860,7 +953,7 @@ bool DR_VisibleEnemy(int client)
 Action DR_BeforeFrame(int client)
 {
     if (!DR_OwnsOpening(client)) return Plugin_Continue;
-    if (!DR_IsClient(client) || !DR_FormalRound() || g_bBombPlanted)
+    if (!DR_IsClient(client) || DR_TReplayBlocked(client) || !DR_FormalRound() || g_bBombPlanted)
     {
         DR_OpeningLifecycle(client, "opening_lifecycle");
         return Plugin_Stop;
@@ -868,8 +961,14 @@ Action DR_BeforeFrame(int client)
     return DR_Paused() ? Plugin_Changed : Plugin_Continue;
 }
 
+public Action BotMimic_OnPlayerStartsMimicing(int client, char[] name, char[] category, char[] path)
+{
+    return DR_TReplayBlocked(client) ? Plugin_Handled : Plugin_Continue;
+}
+
 public Action BotMimic_OnPlayerMimicFrame(int client, int frameIndex, const float recordedOrigin[3], const float movement[3])
 {
+    if (DR_TReplayBlocked(client)) return Plugin_Stop;
     if (g_DRGrenade[client].stage == DR_GrenadeStagePlaying)
     {
         if (!DR_MatchesGrenadePlayback(client))
@@ -888,6 +987,13 @@ public Action BotMimic_OnPlayerMimicFrame(int client, int frameIndex, const floa
 
 public void BotMimic_OnPlayerMimicLoops(int client)
 {
+    if (DR_TReplayBlocked(client))
+    {
+        DR_StopClient(client, "postplant_blocked");
+        DR_StopGrenade(client, "postplant_blocked");
+        if (BotMimic_IsPlayerMimicing(client)) BotMimic_StopPlayerMimic(client);
+        return;
+    }
     if (DR_MatchesGrenadePlayback(client) && !g_DRGrenade[client].firstFrame)
     {
         g_DRGrenade[client].firstFrame = true;
@@ -901,13 +1007,68 @@ public void BotMimic_OnPlayerMimicLoops(int client)
     }
 }
 
+bool DR_ReadPlaybackContext(int client, const char[] path, bool stopped, int &instance, bool &reachedEnd)
+{
+    instance = 0;
+    reachedEnd = false;
+    Handle core = FindPluginByFile("botmimic.smx");
+    if (core == null) return false;
+    Function query = GetFunctionByName(core, "BM_ReadPlaybackContext");
+    if (query == INVALID_FUNCTION) return false;
+    bool valid;
+    Call_StartFunction(core, query);
+    Call_PushCell(client);
+    Call_PushString(path);
+    Call_PushCell(stopped);
+    Call_PushCellRef(instance);
+    Call_PushCellRef(reachedEnd);
+    int error = Call_Finish(valid);
+    return error == SP_ERROR_NONE && valid;
+}
+
+BMError DR_PlayRecordForTask(int client, const char[] path, int startFrame, bool alignStart, int &instance)
+{
+    instance = 0;
+    Handle core = FindPluginByFile("botmimic.smx");
+    if (core == null) return BM_BadClient;
+    Function play = GetFunctionByName(core, "BM_PlayRecordForTask");
+    if (play == INVALID_FUNCTION) return BM_BadParameter;
+    BMError result;
+    Call_StartFunction(core, play);
+    Call_PushCell(client);
+    Call_PushString(path);
+    Call_PushCell(startFrame);
+    Call_PushCell(alignStart);
+    Call_PushCellRef(instance);
+    int error = Call_Finish(result);
+    return error == SP_ERROR_NONE ? result : BM_BadParameter;
+}
+
 public void BotMimic_OnPlayerStopsMimicing(int client, char[] name, char[] category, char[] path)
 {
-    DR_StopGrenade(client, "playback_stopped", false);
-    if (g_DRClient[client].active)
+    int instance;
+    bool reachedEnd;
+    if (client < 1 || client > MaxClients || g_DRCatalog == null
+        || !DR_ReadPlaybackContext(client, path, true, instance, reachedEnd)) return;
+    if (DR_OwnsGrenade(client) && g_DRGrenade[client].stage == DR_GrenadeStagePlaying
+        && g_DRGrenade[client].playbackInstance == instance)
     {
-        if (!DR_IsClient(client)) DR_OpeningLifecycle(client, "client_lifecycle");
-        else DR_StopClient(client, "playback_stopped", false);
+        DRRecord record;
+        g_DRCatalog.GetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
+        if (StrEqual(path, record.path))
+            DR_StopGrenade(client, reachedEnd ? "playback_eof" : "playback_cancelled", false, instance);
+    }
+    int role = g_DRClient[client].role;
+    if (DR_OwnsOpening(client) && g_DRClient[client].playbackInstance == instance
+        && role >= 0 && role < g_DRCatalog.Length)
+    {
+        DRRecord record;
+        g_DRCatalog.GetArray(role, record, sizeof(DRRecord));
+        if (StrEqual(path, record.path))
+        {
+            if (!DR_IsClient(client)) DR_OpeningLifecycle(client, "client_lifecycle");
+            else DR_StopClient(client, reachedEnd ? "playback_eof" : "playback_cancelled", false);
+        }
     }
 }
 
@@ -917,6 +1078,8 @@ void DR_ResetClient(int client, bool disconnect = false)
         return;
     DR_OpeningLifecycle(client, "client_lifecycle");
     DR_StopGrenade(client, "client_lifecycle");
+    if (DR_TReplayBlocked(client) && BotMimic_IsPlayerMimicing(client))
+        BotMimic_StopPlayerMimic(client);
     int serial = !disconnect && IsClientInGame(client) ? GetClientSerial(client) : 0;
     if (serial != g_DRClient[client].serial || g_DRClient[client].round != g_DRRoundSerial)
         g_DRClient[client].consumed = false;
@@ -936,7 +1099,7 @@ bool DR_GrenadeIdle(int client)
 
 bool DR_GrenadePhaseAllowed(int client, bool continuing = false)
 {
-    if (!DR_IsClient(client) || !DR_FormalRound() || !g_bFreezetimeEnd || DR_Paused()
+    if (!DR_IsClient(client) || DR_TReplayBlocked(client) || !DR_FormalRound() || !g_bFreezetimeEnd || DR_Paused()
         || (DR_IsReserved(client) && !DR_OwnsGrenade(client))
         || ShouldSaveInsteadOfRetake(client))
         return false;
@@ -982,9 +1145,11 @@ bool DR_MatchesGrenadePlayback(int client)
         return false;
     DRRecord record;
     g_DRCatalog.GetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
-    char path[PLATFORM_MAX_PATH];
-    BotMimic_GetRecordPlayerMimics(client, path, sizeof(path));
-    return StrEqual(path, record.path);
+    int instance;
+    bool reachedEnd;
+    return g_DRGrenade[client].playbackInstance != 0
+        && DR_ReadPlaybackContext(client, record.path, false, instance, reachedEnd)
+        && instance == g_DRGrenade[client].playbackInstance;
 }
 
 bool DR_RecordAvailable(DRRecord record)
@@ -1002,9 +1167,29 @@ bool DR_RecordAvailable(DRRecord record)
         && (!record.opening || (record.freezeFrame >= 0 && record.freezeFrame < header.BMFH_tickCount));
 }
 
+bool DR_ActionEligible(int client, DRRecord record, float now)
+{
+    if (!record.action || !DR_IsClient(client) || DR_TReplayBlocked(client) || !DR_GrenadePhaseAllowed(client, DR_OwnsGrenade(client))
+        || g_bBombPlanted || GetClientTeam(client) != record.team)
+        return false;
+    int weapon = eItems_FindWeaponByDefIndex(client, record.requiredWeaponDefIndex);
+    if (!IsValidEntity(weapon) || GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity") != client)
+        return false;
+    if (DR_OwnsGrenade(client))
+    {
+        DRRecord assigned;
+        g_DRCatalog.GetArray(g_DRGrenade[client].record, assigned, sizeof(DRRecord));
+        if (StrEqual(assigned.id, record.id)) return true;
+    }
+    float origin[3];
+    GetClientAbsOrigin(client, origin);
+    return now - record.actionTimestamp >= 25.0
+        && GetVectorDistance(origin, record.triggerOrigin, true) <= 250.0 * 250.0;
+}
+
 void DR_TryGrenade(int client)
 {
-    if (!DR_IsClient(client) || g_DRCatalog == null || g_DRGrenade[client].stage != DR_GrenadeStageIdle)
+    if (!DR_IsClient(client) || DR_TReplayBlocked(client) || g_DRCatalog == null || g_DRGrenade[client].stage != DR_GrenadeStageIdle)
         return;
     float now = GetGameTime();
     if (now < g_DRNextGrenadeScan[client] || !DR_GrenadePhaseAllowed(client)) return;
@@ -1013,18 +1198,19 @@ void DR_TryGrenade(int client)
     float origin[3], selectedDistance;
     char selectedID[64];
     GetClientAbsOrigin(client, origin);
-    for (int kind = 0; kind < 4; kind++)
+    for (int kind = 0; kind <= 4; kind++)
     {
-        ArrayList candidates = g_DRGrenadeIndex[team][kind];
+        ArrayList candidates = kind == 4 ? g_DRActionIndex[team] : g_DRGrenadeIndex[team][kind];
         if (candidates == null) continue;
         for (int i = 0; i < candidates.Length; i++)
         {
             int index = candidates.Get(i);
             DRRecord record;
             g_DRCatalog.GetArray(index, record, sizeof(DRRecord));
-            float distance = GetVectorDistance(origin, record.origin, true);
-            if ((selected != -1 && distance > selectedDistance) || DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
-                || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))
+            float distance = GetVectorDistance(origin, record.action ? record.triggerOrigin : record.origin, true);
+            if (record.action && !DR_ActionEligible(client, record, now)) continue;
+            if ((selected != -1 && distance > selectedDistance) || (!record.action && (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
+                || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))))
                 continue;
             if (!DR_RecordAvailable(record))
             {
@@ -1081,7 +1267,7 @@ bool DR_EffectBlocked(int team, DRGrenadeKind kind, const float target[3], int i
     return false;
 }
 
-void DR_CaptureEffectProjectile(int index)
+void DR_CaptureEffectProjectile(int index, int stoppedInstance = 0)
 {
     if (index == -1 || !g_DRRoundActive)
         return;
@@ -1099,33 +1285,58 @@ void DR_CaptureEffectProjectile(int index)
         if ((owner > 0 && GetEntPropEnt(entity, Prop_Send, "m_hThrower") == owner)
             || (effect.ownerHandle != 0 && effect.ownerHandle != INVALID_ENT_REFERENCE
                 && GetEntProp(entity, Prop_Send, "m_hThrower") == effect.ownerHandle))
-            DR_OnProjectileCreated(entity);
+            DR_OnProjectileCreated(entity, stoppedInstance);
 }
 
-void DR_CaptureGrenadeProjectile(int client)
+void DR_CaptureGrenadeProjectile(int client, int stoppedInstance = 0)
 {
     if (!DR_OwnsGrenade(client) || g_DRGrenade[client].stage != DR_GrenadeStagePlaying)
         return;
-    DR_CaptureEffectProjectile(DR_FindEffect(g_DRGrenade[client].reservation));
+    DR_CaptureEffectProjectile(DR_FindEffect(g_DRGrenade[client].reservation), stoppedInstance);
 }
 
-void DR_StopGrenade(int client, const char[] reason, bool stopMimic = true)
+void DR_StopGrenade(int client, const char[] reason, bool stopMimic = true, int stoppedInstance = 0)
 {
     if (client < 1 || client > MaxClients || g_DRGrenade[client].stage == DR_GrenadeStageIdle)
         return;
+    DRRecord record;
+    g_DRCatalog.GetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
+    if (record.action && !StrEqual(reason, "playback_eof"))
+    {
+        record.actionTimestamp = GetGameTime();
+        g_DRCatalog.SetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
+    }
     bool stopPlayback = stopMimic && DR_MatchesGrenadePlayback(client);
     int equippedWeaponRef = g_DRGrenade[client].equippedWeaponRef;
+    int activeWeapon = DR_OwnsGrenade(client) ? GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") : -1;
+    int activeRef = activeWeapon > MaxClients && IsValidEntity(activeWeapon) ? EntIndexToEntRef(activeWeapon) : INVALID_ENT_REFERENCE;
+    bool knife = activeWeapon > MaxClients && IsValidEntity(activeWeapon)
+        && eItems_GetWeaponSlotByWeapon(activeWeapon) == CS_SLOT_KNIFE;
     bool restoreWeapon = DR_OwnsGrenade(client) && DR_IsClient(client) && !DR_OwnsOpening(client)
         && equippedWeaponRef != INVALID_ENT_REFERENCE
-        && GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == EntRefToEntIndex(equippedWeaponRef)
+        && (activeRef == equippedWeaponRef || knife)
         && DR_GrenadeIdle(client) && (!BotMimic_IsPlayerMimicing(client) || stopPlayback);
-    int activeWeapon = DR_OwnsGrenade(client) ? GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") : -1;
-    bool pendingAction = IsValidEntity(activeWeapon) && HasEntProp(activeWeapon, Prop_Send, "m_bPinPulled")
+    bool pendingAction = !record.action && IsValidEntity(activeWeapon) && HasEntProp(activeWeapon, Prop_Send, "m_bPinPulled")
         && (!BotMimic_IsPlayerMimicing(client) || stopPlayback || !stopMimic)
         && (stopPlayback || EntIndexToEntRef(activeWeapon) == equippedWeaponRef) && !DR_GrenadeIdle(client);
-    DR_CaptureGrenadeProjectile(client);
+    DR_CaptureGrenadeProjectile(client, stoppedInstance);
     DRGrenadeStage stage = g_DRGrenade[client].stage;
+    int serial = g_DRGrenade[client].serial, round = g_DRGrenade[client].round;
+    int reservation = g_DRGrenade[client].reservation;
+    g_DRGrenade[client].result = g_DRGrenade[client].projectileObserved ? DR_Thrown
+        : pendingAction ? DR_ThrowPending
+        : StrEqual(reason, "playback_eof") ? DR_NotThrown : DR_CancelledBeforeThrow;
+    char result[32];
+    switch (g_DRGrenade[client].result)
+    {
+        case DR_Thrown: strcopy(result, sizeof(result), "thrown");
+        case DR_ThrowPending: strcopy(result, sizeof(result), "pending");
+        case DR_CancelledBeforeThrow: strcopy(result, sizeof(result), "cancelled_before_throw");
+        default: strcopy(result, sizeof(result), "not_thrown");
+    }
+    if (record.action) strcopy(result, sizeof(result), "action");
     g_DRGrenade[client].stage = DR_GrenadeStageIdle;
+    g_DRGrenade[client].playbackInstance = 0;
     g_DRGrenade[client].equippedWeaponRef = INVALID_ENT_REFERENCE;
     int index = DR_FindEffect(g_DRGrenade[client].reservation);
     if (index != -1)
@@ -1148,12 +1359,14 @@ void DR_StopGrenade(int client, const char[] reason, bool stopMimic = true)
     }
     if (stopPlayback)
         BotMimic_StopPlayerMimic(client);
-    if (restoreWeapon && DR_IsClient(client) && !BotMimic_IsPlayerMimicing(client)
-        && GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == EntRefToEntIndex(equippedWeaponRef)
+    if (restoreWeapon && DR_IsClient(client) && GetClientSerial(client) == serial && round == g_DRRoundSerial
+        && g_DRGrenade[client].stage == DR_GrenadeStageIdle && g_DRGrenade[client].reservation == reservation
+        && !DR_OwnsOpening(client) && !BotMimic_IsPlayerMimicing(client)
+        && GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == EntRefToEntIndex(activeRef)
         && DR_GrenadeIdle(client))
         BotEquipBestWeapon(client, true);
-    PrintToServer("[DemoReplay] grenade_stop round=%d serial=%d reservation=%d stage=%d reason=%s",
-        g_DRRoundSerial, g_DRGrenade[client].serial, g_DRGrenade[client].reservation, stage, reason);
+    PrintToServer("[DemoReplay] grenade_stop round=%d serial=%d reservation=%d stage=%d reason=%s result=%s",
+        round, serial, reservation, stage, reason, result);
 }
 
 void DR_AssignGrenade(int client, int recordIndex)
@@ -1161,41 +1374,47 @@ void DR_AssignGrenade(int client, int recordIndex)
     DRRecord record;
     g_DRCatalog.GetArray(recordIndex, record, sizeof(DRRecord));
     if (!DR_GrenadePhaseAllowed(client) || !DR_RecordAvailable(record)
-        || DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
-        || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))
+        || (record.action ? !DR_ActionEligible(client, record, GetGameTime())
+            : (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
+                || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))))
         return;
-    if (g_DREffects == null)
-        g_DREffects = new ArrayList(sizeof(DREffect));
-    DREffect effect;
-    effect.id = ++g_DRNextEffect;
-    effect.live = true;
-    effect.round = g_DRRoundSerial;
-    effect.ownerSerial = GetClientSerial(client);
-    effect.team = record.team;
-    effect.kind = record.kind;
-    effect.phase = DR_EffectSelected;
-    effect.sourceKnown = record.targetKnown;
-    effect.projectileRef = INVALID_ENT_REFERENCE;
-    effect.infernoRef = INVALID_ENT_REFERENCE;
-    strcopy(effect.recordID, sizeof(effect.recordID), record.id);
-    for (int axis = 0; axis < 3; axis++)
-        effect.target[axis] = record.target[axis];
-    g_DREffects.PushArray(effect, sizeof(DREffect));
+    int reservation = ++g_DRNextEffect;
+    if (!record.action)
+    {
+        if (g_DREffects == null) g_DREffects = new ArrayList(sizeof(DREffect));
+        DREffect effect;
+        effect.id = reservation;
+        effect.live = true;
+        effect.round = g_DRRoundSerial;
+        effect.ownerSerial = GetClientSerial(client);
+        effect.team = record.team;
+        effect.kind = record.kind;
+        effect.phase = DR_EffectSelected;
+        effect.sourceKnown = record.targetKnown;
+        effect.projectileRef = INVALID_ENT_REFERENCE;
+        effect.infernoRef = INVALID_ENT_REFERENCE;
+        strcopy(effect.recordID, sizeof(effect.recordID), record.id);
+        Array_Copy(record.target, effect.target, 3);
+        g_DREffects.PushArray(effect, sizeof(DREffect));
+    }
     g_DRGrenade[client].stage = DR_GrenadeStageApproaching;
+    g_DRGrenade[client].playbackInstance = 0;
     g_DRGrenade[client].firstFrame = false;
+    g_DRGrenade[client].projectileObserved = false;
+    g_DRGrenade[client].result = DR_NotThrown;
     g_DRGrenade[client].serial = GetClientSerial(client);
     g_DRGrenade[client].round = g_DRRoundSerial;
     g_DRGrenade[client].record = recordIndex;
-    g_DRGrenade[client].reservation = effect.id;
+    g_DRGrenade[client].reservation = reservation;
     g_DRGrenade[client].equippedWeaponRef = INVALID_ENT_REFERENCE;
     g_DRGrenade[client].assignedAt = GetGameTime();
     g_DRGrenade[client].progressSince = GetGameTime();
     GetClientAbsOrigin(client, g_DRGrenade[client].progressOrigin);
     g_DRGrenade[client].nextMoveAt = 0.0;
     g_DRGrenade[client].startedAt = 0.0;
-    PrintToServer("[DemoReplay] grenade_selected round=%d serial=%d kind=%d reservation=%d rec=%s source=%.3f,%.3f,%.3f tick=%d",
-        g_DRRoundSerial, GetClientSerial(client), view_as<int>(record.kind),
-        effect.id, record.id, effect.target[0], effect.target[1], effect.target[2], GetGameTickCount());
+    PrintToServer("[DemoReplay] %s_selected round=%d serial=%d kind=%d reservation=%d rec=%s source=%.3f,%.3f,%.3f tick=%d",
+        record.action ? "action" : "grenade", g_DRRoundSerial, GetClientSerial(client), record.action ? -1 : view_as<int>(record.kind),
+        reservation, record.id, record.target[0], record.target[1], record.target[2], GetGameTickCount());
     PrintToServer("[DemoReplay] grenade_approach_started round=%d serial=%d rec=%s",
         g_DRRoundSerial, GetClientSerial(client), record.id);
 }
@@ -1234,6 +1453,11 @@ bool DR_GrenadeWeaponReady(int client, CSWeaponID weaponID)
 
 void DR_UpdateGrenade(int client)
 {
+    if (DR_TReplayBlocked(client))
+    {
+        DR_StopGrenade(client, "postplant_blocked");
+        return;
+    }
     if (g_DRGrenade[client].stage == DR_GrenadeStageIdle)
         return;
     if (!DR_OwnsGrenade(client) || !DR_IsClient(client) || !DR_FormalRound())
@@ -1264,16 +1488,21 @@ void DR_UpdateGrenade(int client)
         DR_StopGrenade(client, "core_catalog");
         return;
     }
-    if (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0)
+    if (record.action && !DR_ActionEligible(client, record, GetGameTime()))
+    {
+        DR_StopGrenade(client, "action_equipment_or_phase");
+        return;
+    }
+    if (!record.action && DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0)
     {
         DR_CaptureGrenadeProjectile(client);
         int index = DR_FindEffect(g_DRGrenade[client].reservation);
-        bool committed = false;
+        bool committed = g_DRGrenade[client].projectileObserved;
         if (index != -1)
         {
             DREffect effect;
             g_DREffects.GetArray(index, effect, sizeof(DREffect));
-            committed = effect.phase != DR_EffectSelected;
+            committed = committed || effect.phase != DR_EffectSelected;
         }
         if (g_DRGrenade[client].stage != DR_GrenadeStagePlaying
             || !g_DRGrenade[client].firstFrame || (!committed && DR_GrenadeIdle(client)))
@@ -1282,7 +1511,7 @@ void DR_UpdateGrenade(int client)
             return;
         }
     }
-    if (!g_DRGrenade[client].firstFrame && record.targetKnown
+    if (!record.action && !g_DRGrenade[client].firstFrame && record.targetKnown
         && DR_EffectBlocked(record.team, record.kind, record.target, g_DRGrenade[client].reservation))
     {
         DR_StopGrenade(client, "effect_blocked");
@@ -1309,8 +1538,13 @@ void DR_UpdateGrenade(int client)
     }
     GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", velocity);
     velocity[2] = 0.0;
-    float distanceSquared = GetVectorDistance(origin, record.origin, true);
-    if (distanceSquared > DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)
+    if (record.action)
+    {
+        record.actionTimestamp = now;
+        g_DRCatalog.SetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
+    }
+    float distanceSquared = GetVectorDistance(origin, record.action ? record.triggerOrigin : record.origin, true);
+    if (record.action ? distanceSquared >= 25.0 * 25.0 : distanceSquared > DR_GRENADE_START_RADIUS * DR_GRENADE_START_RADIUS)
     {
         if (now >= g_DRGrenade[client].nextMoveAt)
         {
@@ -1324,9 +1558,11 @@ void DR_UpdateGrenade(int client)
     GetAngleVectors(record.startAngles, direction, NULL_VECTOR, NULL_VECTOR);
     for (int axis = 0; axis < 3; axis++)
         look[axis] = eye[axis] + direction[axis] * 1000.0;
+    if (record.action) Array_Copy(record.lookAt, look, 3);
     BotSetLookAt(client, "Use entity", look, PRIORITY_HIGH, 2.0, false, 3.0, false);
-    if (!DR_GrenadeWeaponReady(client, record.targetWeapon)) return;
-    if (!DR_CanStartGrenade(distanceSquared, GetVectorLength(velocity, true), (GetEntityFlags(client) & FL_ONGROUND) != 0, DR_GrenadeWalkSpeed(client)))
+    if (!record.action && !DR_GrenadeWeaponReady(client, record.targetWeapon)) return;
+    if (record.action ? (GetVectorLength(velocity, true) != 0.0 || (GetEntityFlags(client) & FL_ONGROUND) == 0)
+        : !DR_CanStartGrenade(distanceSquared, GetVectorLength(velocity, true), (GetEntityFlags(client) & FL_ONGROUND) != 0, DR_GrenadeWalkSpeed(client)))
         return;
     if (view_as<LookAtSpotState>(GetEntData(client, g_iBotLookAtSpotStateOffset)) == LOOK_AT_SPOT)
         DR_StartGrenade(client, g_DRGrenade[client].record);
@@ -1340,13 +1576,17 @@ void DR_StartGrenade(int client, int recordIndex)
     GetClientAbsOrigin(client, origin);
     GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", velocity);
     velocity[2] = 0.0;
-    if (!DR_OwnsGrenade(client) || g_DRGrenade[client].stage != DR_GrenadeStageApproaching
+    if (!DR_OwnsGrenade(client) || DR_TReplayBlocked(client) || g_DRGrenade[client].stage != DR_GrenadeStageApproaching
         || !DR_GrenadePhaseAllowed(client, true) || !DR_RecordAvailable(record)
-        || DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
-        || !DR_GrenadeWeaponReady(client, record.targetWeapon)
-        || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target, g_DRGrenade[client].reservation))
-        || !DR_CanStartGrenade(GetVectorDistance(origin, record.origin, true), GetVectorLength(velocity, true),
-            (GetEntityFlags(client) & FL_ONGROUND) != 0, DR_GrenadeWalkSpeed(client))
+        || (record.action
+            ? (!DR_ActionEligible(client, record, GetGameTime())
+                || GetVectorDistance(origin, record.triggerOrigin, true) >= 25.0 * 25.0
+                || GetVectorLength(velocity, true) != 0.0 || (GetEntityFlags(client) & FL_ONGROUND) == 0)
+            : (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
+                || !DR_GrenadeWeaponReady(client, record.targetWeapon)
+                || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target, g_DRGrenade[client].reservation))
+                || !DR_CanStartGrenade(GetVectorDistance(origin, record.origin, true), GetVectorLength(velocity, true),
+                    (GetEntityFlags(client) & FL_ONGROUND) != 0, DR_GrenadeWalkSpeed(client))))
         || view_as<LookAtSpotState>(GetEntData(client, g_iBotLookAtSpotStateOffset)) != LOOK_AT_SPOT)
     {
         DR_StopGrenade(client, "start_state_changed");
@@ -1357,7 +1597,13 @@ void DR_StartGrenade(int client, int recordIndex)
     PrintToServer("[DemoReplay] grenade_approach_finished round=%d serial=%d rec=%s elapsed=%.3f speed=%.3f",
         g_DRRoundSerial, GetClientSerial(client), record.id,
         GetGameTime() - g_DRGrenade[client].assignedAt, GetVectorLength(velocity));
-    BMError result = BotMimic_PlayRecordFromFileEx(client, record.path, 0, BMPlayback_Legacy, true);
+    int reservation = g_DRGrenade[client].reservation, serial = g_DRGrenade[client].serial;
+    int round = g_DRGrenade[client].round, instance;
+    BMError result = DR_PlayRecordForTask(client, record.path, 0, !record.action, instance);
+    if (g_DRGrenade[client].stage != DR_GrenadeStagePlaying || g_DRGrenade[client].reservation != reservation
+        || g_DRGrenade[client].serial != serial || g_DRGrenade[client].round != round)
+        return;
+    g_DRGrenade[client].playbackInstance = instance;
     PrintToServer("[DemoReplay] grenade_start_requested round=%d serial=%d reservation=%d result=%d",
         g_DRRoundSerial, GetClientSerial(client), g_DRGrenade[client].reservation, result);
     if (result != BM_NoError || !DR_MatchesGrenadePlayback(client))
@@ -1418,13 +1664,29 @@ int DR_FindPendingEffect(int ownerHandle, DRGrenadeKind kind)
             || effect.pendingWeaponRef == 0 || effect.ownerHandle != ownerHandle || effect.kind != kind)
             continue;
         if (found != -1)
-            return -1;
+            return -2; // Ambiguous pending identity; do not assign to a new task.
         found = index;
     }
     return found;
 }
 
-void DR_OnProjectileCreated(int entity)
+void DR_SettleThrowResult(DREffect effect, DRThrowResult result)
+{
+    int owner = GetClientFromSerial(effect.ownerSerial);
+    if (owner == 0 || g_DRCatalog == null || effect.round != g_DRRoundSerial
+        || g_DRGrenade[owner].round != effect.round || g_DRGrenade[owner].serial != effect.ownerSerial
+        || g_DRGrenade[owner].reservation != effect.id
+        || g_DRGrenade[owner].record < 0 || g_DRGrenade[owner].record >= g_DRCatalog.Length)
+        return;
+    DRRecord record;
+    g_DRCatalog.GetArray(g_DRGrenade[owner].record, record, sizeof(DRRecord));
+    if (record.action || record.kind != effect.kind || !StrEqual(record.id, effect.recordID))
+        return;
+    g_DRGrenade[owner].result = result;
+    if (result == DR_Thrown) g_DRGrenade[owner].projectileObserved = true;
+}
+
+void DR_OnProjectileCreated(int entity, int stoppedInstance = 0)
 {
     if (!g_DRRoundActive || !IsValidEntity(entity))
         return;
@@ -1450,16 +1712,32 @@ void DR_OnProjectileCreated(int entity)
         g_DREffects = new ArrayList(sizeof(DREffect));
     int index = -1;
     if (validOwner && g_DRGrenade[owner].stage == DR_GrenadeStagePlaying && DR_OwnsGrenade(owner))
-        index = DR_FindEffect(g_DRGrenade[owner].reservation);
+    {
+        DRRecord record;
+        g_DRCatalog.GetArray(g_DRGrenade[owner].record, record, sizeof(DRRecord));
+        int instance;
+        bool reachedEnd;
+        // Stop capture belongs to the notified instance even when a new playback is active.
+        // Ordinary observations only use the active instance; never adopt a nested playback.
+        if ((stoppedInstance == 0 || stoppedInstance == g_DRGrenade[owner].playbackInstance)
+            && DR_ReadPlaybackContext(owner, record.path, stoppedInstance != 0, instance, reachedEnd)
+            && instance == g_DRGrenade[owner].playbackInstance)
+            index = DR_FindEffect(g_DRGrenade[owner].reservation);
+    }
     DREffect effect;
     if (index != -1)
     {
         g_DREffects.GetArray(index, effect, sizeof(DREffect));
-        if (effect.phase != DR_EffectSelected || effect.kind != kind)
+        if (!effect.live || effect.round != g_DRRoundSerial || effect.phase != DR_EffectSelected
+            || effect.kind != kind || effect.ownerSerial != GetClientSerial(owner)
+            || !g_DRGrenade[owner].firstFrame)
             index = -1;
     }
-    if (index == -1)
-        index = DR_FindPendingEffect(GetEntProp(entity, Prop_Send, "m_hThrower"), kind);
+    int pending = DR_FindPendingEffect(GetEntProp(entity, Prop_Send, "m_hThrower"), kind);
+    if (pending == -2 || (index != -1 && pending >= 0 && pending != index))
+        index = -1; // Old pending and new playback both match: retain unknown provenance.
+    else if (index == -1)
+        index = pending;
     if (index != -1)
         g_DREffects.GetArray(index, effect, sizeof(DREffect));
     if (index == -1 && !validOwner)
@@ -1480,6 +1758,10 @@ void DR_OnProjectileCreated(int entity)
         effect.recordID[0] = '\0';
         index = g_DREffects.PushArray(effect, sizeof(DREffect));
     }
+    DR_SettleThrowResult(effect, DR_Thrown);
+    if (effect.pendingWeaponRef != 0)
+        PrintToServer("[DemoReplay] grenade_result round=%d serial=%d reservation=%d result=thrown",
+            effect.round, effect.ownerSerial, effect.id);
     effect.ownerHandle = GetEntProp(entity, Prop_Send, "m_hThrower");
     effect.thrownAt = GetGameTime();
     effect.phase = DR_EffectFlying;
@@ -1608,6 +1890,9 @@ void DR_UpdateEffects()
                 if (now >= effect.expiresAt)
                 {
                     effect.live = false;
+                    DR_SettleThrowResult(effect, effect.throwCommitted ? DR_NotThrown : DR_CancelledBeforeThrow);
+                    PrintToServer("[DemoReplay] grenade_result round=%d serial=%d reservation=%d result=%s",
+                        effect.round, effect.ownerSerial, effect.id, effect.throwCommitted ? "not_thrown" : "cancelled_before_throw");
                     g_DREffects.SetArray(index, effect, sizeof(DREffect));
                     PrintToServer("[DemoReplay] effect_released round=%d reservation=%d phase=0 time=%.6f",
                         effect.round, effect.id, now);
@@ -1661,6 +1946,15 @@ void DR_ResetRound()
     }
     if (g_DREffects != null)
         g_DREffects.Clear();
+    if (g_DRCatalog != null)
+        for (int index = 0; index < g_DRCatalog.Length; index++)
+        {
+            DRRecord record;
+            g_DRCatalog.GetArray(index, record, sizeof(DRRecord));
+            if (!record.action) continue;
+            record.actionTimestamp = 0.0;
+            g_DRCatalog.SetArray(index, record, sizeof(DRRecord));
+        }
 }
 
 int DR_NewObservedEffect(int team, int ownerSerial, DRGrenadeKind kind)

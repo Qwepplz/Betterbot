@@ -474,6 +474,7 @@ public Action Command_ValidateBots(int iClient, int iArgs)
 
 public void OnMapStart()
 {
+    if (GameRules_GetProp("m_bBombPlanted") != 0) g_DRTPostPlantBlocked = true;
     RequestFrame(DR_LoadCatalogFrame);
 	ResetAllBotReactions("map_start");
 	InitializeMapRuntime();
@@ -939,8 +940,11 @@ public void OnPluginEnd()
     delete g_DRCatalog;
     delete g_DREffects;
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
+    {
+        delete g_DRActionIndex[team];
         for (int kind = 0; kind < 4; kind++)
             delete g_DRGrenadeIndex[team][kind];
+    }
 	ResetAllBotReactions("plugin_end");
 }
 
@@ -1097,10 +1101,9 @@ public void OnRoundPreStart(Event eEvent, const char[] szName, bool bDontBroadca
 public void OnRoundStart(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
 	ResetAllBotReactions("round_start");
+    g_bFreezetimeEnd = false;
+    g_bBombPlanted = false;
     DR_OnRoundStart();
-
-	g_bFreezetimeEnd = false;
-	g_bBombPlanted = false;
 	g_fRoundStart = GetGameTime();
 	g_bHalftimeSwitch = false;
 
@@ -1210,9 +1213,11 @@ public void OnFreezetimeEnd(Event eEvent, const char[] szName, bool bDontBroadca
 
 public void OnBombPlanted(Event eEvent, const char[] szName, bool bDontBroadcast)
 {
+    g_bBombPlanted = true;
+    DR_BlockTReplays();
     for (int client = 1; client <= MaxClients; client++)
-        DR_StopClient(client, "bomb_planted");
-	g_bBombPlanted = true;
+        if (IsClientInGame(client) && GetClientTeam(client) != CS_TEAM_T)
+            DR_StopClient(client, "bomb_planted");
 
 	int iPlantedC4 = FindEntityByClassname(-1, "planted_c4");
 	if (IsValidEntity(iPlantedC4))
@@ -1846,6 +1851,12 @@ public void OnPlayerRunCmdPre(int iClient, int iButtons, int iImpulse, const flo
 		g_iReactionCmdNum[iClient] = iCmdNum;
 		g_iReactionPreButtons[iClient] = iButtons;
 	}
+    if (DR_TReplayBlocked(iClient))
+    {
+        DR_StopClient(iClient, "postplant_blocked");
+        DR_StopGrenade(iClient, "postplant_blocked");
+        if (BotMimic_IsPlayerMimicing(iClient)) BotMimic_StopPlayerMimic(iClient);
+    }
 	UpdateBotReaction(iClient);
 }
 
