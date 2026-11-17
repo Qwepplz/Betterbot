@@ -157,6 +157,7 @@ Handle g_hBotSetLookAt;
 Handle g_hSetCrosshairCode;
 Handle g_hSwitchWeaponCall;
 Handle g_hGetPlayerMaxSpeedCall;
+Handle g_hReevaluateNativeTaskCall;
 Handle g_hIsLineBlockedBySmoke;
 Handle g_hAddMoney;
 Handle g_hOnAudibleEvent;
@@ -937,6 +938,7 @@ public void OnPluginEnd()
 {
     DR_OnRoundEnd();
     delete g_hGetPlayerMaxSpeedCall;
+    delete g_hReevaluateNativeTaskCall;
     delete g_DRCatalog;
     delete g_DREffects;
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
@@ -2445,6 +2447,12 @@ public void LoadSDK()
 		SetFailState("Failed to create SDKCall: SetCrosshairCode");
 
 	StartPrepSDKCall(SDKCall_Player);
+	if (!PrepSDKCall_SetFromConf(hConf, SDKConf_Signature, "CCSBot::Idle"))
+		SetFailState("Missing signature: CCSBot::Idle");
+	if ((g_hReevaluateNativeTaskCall = EndPrepSDKCall()) == null)
+		SetFailState("Failed to create SDKCall: CCSBot::Idle");
+
+	StartPrepSDKCall(SDKCall_Player);
 	if (!PrepSDKCall_SetFromConf(hConf, SDKConf_Signature, "CCSPlayer::GetPlayerMaxSpeed"))
 		SetFailState("Missing signature: CCSPlayer::GetPlayerMaxSpeed");
 	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
@@ -2541,6 +2549,14 @@ bool BotIsVisible(int iClient, float fPos[3], bool bTestFOV, int iIgnore = -1)
 public bool BotIsHiding(int iClient)
 {
 	return SDKCall(g_hBotIsHiding, iClient);
+}
+
+bool DR_ReevaluateNativeTask(int client)
+{
+    if (!DR_IsClient(client) || g_hReevaluateNativeTaskCall == null)
+        return false;
+    SDKCall(g_hReevaluateNativeTaskCall, client);
+    return true;
 }
 
 public void BotEquipBestWeapon(int iClient, bool bMustEquip)

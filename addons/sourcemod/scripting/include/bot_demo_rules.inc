@@ -6,7 +6,15 @@
 #define DR_TICKRATE 128
 #define DR_OPENING_CHANCE 80
 #define DR_GRENADE_START_RADIUS 32.0
+#define DR_START_EXCLUSION_RADIUS 32.0
 #define DR_GRENADE_WALK_FACTOR 0.52
+
+stock bool DR_StartPointsConflict(float distanceSquared)
+{
+    return (view_as<int>(distanceSquared) & 0x7F800000) != 0x7F800000
+        && distanceSquared >= 0.0
+        && distanceSquared <= DR_START_EXCLUSION_RADIUS * DR_START_EXCLUSION_RADIUS;
+}
 
 stock bool DR_AcceptRoll(int roll, int chance)
 {

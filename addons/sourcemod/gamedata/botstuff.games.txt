@@ -4,6 +4,12 @@
 	{
 		"Signatures"
 		{
+			"CCSBot::Idle"
+			{
+				// Linux 8853 / server.so SHA256 7de235c3: native state transition, not Update/Reset.
+				"library" "server"
+				"linux" "\x55\x89\xE5\x83\xEC\x10\x8B\x45\x08\xC7\x80\xA4\x3E\x00\x00\x00\x00\x00\x00\x8D\x90\xC4\x3C\x00\x00\xC7\x80\xA8\x3E\x00\x00\xFF\xFF\xFF\xFF\x52\x50\xE8\xE6\xFE\xFF\xFF\x83\xC4\x10\xC9\xC3"
+			}
 			"CCSPlayer::GetPlayerMaxSpeed"
 			{
 				// Linux build 8853, server.so SHA256 7de235c3, CCSPlayer vtable 507.
