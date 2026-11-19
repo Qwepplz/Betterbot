@@ -943,6 +943,7 @@ public void OnPluginEnd()
     delete g_DREffects;
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
     {
+        delete g_DRUsedGrenadePaths[team];
         delete g_DRActionIndex[team];
         for (int kind = 0; kind < 4; kind++)
             delete g_DRGrenadeIndex[team][kind];

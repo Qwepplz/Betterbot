@@ -141,6 +141,7 @@ ArrayList g_DREffects;
 int g_DRNextEffect;
 int g_DRNextProjectile;
 ArrayList g_DRGrenadeIndex[4][4];
+StringMap g_DRUsedGrenadePaths[4];
 ArrayList g_DRActionIndex[4];
 float g_DRNextGrenadeScan[MAXPLAYERS + 1];
 DRGrenadePlayback g_DRGrenade[MAXPLAYERS + 1];
@@ -363,6 +364,11 @@ void DR_CheckOpeningFinished(int team)
     g_DRTeamSource[team][0] = '\0';
 }
 
+bool DR_GrenadeUsedThisRound(int team, const char[] path)
+{
+    return g_DRUsedGrenadePaths[team] != null && g_DRUsedGrenadePaths[team].ContainsKey(path);
+}
+
 void DR_OnRoundStart()
 {
     g_DRRoundActive = false;
@@ -371,6 +377,8 @@ void DR_OnRoundStart()
     g_DRRoundActive = true;
     for (int team = CS_TEAM_T; team <= CS_TEAM_CT; team++)
     {
+        if (g_DRUsedGrenadePaths[team] != null)
+            g_DRUsedGrenadePaths[team].Clear();
         g_DRTeamRolled[team] = false;
         g_DRTeamAccepted[team] = false;
         g_DRTeamStarted[team] = false;
@@ -1141,6 +1149,15 @@ public void BotMimic_OnPlayerMimicLoops(int client)
     if (DR_MatchesGrenadePlayback(client) && !g_DRGrenade[client].firstFrame)
     {
         g_DRGrenade[client].firstFrame = true;
+        DRRecord record;
+        g_DRCatalog.GetArray(g_DRGrenade[client].record, record, sizeof(DRRecord));
+        if (!record.action)
+        {
+            int team = record.team;
+            if (g_DRUsedGrenadePaths[team] == null)
+                g_DRUsedGrenadePaths[team] = new StringMap();
+            g_DRUsedGrenadePaths[team].SetValue(record.path, 1);
+        }
         PrintToServer("[DemoReplay] grenade_first_frame round=%d serial=%d reservation=%d",
             g_DRRoundSerial, g_DRGrenade[client].serial, g_DRGrenade[client].reservation);
     }
@@ -1386,7 +1403,9 @@ void DR_TryGrenade(int client)
             g_DRCatalog.GetArray(index, record, sizeof(DRRecord));
             float distance = GetVectorDistance(origin, record.action ? record.triggerOrigin : record.origin, true);
             if (record.action && !DR_ActionEligible(client, record, now)) continue;
-            if (!record.action && DR_StartOccupied(client, index)) continue;
+            if (!record.action && (DR_GrenadeUsedThisRound(record.team, record.path)
+                || DR_StartOccupied(client, index)))
+                continue;
             if ((selected != -1 && distance > selectedDistance) || (!record.action && (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
                 || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))))
                 continue;
@@ -1560,7 +1579,8 @@ void DR_AssignGrenade(int client, int recordIndex)
     g_DRCatalog.GetArray(recordIndex, record, sizeof(DRRecord));
     if (record.opening || GetClientTeam(client) != record.team
         || !DR_GrenadePhaseAllowed(client) || !DR_RecordAvailable(record)
-        || (!record.action && DR_StartOccupied(client, recordIndex))
+        || (!record.action && (DR_GrenadeUsedThisRound(record.team, record.path)
+            || DR_StartOccupied(client, recordIndex)))
         || (record.action ? !DR_ActionEligible(client, record, GetGameTime())
             : (DR_CountWeapon(client, DR_InventoryGrenadeWeapon(client, record.targetWeapon)) == 0
                 || (record.targetKnown && DR_EffectBlocked(record.team, record.kind, record.target)))))
@@ -1772,7 +1792,8 @@ void DR_StartGrenade(int client, int recordIndex)
     velocity[2] = 0.0;
     if (!DR_OwnsGrenade(client) || DR_TReplayBlocked(client) || g_DRGrenade[client].stage != DR_GrenadeStageApproaching
         || g_DRGrenade[client].record != recordIndex
-        || (!record.action && DR_StartOccupied(client, recordIndex))
+        || (!record.action && (DR_GrenadeUsedThisRound(record.team, record.path)
+            || DR_StartOccupied(client, recordIndex)))
         || !DR_GrenadePhaseAllowed(client, true) || !DR_RecordAvailable(record)
         || (record.action
             ? (!DR_ActionEligible(client, record, GetGameTime())
